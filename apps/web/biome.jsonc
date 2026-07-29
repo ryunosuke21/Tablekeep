@@ -11,5 +11,17 @@
         "noShadowRestrictedNames": "off"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["public/towerkeep.svg", "public/towerkeep-icon.svg"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      }
+    }
+  ]
 }
