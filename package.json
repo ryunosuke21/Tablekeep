@@ -1,0 +1,33 @@
+{
+  "name": "Tablekeep",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev:web": "turbo run dev -F web",
+    "db:push": "turbo run db:push -F web",
+    "db:studio": "turbo run db:studio -F web",
+    "db:generate": "turbo run db:generate -F web",
+    "db:migrate": "turbo run db:migrate -F web",
+    "auth:generate": "turbo run auth:generate -F web",
+    "check": "biome check --write ."
+  },
+  "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@tablekeep/config": "workspace:*",
+    "@biomejs/biome": "^2.5.2",
+    "@types/node": "^22.13.14",
+    "turbo": "^2.10.2",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.8.0"
+}
