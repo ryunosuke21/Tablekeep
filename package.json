@@ -23,9 +23,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.6",
     "@tablekeep/config": "workspace:*",
-    "@biomejs/biome": "^2.5.2",
-    "@types/node": "^22.13.14",
+    "@types/node": "^26.1.2",
     "turbo": "^2.10.2",
     "typescript": "catalog:"
   },
