@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Tablekeep Web Dashboard Implementation Plan</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f7fb;
+        --surface: #ffffff;
+        --surface-alt: #f0f3f8;
+        --text: #172033;
+        --muted: #5e687a;
+        --border: #d9deea;
+        --accent: #5b5bd6;
+        --accent-soft: #e9e9ff;
+        --success: #16825d;
+        --success-soft: #e1f5ec;
+        --warning: #a15c00;
+        --warning-soft: #fff0d5;
+        --code-bg: #111827;
+        --code-text: #e5e7eb;
+        --shadow: 0 10px 30px rgb(23 32 51 / 8%);
+        --radius: 14px;
+        --content-width: 960px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d111b;
+          --surface: #151b27;
+          --surface-alt: #1c2432;
+          --text: #e7eaf0;
+          --muted: #a9b1c1;
+          --border: #30394a;
+          --accent: #a5a5ff;
+          --accent-soft: #292951;
+          --success: #71d5ae;
+          --success-soft: #173d32;
+          --warning: #ffc36a;
+          --warning-soft: #493317;
+          --code-bg: #090d14;
+          --code-text: #e5e7eb;
+          --shadow: 0 10px 30px rgb(0 0 0 / 24%);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.65;
+      }
+
+      main {
+        width: min(calc(100% - 32px), var(--content-width));
+        margin: 0 auto;
+        padding: 48px 0 80px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      section {
+        margin-top: 40px;
+        scroll-margin-top: 24px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.2;
+        text-wrap: balance;
+      }
+
+      h1 {
+        margin: 4px 0 12px;
+        font-size: clamp(2rem, 7vw, 3.75rem);
+        letter-spacing: -0.04em;
+      }
+
+      h2 {
+        margin: 0 0 16px;
+        font-size: clamp(1.4rem, 4vw, 2rem);
+        letter-spacing: -0.025em;
+      }
+
+      h3 {
+        margin: 0 0 8px;
+        font-size: 1.05rem;
+      }
+
+      p,
+      ul,
+      ol {
+        margin-top: 0;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface-alt);
+        padding: 0.1em 0.35em;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        font-size: 0.9em;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 16px 0 0;
+        border-radius: 10px;
+        background: var(--code-bg);
+        padding: 16px;
+        color: var(--code-text);
+      }
+
+      pre code {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        color: inherit;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 750;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .lede {
+        max-width: 760px;
+        margin-bottom: 20px;
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        padding: 4px 10px;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .badge.success {
+        background: var(--success-soft);
+        color: var(--success);
+      }
+
+      .badge.warning {
+        background: var(--warning-soft);
+        color: var(--warning);
+      }
+
+      .toc,
+      .card,
+      .callout {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .toc,
+      .card {
+        padding: 20px;
+      }
+
+      .toc ol {
+        margin-bottom: 0;
+        padding-left: 22px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns:
+          repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+        gap: 16px;
+      }
+
+      .callout {
+        border-left: 4px solid var(--accent);
+        padding: 16px 18px;
+      }
+
+      .callout.warning {
+        border-left-color: var(--warning);
+        background: var(--warning-soft);
+      }
+
+      .steps {
+        padding: 0;
+        list-style: none;
+        counter-reset: steps;
+      }
+
+      .steps > li {
+        position: relative;
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 20px 20px 20px 64px;
+        box-shadow: var(--shadow);
+        counter-increment: steps;
+      }
+
+      .steps > li::before {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        display: grid;
+        width: 30px;
+        height: 30px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--accent);
+        color: var(--surface);
+        content: counter(steps);
+        font-size: 0.85rem;
+        font-weight: 800;
+      }
+
+      .file-list,
+      .checklist {
+        padding-left: 0;
+        list-style: none;
+      }
+
+      .file-list li,
+      .checklist li {
+        position: relative;
+        margin: 8px 0;
+        padding-left: 28px;
+      }
+
+      .file-list li::before {
+        position: absolute;
+        left: 0;
+        content: "→";
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      .checklist li::before {
+        position: absolute;
+        left: 0;
+        content: "□";
+        color: var(--accent);
+        font-weight: 800;
+      }
+
+      .section-number {
+        color: var(--accent);
+        font-size: 0.8em;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          width: min(calc(100% - 20px), var(--content-width));
+          padding-top: 28px;
+        }
+
+        section {
+          margin-top: 32px;
+        }
+
+        .toc,
+        .card {
+          padding: 16px;
+        }
+
+        .steps > li {
+          padding: 58px 16px 16px;
+        }
+
+        .steps > li::before {
+          top: 16px;
+          left: 16px;
+        }
+
+        table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <!-- PLAN:START -->
+
+      <header>
+        <p class="eyebrow">Implementation plan</p>
+        <h1>Build the Tablekeep web dashboard</h1>
+        <p class="lede">
+          Replace the Create T3 starter at <code>/</code> with an immediately useful,
+          responsive dashboard: a shadcn sidebar-04-inspired floating navigation shell
+          and two independently expandable card collections for the signed-in
+          player&rsquo;s campaigns and characters. Keep the data boundary real through
+          tRPC, but return deterministic mock data and make no database or schema changes.
+        </p>
+        <div class="meta">
+          <span class="badge">Ready to implement</span>
+          <span class="badge success">Repository inspected</span>
+          <span class="badge success">Reference block verified</span>
+          <span class="badge success">Local web env copied</span>
+          <span class="badge warning">Mock API only</span>
+        </div>
+      </header>
+
+      <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#outcome">Outcome and boundaries</a></li>
+          <li><a href="#findings">Verified codebase findings</a></li>
+          <li><a href="#experience">Dashboard experience</a></li>
+          <li><a href="#design">Visual direction</a></li>
+          <li><a href="#contracts">Mock API contracts</a></li>
+          <li><a href="#architecture">Component architecture</a></li>
+          <li><a href="#steps">Implementation steps</a></li>
+          <li><a href="#files">Expected file changes</a></li>
+          <li><a href="#risks">Risks and edge cases</a></li>
+          <li><a href="#validation">Validation strategy</a></li>
+        </ol>
+      </nav>
+
+      <section id="outcome">
+        <h2><span class="section-number">01.</span> Outcome and boundaries</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>Primary outcome</h3>
+            <p>
+              A user opening the product at <code>/</code> sees the Tablekeep brand,
+              navigation for personal and rules-reference areas, and scannable campaign
+              and character cards. The page should feel like the beginning of the real
+              product, not a dashboard template.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Data outcome</h3>
+            <p>
+              Campaigns, characters, and feedback use typed tRPC procedures. The
+              procedures return in-memory fixtures with stable IDs and ISO timestamps,
+              making the response shapes the provisional contract for later Drizzle
+              work.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Interaction outcome</h3>
+            <p>
+              Each dashboard section begins in a compact state showing the first three
+              cards. <q>Show all (n)</q> reveals every remaining item independently;
+              <q>Show less</q> returns the section to three.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Responsive outcome</h3>
+            <p>
+              Desktop uses a floating, icon-collapsible sidebar and a three-column card
+              grid. Tablet moves to two columns. Mobile opens the sidebar as the existing
+              sheet and renders a single readable card column.
+            </p>
+          </article>
+        </div>
+
+        <h3>Non-goals</h3>
+        <ul>
+          <li>No Drizzle tables, migrations, database reads, campaign membership logic, or seed scripts.</li>
+          <li>No campaign detail, character sheet, compendium, settings, or help-page implementation.</li>
+          <li>No copied rules text, monster stat blocks, or commercial compendium data.</li>
+          <li>No create/edit/delete flows for campaigns or characters in this pass.</li>
+          <li>No new package or alternate state-management library.</li>
+        </ul>
+
+        <div class="callout">
+          The sidebar may expose the final route vocabulary before those destinations
+          exist, but the implementation must clearly treat those pages as planned. The
+          dashboard itself, theme control, feedback interaction, external Help link, and
+          sign-out action are the functional scope of this change.
+        </div>
+      </section>
+
+      <section id="findings">
+        <h2><span class="section-number">02.</span> Verified codebase findings</h2>
+        <ul>
+          <li>
+            <code>apps/web/src/app/page.tsx</code> is still the Create T3 starter and
+            currently performs one server-side <code>api.health.check()</code> call.
+          </li>
+          <li>
+            <code>apps/web</code> is the correct workspace for this authenticated product
+            surface. <code>apps/docs</code> remains the static marketing and documentation
+            site.
+          </li>
+          <li>
+            <code>packages/ui/src/components/sidebar.tsx</code> already exposes
+            <code>SidebarProvider</code>, <code>Sidebar</code>,
+            <code>SidebarInset</code>, <code>SidebarTrigger</code>, groups, menus,
+            footer, tooltips, cookie persistence, the <code>Ctrl/Cmd+B</code> shortcut,
+            and mobile sheet behavior.
+          </li>
+          <li>
+            The shared sidebar accepts <code>variant=&quot;floating&quot;</code> and
+            <code>collapsible=&quot;icon&quot;</code>. The official sidebar-04 block uses
+            the floating variant and a <code>19rem</code> provider width.
+          </li>
+          <li>
+            Shared cards, collapsibles, dropdown menus, avatars, badges, dialogs,
+            skeletons, separators, tooltips, and buttons already exist in
+            <code>packages/ui</code>; application-specific compositions belong under
+            <code>apps/web/src/components/</code>.
+          </li>
+          <li>
+            <code>packages/ui/src/icons/tablekeep.tsx</code> provides the current-color
+            Tablekeep tower mark. <code>@tabler/icons-react</code> is already installed
+            for the navigation icon set.
+          </li>
+          <li>
+            <code>apps/web/src/components/providers/index.tsx</code> already configures
+            tRPC/TanStack Query, <code>next-themes</code>, tooltips, and toasts.
+          </li>
+          <li>
+            Better Auth exposes <code>authClient.useSession()</code> and
+            <code>authClient.signOut()</code> through
+            <code>apps/web/src/server/better-auth/client.ts</code>.
+          </li>
+          <li>
+            The tRPC root currently contains only <code>health.check</code>. Both
+            <code>publicProcedure</code> and <code>protectedProcedure</code> are
+            available, but public mock procedures are the correct temporary choice so
+            this dashboard does not depend on an authenticated database session.
+          </li>
+          <li>
+            The main checkout contained <code>apps/web/.env</code>. It has been copied
+            into this worktree as an ignored file without exposing its contents. The
+            main checkout did not contain a local <code>apps/docs/.env</code>.
+          </li>
+        </ul>
+      </section>
+
+      <section id="experience">
+        <h2><span class="section-number">03.</span> Dashboard experience</h2>
+
+        <h3>Navigation model</h3>
+        <div class="grid">
+          <article class="card">
+            <h3>Brand header</h3>
+            <p>
+              Use <code>TablekeepIcon</code> in a compact violet tile next to
+              <q>Tablekeep</q>. When the sidebar is icon-collapsed, retain the tower mark
+              with a tooltip and hide only the wordmark.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Personal</h3>
+            <p>
+              <code>Campaigns</code> and <code>Characters</code>, with whichever
+              destination route is current visibly active. On the root dashboard both
+              remain neutral and the brand link carries the current-page state. Use final
+              hrefs <code>/campaigns</code> and <code>/characters</code>.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Wiki</h3>
+            <p>
+              In order: <code>Races</code>, <code>Backgrounds</code>,
+              <code>Classes</code>, <code>Spells</code>, <code>Monsters</code>,
+              <code>Feats</code>, plus <code>Items</code> and
+              <code>Conditions</code>. Keep this as a labeled, scrollable group rather
+              than nested accordions.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Footer</h3>
+            <p>
+              <code>Help</code> opens the public documentation in a new tab,
+              <code>Feedback</code> opens an in-app dialog, and a full-width user row
+              opens the account dropdown.
+            </p>
+          </article>
+        </div>
+
+        <h3>User menu behavior</h3>
+        <ul>
+          <li>Show session avatar, name, and email when Better Auth has a session.</li>
+          <li>Use a clearly named preview user fixture when no session exists, so local mock development remains complete.</li>
+          <li>Provide a <code>Settings</code> link targeting <code>/settings</code>.</li>
+          <li>
+            Provide <code>Light</code>, <code>Dark</code>, and <code>System</code>
+            choices backed by <code>useTheme()</code>; show a check beside the active
+            choice.
+          </li>
+          <li>
+            Call <code>authClient.signOut()</code> for a real session, show success or
+            failure through the existing toaster, and refresh/redirect to
+            <code>/</code> after success. In preview mode, label sign-out unavailable
+            instead of pretending to terminate a session.
+          </li>
+        </ul>
+
+        <h3>Section reveal rules</h3>
+        <pre><code>visibleCount = expanded ? items.length : Math.min(3, items.length)
+hiddenCount  = Math.max(items.length - 3, 0)
+
+0 items      → directional empty state; no Show all control
+1–3 items    → render all items; no Show all control
+4+ items     → default to first 3; button reads “Show all (hiddenCount)”
+expanded     → render all items; button reads “Show less”</code></pre>
+        <p>
+          Campaigns and Characters keep separate local expanded state. Use an actual
+          <code>Collapsible</code> root/content relationship for accessible state and
+          animate only a short opacity/height transition that respects reduced motion.
+          Do not persist this state; a new visit returns to the compact overview.
+        </p>
+
+        <h3>Card content</h3>
+        <div class="grid">
+          <article class="card">
+            <h3>Campaign card</h3>
+            <p>
+              Name, short summary, game-system label, the user&rsquo;s role
+              (<q>DM</q> or <q>Player</q>), party/member count, active character count,
+              and next-session date or <q>Not scheduled</q>. The full card links to
+              <code>/campaigns/[slug]</code>.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Character card</h3>
+            <p>
+              Name, ancestry, class list with levels, total level, linked campaign or
+              <q>Unassigned</q>, portrait/initials, and HP only when the endpoint
+              provides it. The full card links to
+              <code>/characters/[slug]</code>.
+            </p>
+          </article>
+        </div>
+        <p>
+          Mock six items per section so the initial state visibly hides three and
+          exercises the exact <q>Show all (3)</q> behavior requested.
+        </p>
+      </section>
+
+      <section id="design">
+        <h2><span class="section-number">04.</span> Visual direction</h2>
+        <p>
+          The subject is a busy in-person tabletop session, the audience is players and
+          DMs, and the page&rsquo;s single job is to get them back into a campaign or
+          character quickly. The visual language should feel like a clean campaign
+          folio: compact, tactile, and calm enough to scan while people are talking.
+        </p>
+
+        <div class="grid">
+          <article class="card">
+            <h3>Palette reference</h3>
+            <ul>
+              <li><code>Keep navy #24324F</code> &mdash; grounded brand detail.</li>
+              <li><code>Arcane violet #7047EB</code> &mdash; active and focus accent.</li>
+              <li><code>Ember orchid #D673C4</code> &mdash; restrained secondary accent.</li>
+              <li><code>Mist #F3F5F6</code> &mdash; light dashboard canvas.</li>
+              <li><code>Ink #20252B</code> &mdash; light-mode text.</li>
+              <li><code>Night #171A20</code> &mdash; dark dashboard canvas.</li>
+            </ul>
+            <p class="muted">
+              These are visual calibration values. Implementation should extend the
+              existing semantic OKLCH tokens in
+              <code>apps/web/src/styles/globals.css</code>, not scatter raw hex colors
+              through components.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Type</h3>
+            <p>
+              Keep the existing <code>Inter</code> face for headings, labels, and body
+              copy. Use <code>JetBrains Mono</code> only for levels, dates, counts,
+              section eyebrows, and compact game metadata. This preserves brand
+              continuity and makes changing table state easy to scan.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Layout</h3>
+            <p>
+              A 19rem floating sidebar sits eight pixels from the viewport edge. The
+              content inset uses a restrained max width, generous horizontal breathing
+              room, and two stacked sections whose three-column grids align.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Signature detail</h3>
+            <p>
+              Give each card one narrow, asymmetric <q>ledger tab</q> edge derived from
+              its stable mock accent. It evokes dividers in a campaign binder without
+              adding fantasy ornament, parchment texture, gradients, or decorative
+              noise.
+            </p>
+          </article>
+        </div>
+
+        <pre><code>┌ floating sidebar ┐   ┌──────────────── dashboard inset ────────────────┐
+│ tower Tablekeep  │   │ [toggle]  Your table                            │
+│                  │   │ Pick up where the group left off.               │
+│ PERSONAL         │   │                                                 │
+│ ◆ Campaigns      │   │ CAMPAIGNS · 6                  [Show all (3)]   │
+│ ♙ Characters     │   │ ┌────────┐ ┌────────┐ ┌────────┐                │
+│                  │   │ │ ledger │ │ ledger │ │ ledger │                │
+│ WIKI             │   │ │ card   │ │ card   │ │ card   │                │
+│ Races            │   │ └────────┘ └────────┘ └────────┘                │
+│ Backgrounds      │   │                                                 │
+│ Classes          │   │ CHARACTERS · 6                 [Show all (3)]   │
+│ Spells           │   │ ┌────────┐ ┌────────┐ ┌────────┐                │
+│ Monsters …       │   │ │ ledger │ │ ledger │ │ ledger │                │
+│                  │   │ └────────┘ └────────┘ └────────┘                │
+│ Help / Feedback  │   └─────────────────────────────────────────────────┘
+│ [avatar] Player  │
+└──────────────────┘</code></pre>
+
+        <div class="callout">
+          Self-critique: a fantasy dashboard could easily become parchment-heavy or
+          overly ornamental. The revision keeps Tablekeep&rsquo;s existing cool product
+          palette and spends the one expressive gesture on the ledger-tab card edge.
+          Everything else remains quiet, semantic, and useful at the table.
+        </div>
+      </section>
+
+      <section id="contracts">
+        <h2><span class="section-number">05.</span> Mock API contracts</h2>
+        <p>
+          Create domain routers rather than importing JSON directly into the page. Keep
+          fixtures in a server-only mock module, mark the procedures and data as
+          temporary, and do not access <code>ctx.db</code>. Use
+          <code>publicProcedure</code> only while the responses are fixed fixtures;
+          replacement procedures must become <code>protectedProcedure</code> and verify
+          ownership/membership when persistence arrives.
+        </p>
+
+        <h3>Provisional response types</h3>
+        <pre><code>type CampaignSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  summary: string;
+  gameSystem: { id: string; name: string };
+  role: &quot;dm&quot; | &quot;player&quot;;
+  memberCount: number;
+  activeCharacterCount: number;
+  nextSessionAt: string | null; // ISO 8601
+  accent: &quot;violet&quot; | &quot;orchid&quot; | &quot;navy&quot; | &quot;teal&quot;;
+  updatedAt: string; // ISO 8601
+};
+
+type CharacterSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  ancestry: string;
+  classes: Array&lt;{ name: string; level: number }&gt;;
+  totalLevel: number;
+  campaign: { id: string; name: string } | null;
+  portraitUrl: string | null;
+  hitPoints: { current: number; maximum: number } | null;
+  accent: &quot;violet&quot; | &quot;orchid&quot; | &quot;navy&quot; | &quot;teal&quot;;
+  updatedAt: string; // ISO 8601
+};
+
+type ListResponse&lt;T&gt; = {
+  items: T[];
+  total: number;
+};</code></pre>
+
+        <h3>Procedures</h3>
+        <ul>
+          <li>
+            <code>campaign.listMine(): ListResponse&lt;CampaignSummary&gt;</code>
+            &mdash; return six fixtures in intentional display order.
+          </li>
+          <li>
+            <code>character.listMine(): ListResponse&lt;CharacterSummary&gt;</code>
+            &mdash; return six fixtures, including one multiclass character, one
+            unassigned character, one missing portrait, and one null HP value.
+          </li>
+          <li>
+            <code>feedback.submit(input)</code> with
+            <code>{ category: &quot;idea&quot; | &quot;issue&quot; | &quot;other&quot;;
+            message: string; page: string }</code>; validate a useful message length and
+            return <code>{ accepted: true, reference: string }</code> without persistence.
+          </li>
+        </ul>
+
+        <p>
+          Fetch campaign and character lists concurrently in the server page with
+          <code>Promise.all</code>, then pass typed results into the interactive shell.
+          This exercises the same API boundary a future database implementation will
+          preserve without introducing a client waterfall. Derive hidden counts from
+          <code>items.length</code>, not the fixture&rsquo;s <code>total</code>, while the
+          endpoint remains unpaginated.
+        </p>
+
+        <div class="callout warning">
+          Mock data must be clearly fictional and contain only short original summaries.
+          Do not include proprietary rules prose or published character/monster content.
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2><span class="section-number">06.</span> Component architecture</h2>
+        <pre><code>apps/web/src/app/page.tsx (server)
+├── Promise.all(campaign.listMine, character.listMine)
+└── DashboardShell (client)
+    ├── SidebarProvider
+    │   ├── AppSidebar
+    │   │   ├── brand header
+    │   │   ├── PersonalNav
+    │   │   ├── WikiNav
+    │   │   └── footer: Help, FeedbackDialog, UserMenu
+    │   └── SidebarInset
+    │       ├── compact dashboard header + SidebarTrigger
+    │       ├── DashboardSection&lt;CampaignSummary&gt;
+    │       │   └── CampaignCard × visibleCount
+    │       └── DashboardSection&lt;CharacterSummary&gt;
+    │           └── CharacterCard × visibleCount</code></pre>
+
+        <p>
+          Keep <code>AppSidebar</code>, dashboard sections, cards, feedback, and account
+          menu in <code>apps/web</code> because they encode Tablekeep routes and game
+          data. Reuse primitives from <code>@tablekeep/ui</code> without changing shared
+          components unless a verified primitive defect blocks the composition.
+        </p>
+
+        <h3>Server/client boundary</h3>
+        <ul>
+          <li>
+            Keep <code>page.tsx</code> as a Server Component responsible for API calls
+            and top-level metadata-friendly content.
+          </li>
+          <li>
+            Mark only the shell/compositions that need sidebar state, section expansion,
+            theme selection, session hooks, feedback mutation, or routing hooks as
+            client components.
+          </li>
+          <li>
+            Pass serializable API results into the client shell; ISO date strings avoid
+            hydration ambiguity.
+          </li>
+          <li>
+            Format dates with an explicit locale/options on both server and client, or
+            only inside the client card components, to prevent markup mismatches.
+          </li>
+        </ul>
+      </section>
+
+      <section id="steps">
+        <h2><span class="section-number">07.</span> Ordered implementation steps</h2>
+        <ol class="steps">
+          <li>
+            <h3>Define fixtures and tRPC contracts</h3>
+            <p>
+              Add the provisional summary types and six deterministic fixtures per
+              domain in a server-only mock module. Add
+              <code>campaign.listMine</code>, <code>character.listMine</code>, and
+              <code>feedback.submit</code> routers and compose them in
+              <code>appRouter</code>. Keep the existing health route.
+            </p>
+          </li>
+          <li>
+            <h3>Establish the dashboard shell</h3>
+            <p>
+              Replace the starter page with concurrent server-side tRPC calls. Build a
+              client <code>DashboardShell</code> using
+              <code>SidebarProvider</code>, a 19rem
+              <code>Sidebar variant=&quot;floating&quot;</code> with icon collapse, and
+              <code>SidebarInset</code>. Ensure the mobile trigger remains visible.
+            </p>
+          </li>
+          <li>
+            <h3>Compose the application sidebar</h3>
+            <p>
+              Add the tower brand header, Personal and Wiki groups in the requested
+              order, active-route handling through <code>usePathname()</code>, unique
+              Tabler icons, collapsed tooltips, and the bottom Help/Feedback/account
+              area. Keep the navigation config as typed data rather than repeated JSX.
+            </p>
+          </li>
+          <li>
+            <h3>Wire Help and its environment boundary</h3>
+            <p>
+              Add <code>NEXT_PUBLIC_DOCS_URL</code> to
+              <code>apps/web/src/env/client.ts</code> with the local default
+              <code>http://localhost:3001/docs</code>. Add the documented placeholder
+              to <code>apps/web/.env.example</code> and update
+              <code>docs/development.md</code>. The copied local env can omit it because
+              the schema supplies the local default.
+            </p>
+          </li>
+          <li>
+            <h3>Build account and theme interactions</h3>
+            <p>
+              Create the avatar user menu using Better Auth&rsquo;s session hook, a
+              clearly labeled preview fallback, Settings link, theme radio/check items,
+              and real-session sign out. Add <code>suppressHydrationWarning</code> to the
+              root <code>&lt;html&gt;</code> if needed by the theme class.
+            </p>
+          </li>
+          <li>
+            <h3>Build the feedback dialog</h3>
+            <p>
+              Compose existing dialog, select, textarea, button, and toast primitives.
+              Validate category/message client-side, call the mock mutation, close and
+              reset on success, and preserve the message on failure.
+            </p>
+          </li>
+          <li>
+            <h3>Build the reusable progressive-reveal section</h3>
+            <p>
+              Implement an accessible section header, total count, independent default
+              collapsed state, hidden-count calculation, and <q>Show all (n)</q> /
+              <q>Show less</q> control. Support empty and short lists without empty grid
+              slots or misleading controls.
+            </p>
+          </li>
+          <li>
+            <h3>Build domain cards</h3>
+            <p>
+              Compose campaign and character cards from the shared Card primitives.
+              Apply the ledger-tab accent, readable metadata hierarchy, full-card links,
+              hover/focus parity, null-safe dates/HP/portraits, and responsive grid
+              behavior. Keep all displayed copy short and original.
+            </p>
+          </li>
+          <li>
+            <h3>Align product metadata and tokens</h3>
+            <p>
+              Replace the generated page description in
+              <code>apps/web/src/app/layout.tsx</code>, correct the web font token binding
+              to the already loaded Inter/JetBrains variables, and add only the minimal
+              Tablekeep accent/surface tokens required for the dashboard in
+              <code>apps/web/src/styles/globals.css</code>.
+            </p>
+          </li>
+          <li>
+            <h3>Verify behavior and inspect formatter output</h3>
+            <p>
+              Run the narrow app type check first, then workspace checks. Because
+              <code>pnpm check</code> writes safe Biome changes, inspect
+              <code>git diff</code> afterward and keep only relevant formatting.
+              Exercise desktop, mobile, light, dark, collapsed sidebar, both section
+              states, feedback success, and session/preview account states.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="files">
+        <h2><span class="section-number">08.</span> Expected file changes</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>Modify</h3>
+            <ul class="file-list">
+              <li><code>apps/web/src/app/page.tsx</code></li>
+              <li><code>apps/web/src/app/layout.tsx</code></li>
+              <li><code>apps/web/src/styles/globals.css</code></li>
+              <li><code>apps/web/src/env/client.ts</code></li>
+              <li><code>apps/web/.env.example</code></li>
+              <li><code>apps/web/src/server/api/routers/index.ts</code></li>
+              <li><code>docs/development.md</code></li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Create: dashboard UI</h3>
+            <ul class="file-list">
+              <li><code>apps/web/src/components/dashboard/dashboard-shell.tsx</code></li>
+              <li><code>apps/web/src/components/dashboard/app-sidebar.tsx</code></li>
+              <li><code>apps/web/src/components/dashboard/dashboard-section.tsx</code></li>
+              <li><code>apps/web/src/components/dashboard/campaign-card.tsx</code></li>
+              <li><code>apps/web/src/components/dashboard/character-card.tsx</code></li>
+              <li><code>apps/web/src/components/dashboard/feedback-dialog.tsx</code></li>
+              <li><code>apps/web/src/components/dashboard/user-menu.tsx</code></li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Create: mock API</h3>
+            <ul class="file-list">
+              <li><code>apps/web/src/server/api/mocks/dashboard.ts</code></li>
+              <li><code>apps/web/src/server/api/routers/campaign.ts</code></li>
+              <li><code>apps/web/src/server/api/routers/character.ts</code></li>
+              <li><code>apps/web/src/server/api/routers/feedback.ts</code></li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Intentionally unchanged</h3>
+            <ul class="file-list">
+              <li><code>apps/web/src/server/db/schema/*</code></li>
+              <li><code>apps/web/src/server/api/trpc.ts</code></li>
+              <li><code>packages/ui/src/components/*</code></li>
+              <li><code>apps/docs/*</code></li>
+              <li><code>pnpm-lock.yaml</code></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="risks">
+        <h2><span class="section-number">09.</span> Risks and edge cases</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>Mock authorization drift</h3>
+            <p>
+              Fixed public responses are acceptable only because they contain no private
+              data. Add an explicit replacement note beside each procedure: future data
+              must use <code>protectedProcedure</code> and server-side
+              ownership/membership checks.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Dead navigation</h3>
+            <p>
+              The requested sidebar names future destinations. Keep target hrefs in one
+              config and visually distinguish destinations that are not implemented in
+              this pass; do not suggest that planned compendium content already exists.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Hydration and theme flash</h3>
+            <p>
+              Theme state is client-derived. Use the established
+              <code>next-themes</code> pattern, delay active-theme checkmarks until
+              mounted if necessary, and suppress only the root class mismatch.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Nested interactive controls</h3>
+            <p>
+              If the whole card is a link, do not place buttons or menus inside that
+              anchor. Use a stretched-link pattern or keep secondary actions outside the
+              link target.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Responsive density</h3>
+            <p>
+              Three visible cards is a content rule, not a row rule. On mobile it becomes
+              three stacked cards; on tablet it may span two rows. Do not hide items
+              based on CSS breakpoints.
+            </p>
+          </article>
+          <article class="card">
+            <h3>Unknown and null data</h3>
+            <p>
+              Dates, campaign assignment, portraits, and HP are nullable by contract.
+              Cards must render a useful label or omit a row without shifting the rest of
+              the grid into broken alignment.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="validation">
+        <h2><span class="section-number">10.</span> Validation strategy</h2>
+        <h3>Automated checks</h3>
+        <ul class="checklist">
+          <li><code>pnpm --filter web check-types</code></li>
+          <li><code>pnpm check-types</code></li>
+          <li><code>pnpm check</code>, followed by <code>git diff --check</code> and a diff review</li>
+          <li><code>pnpm --filter web build</code> when the local database/auth environment permits it</li>
+        </ul>
+
+        <h3>Manual desktop checks</h3>
+        <ul class="checklist">
+          <li>Open <code>pnpm dev:web</code> at <code>http://localhost:3000</code> and confirm no starter content remains.</li>
+          <li>Verify the floating sidebar spacing, 19rem expanded width, icon collapse, tooltips, active state, and <code>Ctrl/Cmd+B</code>.</li>
+          <li>Verify both sections begin with exactly three of six fixtures and display <q>Show all (3)</q>.</li>
+          <li>Expand one section and confirm the other remains compact; then test <q>Show less</q>.</li>
+          <li>Verify campaign/character card focus rings match hover affordances and all metadata is readable.</li>
+          <li>Submit valid feedback and confirm toast/reset behavior; verify invalid text is rejected without losing the draft.</li>
+          <li>Switch Light, Dark, and System modes and reload to confirm persistence and no severe theme flash.</li>
+          <li>Verify Help opens the configured public docs URL and Settings targets <code>/settings</code>.</li>
+        </ul>
+
+        <h3>Responsive and accessibility checks</h3>
+        <ul class="checklist">
+          <li>At approximately 375px, verify the sidebar opens as a sheet, focus remains trapped, and the dashboard is one column without horizontal scrolling.</li>
+          <li>At tablet width, verify a two-column grid and readable section controls.</li>
+          <li>Navigate the entire shell, reveal controls, dropdown, theme choices, feedback dialog, and cards by keyboard only.</li>
+          <li>Confirm visible focus, meaningful labels/tooltips, decorative icons hidden from assistive technology, and no duplicate link/button nesting.</li>
+          <li>Enable reduced motion and confirm reveal/sidebar behavior remains clear without required animation.</li>
+          <li>Inspect light and dark contrast for muted metadata, active nav, violet focus, and ledger-tab accents.</li>
+        </ul>
+
+        <h3>Contract checks</h3>
+        <ul class="checklist">
+          <li>Call each tRPC procedure and confirm the inferred output matches the provisional types.</li>
+          <li>Temporarily exercise empty, three-item, four-item, and more-than-six-item arrays against <code>DashboardSection</code>.</li>
+          <li>Confirm no router reads <code>ctx.db</code>, no schema file changed, and no migration was generated.</li>
+          <li>Confirm fixture IDs/slugs are stable, list totals match fixture lengths, and timestamps are valid ISO 8601 strings.</li>
+        </ul>
+      </section>
+
+      <!-- PLAN:END -->
+    </main>
+  </body>
+</html>
