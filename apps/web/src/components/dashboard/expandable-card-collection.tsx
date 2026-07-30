@@ -11,7 +11,7 @@ import { useId, useState } from "react";
 
 const COMPACT_ITEM_COUNT = 3;
 
-type DashboardSectionProps<T> = {
+type ExpandableCardCollectionProps<T> = {
   title: string;
   description: string;
   items: T[];
@@ -20,14 +20,14 @@ type DashboardSectionProps<T> = {
   renderItem: (item: T) => React.ReactNode;
 };
 
-export function DashboardSection<T>({
+export function ExpandableCardCollection<T>({
   title,
   description,
   items,
   emptyState,
   getKey,
   renderItem,
-}: DashboardSectionProps<T>) {
+}: ExpandableCardCollectionProps<T>) {
   const [expanded, setExpanded] = useState(false);
   const headingId = useId();
   const compactItems = items.slice(0, COMPACT_ITEM_COUNT);
@@ -46,7 +46,7 @@ export function DashboardSection<T>({
               >
                 {title}
               </h2>
-              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground tabular-nums">
                 {items.length}
               </span>
             </div>

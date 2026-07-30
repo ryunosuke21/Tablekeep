@@ -76,7 +76,7 @@ export function CampaignCard({ campaign }: { campaign: CampaignSummary }) {
             <h3 className="font-semibold text-base tracking-[-0.02em]">
               {campaign.name}
             </h3>
-            <span className="shrink-0 rounded-full bg-background/55 px-2 py-1 font-mono text-[9px] text-foreground/65 uppercase tracking-[0.12em]">
+            <span className="shrink-0 rounded-full bg-background/55 px-2 py-1 font-medium text-[9px] text-foreground/65 uppercase tracking-[0.12em]">
               {campaign.role === "dm" ? "DM" : "Player"}
             </span>
           </div>

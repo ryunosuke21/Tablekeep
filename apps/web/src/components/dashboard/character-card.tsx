@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@tablekeep/ui/components/card";
+import { D20Icon } from "@tablekeep/ui/icons/d20";
 import { IconHeart, IconMapPin } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,27 +40,11 @@ export function CharacterCard({ character }: { character: CharacterSummary }) {
               aria-label={`Level ${character.totalLevel}`}
               className="relative flex size-14 shrink-0 items-center justify-center"
             >
-              <svg
+              <D20Icon
                 aria-hidden="true"
-                viewBox="0 0 64 64"
-                fill="none"
                 className="absolute inset-0 size-14 text-foreground/75"
-              >
-                <path
-                  d="M32 3 57 20 52 49 32 61 12 49 7 20 32 3Z"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="m32 3 11 18 14-1M32 3 21 21 7 20m50 0L43 43l9 6M7 20l14 23-9 6m9-28h22L32 43 21 21Zm0 22h22l-11 18L21 43Z"
-                  stroke="currentColor"
-                  strokeWidth="1.25"
-                  strokeLinejoin="round"
-                  opacity="0.55"
-                />
-              </svg>
-              <span className="relative font-mono font-semibold text-sm tabular-nums">
+              />
+              <span className="relative font-semibold text-sm tabular-nums">
                 {character.totalLevel}
               </span>
             </div>
@@ -86,7 +71,7 @@ export function CharacterCard({ character }: { character: CharacterSummary }) {
 
             <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs shadow-sm ring-1 ring-foreground/10 backdrop-blur-sm">
               <IconHeart className="size-3.5 text-muted-foreground" />
-              <span className="font-medium font-mono tabular-nums">
+              <span className="font-medium tabular-nums">
                 {character.hitPoints
                   ? `${character.hitPoints.current} / ${character.hitPoints.maximum} HP`
                   : "HP —"}

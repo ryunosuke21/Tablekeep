@@ -118,7 +118,7 @@ export function AppSidebar() {
                   <span className="font-semibold tracking-[-0.02em]">
                     Tablekeep
                   </span>
-                  <span className="mt-1 font-mono text-[10px] text-sidebar-foreground/55 uppercase tracking-[0.14em]">
+                  <span className="mt-1 text-[10px] text-sidebar-foreground/55 uppercase tracking-[0.14em]">
                     Campaign companion
                   </span>
                 </span>

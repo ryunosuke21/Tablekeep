@@ -1,14 +1,14 @@
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { api } from "@/trpc/server";
 
-export default async function Home() {
+export default async function DashboardPage() {
   const [campaigns, characters] = await Promise.all([
-    api.campaign.listMine(),
-    api.character.listMine(),
+    api.campaign.list(),
+    api.character.list(),
   ]);
 
   return (
-    <DashboardShell
+    <DashboardOverview
       campaigns={[...campaigns.items]}
       characters={[...characters.items]}
     />

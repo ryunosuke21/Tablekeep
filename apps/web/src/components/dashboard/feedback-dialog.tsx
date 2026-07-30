@@ -1,5 +1,6 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@tablekeep/ui/components/button";
 import {
   Dialog,
@@ -33,17 +34,25 @@ import { Textarea } from "@tablekeep/ui/components/textarea";
 import { IconMessageCircle } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 
+import {
+  type FeedbackFormValues,
+  feedbackFormSchema,
+} from "@/lib/validation/feedback";
 import { api } from "@/trpc/react";
-
-type FeedbackCategory = "idea" | "issue" | "other";
 
 export function FeedbackDialog() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [category, setCategory] = useState<FeedbackCategory>("idea");
-  const [message, setMessage] = useState("");
-  const showLengthError = message.length > 0 && message.trim().length < 10;
+  const form = useForm<FeedbackFormValues>({
+    resolver: zodResolver(feedbackFormSchema),
+    defaultValues: {
+      category: "idea",
+      message: "",
+    },
+    mode: "onChange",
+  });
 
   const submitFeedback = api.feedback.submit.useMutation({
     onSuccess: ({ reference }) => {
@@ -51,8 +60,7 @@ export function FeedbackDialog() {
         description: `Thanks for helping shape Tablekeep. Reference ${reference}.`,
       });
       setOpen(false);
-      setCategory("idea");
-      setMessage("");
+      form.reset();
     },
     onError: () => {
       toast.error("Feedback was not sent", {
@@ -73,14 +81,12 @@ export function FeedbackDialog() {
       </SidebarMenuItem>
       <DialogContent className="sm:max-w-md">
         <form
-          onSubmit={(event) => {
-            event.preventDefault();
+          onSubmit={form.handleSubmit((values) => {
             submitFeedback.mutate({
-              category,
-              message,
+              ...values,
               page: pathname,
             });
-          }}
+          })}
         >
           <DialogHeader>
             <DialogTitle>Send feedback</DialogTitle>
@@ -92,41 +98,49 @@ export function FeedbackDialog() {
           <FieldGroup className="my-5">
             <Field>
               <FieldLabel htmlFor="feedback-category">Type</FieldLabel>
-              <Select
-                value={category}
-                onValueChange={(value) =>
-                  setCategory(value as FeedbackCategory)
-                }
-              >
-                <SelectTrigger id="feedback-category" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="idea">Idea</SelectItem>
-                  <SelectItem value="issue">Something is confusing</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <Controller
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="feedback-category" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="idea">Idea</SelectItem>
+                      <SelectItem value="issue">
+                        Something is confusing
+                      </SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </Field>
 
-            <Field data-invalid={showLengthError}>
+            <Field data-invalid={Boolean(form.formState.errors.message)}>
               <FieldLabel htmlFor="feedback-message">Message</FieldLabel>
               <Textarea
                 id="feedback-message"
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
+                {...form.register("message")}
                 placeholder="What happened, or what should work differently?"
                 rows={5}
                 maxLength={1_000}
-                aria-invalid={showLengthError}
-                aria-describedby="feedback-description"
+                aria-invalid={Boolean(form.formState.errors.message)}
+                aria-describedby={
+                  form.formState.errors.message
+                    ? "feedback-description feedback-error"
+                    : "feedback-description"
+                }
                 className="min-h-28 resize-y"
               />
               <FieldDescription id="feedback-description">
                 Include enough detail for us to understand the moment.
               </FieldDescription>
-              {showLengthError ? (
-                <FieldError>Use at least 10 characters.</FieldError>
+              {form.formState.errors.message ? (
+                <FieldError id="feedback-error">
+                  {form.formState.errors.message.message}
+                </FieldError>
               ) : null}
             </Field>
           </FieldGroup>
@@ -134,7 +148,7 @@ export function FeedbackDialog() {
           <DialogFooter>
             <Button
               type="submit"
-              disabled={submitFeedback.isPending || message.trim().length < 10}
+              disabled={submitFeedback.isPending || !form.formState.isValid}
             >
               {submitFeedback.isPending ? "Sending…" : "Send feedback"}
             </Button>
