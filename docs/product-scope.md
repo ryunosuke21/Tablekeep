@@ -57,8 +57,10 @@ The product should feel useful at a busy table: fast to scan, quick to update, a
 
 1. Campaigns, membership, and authorization.
 2. Character sheets with hit-point and inventory updates.
-3. DM party overview and initiative tracking.
-4. Spell and creature references using safe content sources.
-5. Shops, richer encounter preparation, and optional roll utilities.
+3. Spellbooks, preparation, and resource tracking using safe content sources.
+4. DM party overview and shared initiative tracking.
+5. Creature references, shops, richer encounter preparation, and optional roll utilities.
 
-This is a planning guide, not an implementation contract. Update it when the team makes a product decision.
+This is a planning guide, not an implementation contract. See
+[the product roadmap](roadmap.md) for the approved MVP boundary and delivery
+sequence, and update both documents when the team makes a product decision.

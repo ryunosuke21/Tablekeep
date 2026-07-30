@@ -21,6 +21,8 @@ Tablekeep is a tabletop companion for in-person Dungeons & Dragons campaigns. It
 - Shop creation and inventory management for in-world vendors.
 
 See [the product scope](docs/product-scope.md) for the principles, roles, and planned feature areas.
+The implementation sequence and closed-beta release boundary are defined in
+[the product roadmap](docs/roadmap.md).
 
 ## Technology
 
