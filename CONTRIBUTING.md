@@ -8,6 +8,15 @@ Thanks for helping build Tablekeep. The project is early, so clear scope and sma
 2. Set up the project using the instructions in the [README](README.md).
 3. Check existing work before beginning a large feature so product and data-model decisions stay aligned.
 
+## Which app are you changing?
+
+The monorepo holds two applications:
+
+- **`apps/web` — the product.** The authenticated Tablekeep application: campaigns, characters, encounters, the database, auth, and the API.
+- **`apps/docs` — the public site.** Marketing pages, the landing page, and user documentation. Static MDX content only, with no database or authentication.
+
+Keep changes on the correct side of that line, and put shared presentational primitives in `packages/ui`. The top-level `docs/` directory is internal contributor documentation and is not part of the published site.
+
 ## Development workflow
 
 Create a focused branch, make the smallest complete change, and verify it locally.

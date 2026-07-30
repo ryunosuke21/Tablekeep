@@ -6,6 +6,8 @@ Tablekeep is a companion for campaigns played together in person. It gives each 
 
 The product should feel useful at a busy table: fast to scan, quick to update, and respectful of what each participant should be able to see.
 
+This document describes the product itself, which is delivered by `apps/web`. Tablekeep also has a public site, `apps/docs`, that carries the landing page, marketing pages, and user documentation; it explains the product but implements none of the scope below.
+
 ## Users and responsibilities
 
 | Role | Primary responsibilities | Typical tools |

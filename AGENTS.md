@@ -8,12 +8,23 @@ Tablekeep is an in-person tabletop-campaign companion. It should reduce bookkeep
 - [docs/product-scope.md](docs/product-scope.md) for intended users, roles, and feature boundaries.
 - [docs/development.md](docs/development.md) for architecture and data-change guidance.
 
+## Workspace boundaries
+
+The monorepo contains two separate Next.js applications. Know which one a change belongs to before editing.
+
+- `apps/web` is **the product**: the authenticated application with campaigns, characters, encounters, the database, Better Auth, and the tRPC API.
+- `apps/docs` is **the public site**: the marketing site, landing page, and product documentation, built with Fumadocs and MDX. It is static and content-driven — no database, no authentication, no tRPC, no campaign data.
+
+Do not add product features, data access, or authenticated behavior to `apps/docs`, and do not build marketing or documentation pages inside `apps/web`. Shared visual primitives go in `packages/ui`.
+
+The top-level `docs/` directory is internal contributor and product documentation; it is unrelated to the deployed `apps/docs` site.
+
 ## Repository rules
 
 - Use pnpm. Do not introduce another package manager or edit `pnpm-lock.yaml` by hand.
 - Keep TypeScript strict and use the `@/` alias within `apps/web`.
 - TypeScript is intentionally pinned to 6.0.3 in the workspace catalog and pnpm overrides. Do not upgrade or broaden that version without an explicit project decision.
-- Put reusable presentational primitives in `packages/ui`; keep application-specific components in `apps/web`.
+- Put reusable presentational primitives in `packages/ui`; keep application-specific components in the app that uses them.
 - Use the existing stack: Next.js App Router, tRPC for application APIs, Drizzle for persistence, Better Auth for identity and authorization, and Tailwind for styling.
 - Run the narrowest relevant checks after changes. Before handoff, run `pnpm check-types` and `pnpm check` when practical.
 - `pnpm check` writes safe Biome fixes. Inspect its diff before including it with unrelated work.
@@ -34,4 +45,4 @@ Tablekeep is an in-person tabletop-campaign companion. It should reduce bookkeep
 
 ## Documentation
 
-Update relevant documentation with behavior, environment, command, data-model, or product-scope changes. Keep `README.md` user- and contributor-facing; keep detailed guidance in `docs/`.
+Update relevant documentation with behavior, environment, command, data-model, or product-scope changes. Keep `README.md` user- and contributor-facing; keep detailed guidance in `docs/`. Public-facing user documentation belongs in `apps/docs/content/docs/`.

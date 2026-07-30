@@ -1,0 +1,149 @@
+/*
+ * The product's token set is the single source of truth for color. Fumadocs
+ * reads every surface from `--color-fd-*`, and `shadcn.css` re-points those at
+ * the shadcn-shaped variables `@tablekeep/ui` already defines, so nothing is
+ * re-authored here.
+ *
+ * `@tablekeep/ui/styles/globals.css` is the only place Tailwind is imported;
+ * importing it again would duplicate the preflight.
+ */
+@import "@tablekeep/ui/styles/globals.css";
+@import "fumadocs-ui/css/shadcn.css";
+@import "fumadocs-ui/css/preset.css";
+
+/*
+ * Tailwind scans outward from the CSS file that imports it, which now lives in
+ * `packages/ui`. Without these, this app's own markup is never scanned.
+ */
+@source "../../src";
+@source "../../content";
+@source "../../../../packages/ui/src";
+
+/*
+ * Marketing-only accents. Everything structural still comes from the product
+ * tokens. `tk-keep` is the navy from the Tablekeep mark, `tk-ember` is a soft
+ * orchid highlight, and `tk-arcane` is the product's violet pushed to a glow.
+ */
+@theme {
+  --color-tk-keep: oklch(0.26 0.055 258);
+  --color-tk-ember: oklch(0.5 0.2 320);
+  --color-tk-arcane: oklch(0.55 0.24 295);
+
+  /*
+   * `packages/ui` points --font-sans at an undefined --font-geist-sans, which
+   * invalidates the declaration and drops text to the serif default. Bind the
+   * fonts this app actually loads; the names match apps/web's next/font vars.
+   */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.dark {
+  --color-tk-ember: oklch(0.76 0.16 327);
+}
+
+/*
+ * One continuous wash begins below Fumadocs' header. Its horizontal bands move
+ * from violet into the normal surface near the bottom edge of the hero.
+ */
+.tk-page-gradient {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 3.5rem);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-tk-arcane) 24%, var(--background)) 0,
+    color-mix(in oklab, var(--color-tk-arcane) 12%, var(--background)) 32rem,
+    var(--background) 48rem,
+    var(--background) 100%
+  );
+}
+
+.tk-page-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      13deg,
+      color-mix(in oklab, var(--foreground) 12%, transparent) 0 1px,
+      transparent 1px 3.25rem
+    ),
+    repeating-linear-gradient(
+      103deg,
+      color-mix(in oklab, var(--foreground) 12%, transparent) 0 1px,
+      transparent 1px 3.25rem
+    );
+  mask-image: linear-gradient(
+    to right,
+    rgb(0 0 0 / 85%),
+    rgb(0 0 0 / 42%) 18%,
+    rgb(0 0 0 / 10%) 40%,
+    rgb(0 0 0 / 10%) 60%,
+    rgb(0 0 0 / 42%) 82%,
+    rgb(0 0 0 / 85%)
+  );
+}
+
+.tk-page-gradient > * {
+  position: relative;
+  z-index: 1;
+}
+
+.dark .tk-page-gradient {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-tk-arcane) 42%, var(--background)) 0,
+    color-mix(in oklab, var(--color-tk-arcane) 20%, var(--background)) 32rem,
+    var(--background) 48rem,
+    var(--background) 100%
+  );
+}
+
+/* Fine grain, so the large gradients do not band on wide displays. */
+.tk-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/* The only page-load motion: hero lines settling in, staggered by --tk-step. */
+@keyframes tk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tk-rise {
+  animation: tk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--tk-step, 0) * 90ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-rise {
+    animation: none;
+  }
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}

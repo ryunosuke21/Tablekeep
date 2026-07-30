@@ -366,6 +366,8 @@ These items should be prioritized using closed-beta feedback rather than assumed
 
 ## Expected code surface
 
+Roadmap work lands in `apps/web`, the product application. `apps/docs` is the separate public marketing and documentation site; it carries no roadmap features, only the pages that describe them.
+
 - `apps/web/src/app/` — public entry, auth, beta gate, campaign, character, spellbook, party, and encounter routes.
 - `apps/web/src/components/` — application shell and domain-specific components.
 - `apps/web/src/server/db/schema/` — beta access, campaign, invitation, membership, character, override, inventory, spellbook, and encounter tables.
@@ -376,6 +378,7 @@ These items should be prioritized using closed-beta feedback rather than assumed
 - Drizzle migration output — generated, reviewed, and committed for shared and deployed environments.
 - Test files — follow the selected repository test convention, beginning with security-sensitive services and state transitions.
 - `packages/ui/` — only broadly reusable presentation primitives; application-specific components remain in `apps/web`.
+- `apps/docs/` — landing page, marketing pages, and user-facing documentation for released capabilities; never product features or campaign data.
 
 ## Data and authorization rules
 

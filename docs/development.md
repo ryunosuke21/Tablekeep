@@ -2,26 +2,43 @@
 
 ## Architecture
 
-Tablekeep is a pnpm workspace managed by Turborepo.
+Tablekeep is a pnpm workspace managed by Turborepo. It contains two deployable Next.js applications with distinct audiences.
 
 ```text
-apps/web
+apps/web                   The product (authenticated application)
   src/app/                 Next.js App Router pages and route handlers
   src/server/api/          tRPC routers and procedures
   src/server/better-auth/  Authentication and authorization configuration
   src/server/db/           Drizzle client and PostgreSQL schema
   src/env/                 Validated server and client environment variables
+apps/docs                  The public site (marketing, landing page, documentation)
+  content/docs/            MDX documentation content
+  src/app/(home)/          Landing page and other marketing routes
+  src/app/docs/            Documentation layout and pages
+  src/lib/                 Fumadocs content source and layout configuration
 packages/ui
   src/components/          Reusable UI primitives
   src/styles/              Shared CSS and design tokens
 packages/config            Shared TypeScript configuration
 ```
 
+### apps/web — the product
+
+This is Tablekeep itself. Everything a signed-in user does at the table lives here: campaigns, character sheets, spellbooks, inventory, encounters. It owns the PostgreSQL database, Better Auth, and the tRPC API, and it is the only workspace that reads or writes campaign data.
+
+### apps/docs — the public site
+
+This is the marketing surface: the landing page, product pages, and the user-facing documentation. It is built on Fumadocs with MDX content and renders statically. It has no database, no authentication, no tRPC, and no access to campaign data. It links to the product rather than embedding it.
+
+Do not blur the boundary. Public, unauthenticated content belongs in `apps/docs`; anything that needs a session or a query belongs in `apps/web`. If both applications need the same visual primitive, put it in `packages/ui`.
+
+> Note the naming: `apps/docs` is the deployed public site, while the top-level `docs/` directory holds internal product and contributor documentation that is not published.
+
 The web app uses Next.js 16 Server Components by default. Client-side data access uses tRPC with TanStack Query. PostgreSQL is accessed through Drizzle ORM 0.45. Better Auth 1.6 owns authentication tables and session handling. The workspace uses TypeScript 6.0.3, pinned exactly in the pnpm catalog; do not broaden or upgrade that version without an explicit decision.
 
 ## Local environment
 
-Copy `apps/web/.env.example` to `apps/web/.env`. The server validates its environment through `apps/web/src/env/server.ts`.
+Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to `apps/docs/.env`. The product server validates its environment through `apps/web/src/env/server.ts`; the site validates its public environment through `apps/docs/src/env/client.ts`. `apps/docs` runs on port 3001, and `pnpm dev:docs` starts it on its own.
 
 | Variable | Required | Description |
 | --- | --- | --- |
@@ -32,11 +49,19 @@ Copy `apps/web/.env.example` to `apps/web/.env`. The server validates its enviro
 | `BETTER_AUTH_SECRET` | Production | Secret used by Better Auth; set it locally as well when testing auth. |
 | `LOG_LEVEL` | No | `debug`, `info`, `warn`, or `error`; defaults to `info`. |
 
+`apps/docs` reads two public variables through T3 Env.
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NEXT_PUBLIC_APP_URL` | Deployment | Where every "Open Tablekeep" link points; defaults to `http://localhost:3000`. |
+| `NEXT_PUBLIC_SITE_URL` | Deployment | The site's own public URL, used to resolve Open Graph images; defaults to `http://localhost:3001`. |
+
 The magic-link plugin is configured, but its sender is currently a no-op. Do not describe email sign-in as working until a delivery service is integrated.
 
 ## Application conventions
 
 - Add application-specific components under `apps/web/src/components/`.
+- Add marketing pages under `apps/docs/src/app/(home)/` and documentation content as MDX under `apps/docs/content/docs/`.
 - Add reusable, broadly applicable primitives under `packages/ui/src/components/` and export them through the package’s existing wildcard exports.
 - Use `@/` imports within the web app.
 - Keep schema files organized by domain under `apps/web/src/server/db/schema/`, and re-export them from `schema/index.ts`.
