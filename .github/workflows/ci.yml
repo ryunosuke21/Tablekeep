@@ -70,6 +70,10 @@ jobs:
     name: CI / browser
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # Chromium and its Linux dependencies are preinstalled in this image. Keep
+    # the tag synchronized with @playwright/test in the root package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
     services:
       postgres:
         image: postgres:17-alpine
@@ -77,8 +81,6 @@ jobs:
           POSTGRES_USER: tablekeep
           POSTGRES_PASSWORD: tablekeep
           POSTGRES_DB: tablekeep_test
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U tablekeep -d tablekeep_test"
           --health-interval 10s
@@ -89,7 +91,8 @@ jobs:
       BETTER_AUTH_SECRET: tablekeep-browser-secret-at-least-thirty-two-characters
       GOOGLE_CLIENT_ID: tablekeep-browser-client
       GOOGLE_CLIENT_SECRET: tablekeep-browser-client-secret
-      DATABASE_URL: postgresql://tablekeep:tablekeep@127.0.0.1:5432/tablekeep_test
+      # Job containers reach service containers by their service label.
+      DATABASE_URL: postgresql://tablekeep:tablekeep@postgres:5432/tablekeep_test
       DATA_SOURCE: http://127.0.0.1:4100
       LOG_LEVEL: warn
     steps:
@@ -110,9 +113,6 @@ jobs:
 
       - name: Prepare disposable database
         run: pnpm --filter web exec drizzle-kit push --force
-
-      - name: Install Chromium
-        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run browser smoke tests
         run: pnpm test:e2e

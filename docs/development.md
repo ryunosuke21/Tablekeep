@@ -126,8 +126,9 @@ GitHub Actions runs two checks for every pull request and push to `main`:
 
 - `CI / quality` runs non-writing Biome checks, type checking, coverage tests,
   and production builds.
-- `CI / browser` provisions disposable PostgreSQL, applies the schema, installs
-  Chromium, and runs the smoke suite.
+- `CI / browser` runs in the version-matched official Playwright image, where
+  Chromium and its Linux dependencies are already installed, then provisions
+  disposable PostgreSQL, applies the schema, and runs the smoke suite.
 
 Both jobs use non-secret fixture values. Coverage and Playwright diagnostics are
 uploaded as workflow artifacts for 14 days, including on failed runs.

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const databaseUrl =
+  process.env.DATABASE_URL ??
   "postgresql://tablekeep:tablekeep@127.0.0.1:5432/tablekeep_test";
 
 export default defineConfig({
