@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+
+jobs:
+  quality:
+    name: CI / quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: http://127.0.0.1:3000
+      BETTER_AUTH_SECRET: tablekeep-ci-secret-at-least-thirty-two-characters
+      GOOGLE_CLIENT_ID: tablekeep-ci-client
+      GOOGLE_CLIENT_SECRET: tablekeep-ci-client-secret
+      DATABASE_URL: postgresql://tablekeep:tablekeep@127.0.0.1:5432/tablekeep_test
+      DATA_SOURCE: http://127.0.0.1:4100
+      LOG_LEVEL: warn
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting and lint
+        run: pnpm check:ci
+
+      - name: Check types
+        run: pnpm check-types
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Build applications
+        run: pnpm build
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: warn
+          retention-days: 14
+
+  browser:
+    name: CI / browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: tablekeep
+          POSTGRES_PASSWORD: tablekeep
+          POSTGRES_DB: tablekeep_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tablekeep -d tablekeep_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      BASE_URL: http://127.0.0.1:3000
+      BETTER_AUTH_SECRET: tablekeep-browser-secret-at-least-thirty-two-characters
+      GOOGLE_CLIENT_ID: tablekeep-browser-client
+      GOOGLE_CLIENT_SECRET: tablekeep-browser-client-secret
+      DATABASE_URL: postgresql://tablekeep:tablekeep@127.0.0.1:5432/tablekeep_test
+      DATA_SOURCE: http://127.0.0.1:4100
+      LOG_LEVEL: warn
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare disposable database
+        run: pnpm --filter web exec drizzle-kit push --force
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright diagnostics
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 14

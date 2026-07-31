@@ -50,7 +50,7 @@ Tablekeep is a pnpm/Turborepo monorepo built with:
 
 ### Prerequisites
 
-- Node.js 20 or newer
+- Node.js 20.9 or newer (Node.js 24 LTS is used in CI and recommended)
 - pnpm 11 (the repository declares the exact package-manager version)
 - A running PostgreSQL database
 - Google OAuth credentials; they are currently required by the server environment schema
@@ -88,10 +88,32 @@ For a more detailed guide to the repository and data changes, see [docs/developm
 | `pnpm build` | Build all workspaces. |
 | `pnpm check-types` | Type-check all workspaces. |
 | `pnpm check` | Format and lint the repository with Biome (writes safe fixes). |
+| `pnpm check:ci` | Check formatting and linting without changing files. |
+| `pnpm test` | Run unit and component tests in watch mode. |
+| `pnpm test:run` | Run unit and component tests once. |
+| `pnpm test:coverage` | Run tests and enforce the coverage baseline. |
+| `pnpm test:e2e` | Run Chromium smoke tests for both applications. |
+| `pnpm run ci` | Run the non-browser CI quality checks locally (`pnpm ci` is pnpm's frozen-install command). |
 | `pnpm db:push` | Push the Drizzle schema to the configured database. |
 | `pnpm db:generate` | Generate a Drizzle migration from schema changes. |
 | `pnpm db:migrate` | Apply generated Drizzle migrations. |
 | `pnpm db:studio` | Open Drizzle Studio. |
+
+## Testing
+
+Vitest covers server helpers, representative tRPC routers, shared UI behavior,
+and public-site components. These tests mock all external services and can run
+without PostgreSQL or OAuth credentials. `pnpm test:coverage` enforces the
+initial coverage baseline for the high-value modules listed in
+`vitest.config.ts`.
+
+Playwright provides a thin Chromium smoke suite for both Next.js applications.
+It starts a deterministic local GraphQL service instead of contacting the
+public reference-data API. The complete browser suite expects the disposable
+database URL from `playwright.config.ts` to be available and initialized; CI
+creates and prepares that PostgreSQL database automatically. For local runs,
+start a matching disposable database and run `pnpm --filter web db:push` before
+`pnpm test:e2e`.
 
 ## Repository layout
 

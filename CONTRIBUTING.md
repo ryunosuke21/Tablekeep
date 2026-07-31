@@ -22,12 +22,21 @@ Keep changes on the correct side of that line, and put shared presentational pri
 Create a focused branch, make the smallest complete change, and verify it locally.
 
 ```bash
+pnpm test:run
 pnpm check-types
 pnpm check
 pnpm build
 ```
 
 Run the checks affected by your change at minimum. `pnpm check` applies safe formatting and lint fixes, so review the resulting diff.
+
+Add or update tests whenever behavior changes. Prefer focused server unit or
+tRPC caller tests for parsing, validation, authorization, and data access;
+React Testing Library tests for user-visible component behavior; and Playwright
+tests only for critical cross-application flows. External services must be
+mocked in the automated suite. `pnpm test:coverage` enforces the repository's
+initial 80% line, statement, and function baseline and 70% branch baseline on
+the explicitly covered high-value modules.
 
 ## Database changes
 

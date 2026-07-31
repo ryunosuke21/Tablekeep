@@ -92,9 +92,42 @@ pnpm db:migrate
 ## Verification
 
 ```bash
+pnpm test:run
 pnpm check-types
 pnpm check
 pnpm build
 ```
 
 For UI work, also exercise the affected route manually. For authorization or data work, verify both an allowed case and a denied case.
+
+### Automated tests
+
+The root Vitest configuration defines separate projects for the product server,
+the public site, and shared UI components. Tests live beside the source they
+exercise as `*.test.ts` or `*.test.tsx`. Reusable product API fixtures belong in
+`apps/web/src/test/fixtures/`; keep them minimal, system-neutral, and valid
+against the existing Zod schemas.
+
+Use `pnpm test` while developing, `pnpm test:run` for a one-shot run, and
+`pnpm test:coverage` before handing off changes to the covered server or UI
+modules. The coverage command writes HTML and LCOV output under `coverage/` and
+enforces the thresholds declared in `vitest.config.ts`. Unit and component tests
+must stub network boundaries; they must never contact OAuth, PostgreSQL, or the
+public reference-data API.
+
+The Playwright suite under `e2e/` starts both Next.js applications and a local
+GraphQL fixture service. It uses Chromium to verify only the essential startup
+and navigation paths. Before running `pnpm test:e2e` locally, provide the
+disposable PostgreSQL database configured in `playwright.config.ts` and apply
+the schema with `pnpm --filter web db:push`. Traces, screenshots, videos, and the
+HTML report are written to ignored test-output directories when failures occur.
+
+GitHub Actions runs two checks for every pull request and push to `main`:
+
+- `CI / quality` runs non-writing Biome checks, type checking, coverage tests,
+  and production builds.
+- `CI / browser` provisions disposable PostgreSQL, applies the schema, installs
+  Chromium, and runs the smoke suite.
+
+Both jobs use non-secret fixture values. Coverage and Playwright diagnostics are
+uploaded as workflow artifacts for 14 days, including on failed runs.
