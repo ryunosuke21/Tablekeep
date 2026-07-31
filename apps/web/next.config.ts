@@ -5,9 +5,13 @@
 import "./src/env/server";
 import "./src/env/client";
 
-/** @type {import("next").NextConfig} */
-const config = {
+import type { NextConfig } from "next";
+
+const config: NextConfig = {
   transpilePackages: ["@tablekeep/ui"],
+  experimental: {
+    auauthInterrupts: true,
+  },
 };
 
 export default config;

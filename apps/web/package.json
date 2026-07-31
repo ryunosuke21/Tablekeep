@@ -6,9 +6,8 @@
   "scripts": {
     "auth:generate": "pnpm dlx auth@latest generate --config ./src/server/better-auth/config.ts --output ./src/server/db/schema/auth.ts --yes",
     "build": "next build",
-    "check": "biome check .",
+    "check": "biome check --write .",
     "check:unsafe": "biome check --write --unsafe .",
-    "check:write": "biome check --write .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
