@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
 import type * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Drawer({
   ...props

@@ -1,19 +1,20 @@
 "use client";
 
-import { Button, buttonVariants } from "@tablekeep/ui/components/button";
-import { cn } from "@tablekeep/ui/lib/utils";
+import * as React from "react";
 import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
 } from "@tabler/icons-react";
-import * as React from "react";
 import {
   type DayButton,
   DayPicker,
   getDefaultClassNames,
   type Locale,
 } from "react-day-picker";
+
+import { Button, buttonVariants } from "@tablekeep/ui/components/button";
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Calendar({
   className,

@@ -1,12 +1,12 @@
-import { Button } from "@tablekeep/ui/components/button";
-
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import {
   IconChevronLeft,
   IconChevronRight,
   IconDots,
 } from "@tabler/icons-react";
-import type * as React from "react";
+
+import { Button } from "@tablekeep/ui/components/button";
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (

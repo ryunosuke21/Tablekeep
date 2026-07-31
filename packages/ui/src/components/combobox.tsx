@@ -1,6 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { Combobox as ComboboxPrimitive } from "@base-ui/react";
+import { IconCheck, IconChevronDown, IconX } from "@tabler/icons-react";
+
 import { Button } from "@tablekeep/ui/components/button";
 import {
   InputGroup,
@@ -9,8 +12,6 @@ import {
   InputGroupInput,
 } from "@tablekeep/ui/components/input-group";
 import { cn } from "@tablekeep/ui/lib/utils";
-import { IconCheck, IconChevronDown, IconX } from "@tabler/icons-react";
-import * as React from "react";
 
 const Combobox = ComboboxPrimitive.Root;
 

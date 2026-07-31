@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   DocsBody,
   DocsDescription,
@@ -7,8 +8,8 @@ import {
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { createRelativeLink } from "fumadocs-ui/mdx";
-import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
 import { getMDXComponents } from "@/components/mdx";
 import { gitConfig } from "@/lib/shared";
 import { getPageImageUrl, getPageMarkdownUrl, source } from "@/lib/source";

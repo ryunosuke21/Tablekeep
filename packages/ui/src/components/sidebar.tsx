@@ -1,5 +1,10 @@
 "use client";
 
+import * as React from "react";
+import { IconLayoutSidebar } from "@tabler/icons-react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { Slot } from "radix-ui";
+
 import { Button } from "@tablekeep/ui/components/button";
 import { Input } from "@tablekeep/ui/components/input";
 import { Separator } from "@tablekeep/ui/components/separator";
@@ -18,10 +23,6 @@ import {
 } from "@tablekeep/ui/components/tooltip";
 import { useIsMobile } from "@tablekeep/ui/hooks/use-mobile";
 import { cn } from "@tablekeep/ui/lib/utils";
-import { IconLayoutSidebar } from "@tabler/icons-react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { Slot } from "radix-ui";
-import * as React from "react";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;

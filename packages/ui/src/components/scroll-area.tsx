@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
-import { ScrollArea as ScrollAreaPrimitive } from "radix-ui";
 import type * as React from "react";
+import { ScrollArea as ScrollAreaPrimitive } from "radix-ui";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function ScrollArea({
   className,

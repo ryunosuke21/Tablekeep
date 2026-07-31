@@ -1,5 +1,9 @@
 "use client";
 
+import type * as React from "react";
+import { IconCheck, IconSearch } from "@tabler/icons-react";
+import { Command as CommandPrimitive } from "cmdk";
+
 import {
   Dialog,
   DialogContent,
@@ -11,11 +15,7 @@ import {
   InputGroup,
   InputGroupAddon,
 } from "@tablekeep/ui/components/input-group";
-
 import { cn } from "@tablekeep/ui/lib/utils";
-import { IconCheck, IconSearch } from "@tabler/icons-react";
-import { Command as CommandPrimitive } from "cmdk";
-import type * as React from "react";
 
 function Command({
   className,

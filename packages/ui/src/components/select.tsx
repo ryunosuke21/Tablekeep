@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import {
   IconCheck,
   IconChevronDown,
@@ -8,7 +8,8 @@ import {
   IconSelector,
 } from "@tabler/icons-react";
 import { Select as SelectPrimitive } from "radix-ui";
-import type * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Select({
   ...props

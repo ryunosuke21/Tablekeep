@@ -1,5 +1,6 @@
-import { cn } from "@tablekeep/ui/lib/utils";
 import type * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (

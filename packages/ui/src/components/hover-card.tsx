@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
-import { HoverCard as HoverCardPrimitive } from "radix-ui";
 import type * as React from "react";
+import { HoverCard as HoverCardPrimitive } from "radix-ui";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function HoverCard({
   ...props

@@ -1,5 +1,7 @@
-import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+
+import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
+
 import { appName, appUrl, docsRoute, gitConfig } from "./shared";
 
 export function baseOptions(): BaseLayoutProps {

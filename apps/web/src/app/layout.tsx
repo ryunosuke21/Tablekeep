@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+
 import { Providers } from "@/components/providers";
 import { cn } from "@/lib/utils";
 

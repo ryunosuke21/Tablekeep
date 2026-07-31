@@ -1,8 +1,9 @@
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { cva } from "class-variance-authority";
 import { NavigationMenu as NavigationMenuPrimitive } from "radix-ui";
-import type * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function NavigationMenu({
   className,

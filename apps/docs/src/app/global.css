@@ -144,6 +144,8 @@ html {
 }
 
 html > body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: Override the scroll-lock library's inline compensation. */
   margin-right: 0px !important;
+  /* biome-ignore lint/complexity/noImportantStyles: Keep the library's compensation variable aligned with the override. */
   --removed-body-scroll-bar-size: 0px !important;
 }

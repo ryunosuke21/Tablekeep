@@ -1,11 +1,12 @@
 "use client";
 
+import type * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
 import { Button } from "@tablekeep/ui/components/button";
 import { Input } from "@tablekeep/ui/components/input";
 import { Textarea } from "@tablekeep/ui/components/textarea";
 import { cn } from "@tablekeep/ui/lib/utils";
-import { cva, type VariantProps } from "class-variance-authority";
-import type * as React from "react";
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (

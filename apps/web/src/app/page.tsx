@@ -4,6 +4,7 @@ import { api, HydrateClient } from "@/trpc/server";
 
 export default async function Home() {
   const hello = await api.health.check();
+  const spells = await api.spells.list();
 
   return (
     <HydrateClient>
@@ -40,6 +41,9 @@ export default async function Home() {
             <p className="text-2xl text-white">
               {hello ? hello.status : "Loading tRPC query..."}
             </p>
+            <div className="flex flex-col items-center gap-2">
+              <pre>{JSON.stringify(spells, null, 2)}</pre>
+            </div>
           </div>
         </div>
       </main>

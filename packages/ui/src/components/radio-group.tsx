@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 import type * as React from "react";
+import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function RadioGroup({
   className,

@@ -1,9 +1,10 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
+import * as React from "react";
 import { IconMinus } from "@tabler/icons-react";
 import { OTPInput, OTPInputContext } from "input-otp";
-import * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function InputOTP({
   className,
