@@ -1,8 +1,9 @@
-import { Card, CardContent } from "@tablekeep/ui/components/card";
-import { D20Icon } from "@tablekeep/ui/icons/d20";
 import { IconHeart, IconMapPin } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
+
+import { Card, CardContent } from "@tablekeep/ui/components/card";
+import { D20Icon } from "@tablekeep/ui/icons/d20";
 
 import type { CharacterSummary } from "@/server/api/mocks/dashboard";
 

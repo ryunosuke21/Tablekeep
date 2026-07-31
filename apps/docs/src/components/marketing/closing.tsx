@@ -1,8 +1,10 @@
-import { Button } from "@tablekeep/ui/components/button";
-import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 import { IconArrowRight, IconBrandGithub } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
+
+import { Button } from "@tablekeep/ui/components/button";
+import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
+
 import { appName, appUrl, docsRoute, gitConfig } from "@/lib/shared";
 
 const repoUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;

@@ -36,7 +36,27 @@
     "indentStyle": "space",
     "indentWidth": 2
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ["react", "next"],
+              [":URL:", ":PACKAGE:", "!@tablekeep/**"],
+              ":BLANK_LINE:",
+              ["@tablekeep/**"],
+              ":BLANK_LINE:",
+              [":ALIAS:"],
+              ":NODE:",
+              ":BLANK_LINE:"
+            ]
+          }
+        }
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {

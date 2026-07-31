@@ -1,16 +1,16 @@
 "use client";
 
+import type * as React from "react";
 import {
   MessageScroller as MessageScrollerPrimitive,
   useMessageScroller,
   useMessageScrollerScrollable,
   useMessageScrollerVisibility,
 } from "@shadcn/react/message-scroller";
-import { Button } from "@tablekeep/ui/components/button";
-
-import { cn } from "@tablekeep/ui/lib/utils";
 import { IconArrowDown } from "@tabler/icons-react";
-import type * as React from "react";
+
+import { Button } from "@tablekeep/ui/components/button";
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function MessageScrollerProvider(
   props: React.ComponentProps<typeof MessageScrollerPrimitive.Provider>,

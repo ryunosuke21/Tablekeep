@@ -1,7 +1,9 @@
-import { Button } from "@tablekeep/ui/components/button";
 import { IconArrowRight, IconBook } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
+
+import { Button } from "@tablekeep/ui/components/button";
+
 import { appUrl, docsRoute } from "@/lib/shared";
 
 export function Hero() {

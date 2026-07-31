@@ -1,21 +1,6 @@
 "use client";
 
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  SidebarSeparator,
-} from "@tablekeep/ui/components/sidebar";
-import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
-import {
   IconBackpack,
   IconBandage,
   type IconBook2,
@@ -32,7 +17,24 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+} from "@tablekeep/ui/components/sidebar";
+import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
+
 import { env } from "@/env/client";
+
 import { FeedbackDialog } from "./feedback-dialog";
 import { UserMenu } from "./user-menu";
 

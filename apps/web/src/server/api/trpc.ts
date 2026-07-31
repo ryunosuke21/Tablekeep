@@ -9,8 +9,10 @@
 
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { ZodError } from "zod";
+import { ZodError, z } from "zod";
 
+import { dndApi } from "@/server/api/data-source";
+import { graphqlClient } from "@/server/api/graphql";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
 
@@ -30,7 +32,10 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const session = await auth.api.getSession({
     headers: opts.headers,
   });
+
   return {
+    graphql: graphqlClient,
+    dndApi,
     db,
     session,
     ...opts,
@@ -132,3 +137,27 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+export const paginationSchema = z.object({
+  cursor: z.number().optional(),
+  limit: z.number().optional(),
+});
+
+export const paginationMiddleware = t.middleware(
+  async ({ next, input: initialInput, ctx }) => {
+    // Use safeParse in case input doesn't exactly match schema
+    const parseResult = paginationSchema.safeParse(initialInput);
+
+    // TODO: Check for user settings for pagination
+
+    return await next({
+      ctx: {
+        ...ctx,
+      },
+      input: {
+        ...(initialInput as object),
+        ...parseResult.data,
+      },
+    });
+  },
+);

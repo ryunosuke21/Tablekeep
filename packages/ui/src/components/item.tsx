@@ -1,8 +1,9 @@
-import { Separator } from "@tablekeep/ui/components/separator";
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
-import type * as React from "react";
+
+import { Separator } from "@tablekeep/ui/components/separator";
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (

@@ -1,5 +1,7 @@
 "use client";
 
+import { IconFlag3, IconUsersGroup } from "@tabler/icons-react";
+
 import {
   Empty,
   EmptyDescription,
@@ -7,12 +9,12 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@tablekeep/ui/components/empty";
-import { IconFlag3, IconUsersGroup } from "@tabler/icons-react";
 
 import type {
   CampaignSummary,
   CharacterSummary,
 } from "@/server/api/mocks/dashboard";
+
 import { CampaignCard } from "./campaign-card";
 import { CharacterCard } from "./character-card";
 import { ExpandableCardCollection } from "./expandable-card-collection";

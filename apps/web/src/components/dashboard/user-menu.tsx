@@ -1,6 +1,19 @@
 "use client";
 
 import {
+  IconCheck,
+  IconChevronUp,
+  IconDeviceDesktop,
+  IconLogout,
+  IconMoon,
+  IconSettings,
+  IconSun,
+} from "@tabler/icons-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+
+import {
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -20,18 +33,6 @@ import {
   useSidebar,
 } from "@tablekeep/ui/components/sidebar";
 import { toast } from "@tablekeep/ui/components/sonner";
-import {
-  IconCheck,
-  IconChevronUp,
-  IconDeviceDesktop,
-  IconLogout,
-  IconMoon,
-  IconSettings,
-  IconSun,
-} from "@tabler/icons-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
 
 import { authClient } from "@/server/better-auth/client";
 

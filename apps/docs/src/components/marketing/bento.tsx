@@ -1,9 +1,12 @@
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import { IconArrowUpRight } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
-import type * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
+
 import { docsRoute } from "@/lib/shared";
+
 import { Eyebrow } from "./primitives";
 
 const ART = {

@@ -1,14 +1,22 @@
 export function normalize(urlOrPath: string) {
-  if (urlOrPath.length > 1 && urlOrPath.endsWith('/')) return urlOrPath.slice(0, -1);
+  if (urlOrPath.length > 1 && urlOrPath.endsWith("/"))
+    return urlOrPath.slice(0, -1);
   return urlOrPath;
 }
 
 /**
  * @returns if `href` is matching the given pathname
  */
-export function isActive(href: string, pathname: string, nested = false): boolean {
-  href = normalize(href);
-  pathname = normalize(pathname);
+export function isActive(
+  href: string,
+  pathname: string,
+  nested = false,
+): boolean {
+  const normalizedHref = normalize(href);
+  const normalizedPathname = normalize(pathname);
 
-  return href === pathname || (nested && pathname.startsWith(`${href}/`));
+  return (
+    normalizedHref === normalizedPathname ||
+    (nested && normalizedPathname.startsWith(`${normalizedHref}/`))
+  );
 }

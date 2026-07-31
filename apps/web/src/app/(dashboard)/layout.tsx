@@ -1,9 +1,10 @@
+import type { CSSProperties, ReactNode } from "react";
+
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@tablekeep/ui/components/sidebar";
-import type { CSSProperties, ReactNode } from "react";
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 

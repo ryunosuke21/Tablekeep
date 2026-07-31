@@ -1,6 +1,7 @@
-import { cn } from "@tablekeep/ui/lib/utils";
-import { IconSelector } from "@tabler/icons-react";
 import type * as React from "react";
+import { IconSelector } from "@tabler/icons-react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 type NativeSelectProps = Omit<React.ComponentProps<"select">, "size"> & {
   size?: "sm" | "default";

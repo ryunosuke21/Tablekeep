@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
+import { IconChevronRight, IconShieldFilled } from "@tabler/icons-react";
+
 import { Badge } from "@tablekeep/ui/components/badge";
 import { Button } from "@tablekeep/ui/components/button";
 import { Progress } from "@tablekeep/ui/components/progress";
 import { cn } from "@tablekeep/ui/lib/utils";
-import { IconChevronRight, IconShieldFilled } from "@tabler/icons-react";
-import { useState } from "react";
 
 type Combatant = {
   initiative: number;

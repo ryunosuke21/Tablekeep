@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { IconMessageCircle } from "@tabler/icons-react";
+import { usePathname } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+
 import { Button } from "@tablekeep/ui/components/button";
 import {
   Dialog,
@@ -31,10 +36,6 @@ import {
 } from "@tablekeep/ui/components/sidebar";
 import { toast } from "@tablekeep/ui/components/sonner";
 import { Textarea } from "@tablekeep/ui/components/textarea";
-import { IconMessageCircle } from "@tabler/icons-react";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 
 import {
   type FeedbackFormValues,

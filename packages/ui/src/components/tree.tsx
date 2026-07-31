@@ -1,15 +1,16 @@
 "use client";
 
-import type { ItemInstance, TreeInstance } from "@headless-tree/core";
-import { cn } from "@tablekeep/ui/lib/utils";
-import { IconChevronDown, IconMinus, IconPlus } from "@tabler/icons-react";
-import { Slot } from "radix-ui";
 import type {
   ButtonHTMLAttributes,
   CSSProperties,
   HTMLAttributes,
 } from "react";
 import { createContext, useContext } from "react";
+import type { ItemInstance, TreeInstance } from "@headless-tree/core";
+import { IconChevronDown, IconMinus, IconPlus } from "@tabler/icons-react";
+import { Slot } from "radix-ui";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 type ToggleIconType = "chevron" | "plus-minus";
 

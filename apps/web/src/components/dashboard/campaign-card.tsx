@@ -1,3 +1,6 @@
+import { IconArrowUpRight, IconClock } from "@tabler/icons-react";
+import Link from "next/link";
+
 import {
   Avatar,
   AvatarFallback,
@@ -6,8 +9,6 @@ import {
   AvatarImage,
 } from "@tablekeep/ui/components/avatar";
 import { Card, CardContent } from "@tablekeep/ui/components/card";
-import { IconArrowUpRight, IconClock } from "@tabler/icons-react";
-import Link from "next/link";
 
 import type { CampaignSummary } from "@/server/api/mocks/dashboard";
 

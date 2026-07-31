@@ -1,4 +1,5 @@
 import Image from "next/image";
+
 import { InitiativeRail } from "./initiative-rail";
 import { Eyebrow } from "./primitives";
 

@@ -1,6 +1,9 @@
-import { Badge } from "@tablekeep/ui/components/badge";
 import Link from "next/link";
+
+import { Badge } from "@tablekeep/ui/components/badge";
+
 import { docsRoute } from "@/lib/shared";
+
 import { Eyebrow } from "./primitives";
 
 /**

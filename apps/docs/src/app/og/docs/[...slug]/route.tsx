@@ -1,6 +1,7 @@
 import { generate as DefaultImage } from "fumadocs-ui/og";
 import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
+
 import { appName } from "@/lib/shared";
 import { getPageImageUrl, source } from "@/lib/source";
 

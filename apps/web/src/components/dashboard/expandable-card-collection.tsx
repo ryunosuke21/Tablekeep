@@ -1,13 +1,14 @@
 "use client";
 
+import { useId, useState } from "react";
+import { IconChevronDown } from "@tabler/icons-react";
+
 import { Button } from "@tablekeep/ui/components/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@tablekeep/ui/components/collapsible";
-import { IconChevronDown } from "@tabler/icons-react";
-import { useId, useState } from "react";
 
 const COMPACT_ITEM_COUNT = 3;
 

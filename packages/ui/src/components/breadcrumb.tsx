@@ -1,7 +1,8 @@
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import { IconChevronRight, IconDots } from "@tabler/icons-react";
 import { Slot } from "radix-ui";
-import type * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
   return (

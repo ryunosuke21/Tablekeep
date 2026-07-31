@@ -1,9 +1,10 @@
 "use client";
 
-import { cn } from "@tablekeep/ui/lib/utils";
+import type * as React from "react";
 import { IconCheck, IconChevronRight } from "@tabler/icons-react";
 import { Menubar as MenubarPrimitive } from "radix-ui";
-import type * as React from "react";
+
+import { cn } from "@tablekeep/ui/lib/utils";
 
 function Menubar({
   className,
