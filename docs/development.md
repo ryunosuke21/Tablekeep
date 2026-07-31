@@ -43,6 +43,7 @@ Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to 
 | Variable | Required | Description |
 | --- | --- | --- |
 | `BASE_URL` | Yes | Public URL for the app; use `http://localhost:3000` locally. |
+| `NEXT_PUBLIC_DOCS_URL` | No | Public documentation URL used by the product Help link; defaults to `http://localhost:3001/docs`. |
 | `DATABASE_URL` | Yes | PostgreSQL connection URL. |
 | `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret. |

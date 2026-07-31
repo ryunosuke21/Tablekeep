@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.2",
+    "@hookform/resolvers": "^5.5.7",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tablekeep/ui": "workspace:*",
     "@tabler/icons-react": "^3.45.0",
@@ -39,6 +40,7 @@
     "radix-ui": "^1.6.7",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-hook-form": "^7.83.0",
     "server-only": "^0.0.1",
     "shadcn": "^4.16.0",
     "superjson": "^2.2.1",
