@@ -10,7 +10,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   transpilePackages: ["@tablekeep/ui"],
   experimental: {
-    auauthInterrupts: true,
+    authInterrupts: true,
   },
 };
 

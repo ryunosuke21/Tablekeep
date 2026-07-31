@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
+import { IconLock } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@tablekeep/ui/components/alert";
 import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
 import { SignInForm } from "@/components/auth/sign-in-form";
 
 export const metadata: Metadata = {
-  title: "Sign in | Tablekeep",
-  description: "Sign in to your Tablekeep account.",
+  title: "Sign in required | Tablekeep",
+  description: "Sign in to view this Tablekeep page.",
 };
 
 export default function SignInPage() {
@@ -28,6 +34,13 @@ export default function SignInPage() {
 
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-sm">
+            <Alert className="mb-6 border-primary/20 bg-primary/5">
+              <IconLock className="text-primary" />
+              <AlertTitle>Sign in required</AlertTitle>
+              <AlertDescription>
+                Please sign in to view this page.
+              </AlertDescription>
+            </Alert>
             <SignInForm />
           </div>
         </div>
