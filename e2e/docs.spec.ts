@@ -14,11 +14,12 @@ test("the public site communicates status and links to the two surfaces", async 
   await expect(page.getByText("Built", { exact: true })).toHaveCount(3);
   await expect(page.getByText("Planned", { exact: true })).toHaveCount(4);
 
-  await page
-    .getByRole("link", { name: /read the docs/i })
-    .first()
-    .click();
-  await expect(page).toHaveURL("http://localhost:3001/docs");
+  const docsLink = page.getByRole("link", { name: /read the docs/i }).first();
+  await expect(docsLink).toHaveAttribute("href", "/docs");
+  await Promise.all([
+    page.waitForURL("http://localhost:3001/docs"),
+    docsLink.click(),
+  ]);
   await expect(
     page.getByRole("heading", { name: "Hello World" }),
   ).toBeVisible();

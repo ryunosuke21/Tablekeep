@@ -1,18 +1,22 @@
 import { expect, test } from "@playwright/test";
 
-test("the product app starts with deterministic dashboard data", async ({
+test("the product app protects the dashboard and keeps public APIs available", async ({
   page,
   request,
 }) => {
-  await page.goto("http://localhost:3000");
+  const navigationResponse = await page.goto("http://localhost:3000");
 
+  expect(navigationResponse?.status()).toBe(401);
   await expect(
-    page.getByRole("heading", { name: /your table, at a glance/i }),
+    page.getByText("Sign in required", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Campaigns" })).toBeVisible();
-  await expect(page.getByText("The Ember Coast").first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Characters" })).toBeVisible();
-  await expect(page.getByText("Vesper Quill").first()).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue with Google" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Email address")).toBeVisible();
 
   const health = await request.get(
     "http://localhost:3000/api/trpc/health.check",
@@ -20,8 +24,8 @@ test("the product app starts with deterministic dashboard data", async ({
   expect(health.ok()).toBe(true);
   expect(await health.text()).toContain('"status":"ok"');
 
-  const response = await request.get("http://127.0.0.1:4100/requests");
-  expect(response.ok()).toBe(true);
-  const result = (await response.json()) as { operations: string[] };
+  const mockResponse = await request.get("http://127.0.0.1:4100/requests");
+  expect(mockResponse.ok()).toBe(true);
+  const result = (await mockResponse.json()) as { operations: string[] };
   expect(result.operations).toEqual([]);
 });
