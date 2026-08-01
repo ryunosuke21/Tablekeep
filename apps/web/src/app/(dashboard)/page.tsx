@@ -1,4 +1,4 @@
-import { unauthorized } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import { DashboardOverview } from "@/components/dashboard/dashboard-overview";
 import { getSession } from "@/server/better-auth/server";
@@ -8,7 +8,7 @@ export default async function DashboardPage() {
   const session = await getSession();
 
   if (!session) {
-    unauthorized();
+    redirect("/sign-in");
   }
 
   const [campaigns, characters] = await Promise.all([
