@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { redirect } from "next/navigation";
 
 import {
   SidebarInset,
@@ -7,8 +8,23 @@ import {
 } from "@tablekeep/ui/components/sidebar";
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { getSession } from "@/server/better-auth/server";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const session = await getSession();
+
+  if (!session?.user) {
+    redirect("/sign-in");
+  }
+
+  if (!session.user.name?.trim()) {
+    redirect("/new-profile");
+  }
+
   return (
     <SidebarProvider
       style={

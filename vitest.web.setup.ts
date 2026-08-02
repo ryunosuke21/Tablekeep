@@ -5,6 +5,9 @@ process.env.BETTER_AUTH_SECRET =
   "tablekeep-test-secret-at-least-thirty-two-characters";
 process.env.GOOGLE_CLIENT_ID = "tablekeep-test-client";
 process.env.GOOGLE_CLIENT_SECRET = "tablekeep-test-client-secret";
+process.env.RESEND_API_KEY = "tablekeep-test-resend-key";
+process.env.FROM_EMAIL = "noreply@tablekeep.test";
+process.env.UPLOADTHING_TOKEN = "tablekeep-test-uploadthing-token";
 process.env.DATABASE_URL =
   "postgresql://tablekeep:tablekeep@127.0.0.1:5432/tablekeep_test";
 process.env.DATA_SOURCE = "http://127.0.0.1:4100";
