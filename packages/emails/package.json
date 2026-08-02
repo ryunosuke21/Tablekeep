@@ -1,0 +1,28 @@
+{
+  "name": "@tablekeep/emails",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "email dev --dir src/emails --port 3002",
+    "build": "email build --dir src/emails --packageManager pnpm",
+    "resend": "email resend reset && pnpm resend:setup",
+    "resend:setup": "email resend setup"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@react-email/ui": "^6.9.1",
+    "@tablekeep/config": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "tailwindcss": "catalog:"
+  },
+  "dependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-email": "^6.9.1"
+  }
+}
