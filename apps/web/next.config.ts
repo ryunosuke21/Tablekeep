@@ -12,6 +12,15 @@ const config: NextConfig = {
   experimental: {
     authInterrupts: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "4iedin33if.ufs.sh",
+        pathname: "/f/**",
+      },
+    ],
+  },
 };
 
 export default config;

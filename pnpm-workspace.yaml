@@ -3,6 +3,7 @@ packages:
   - packages/*
 allowBuilds:
   esbuild: true
+  msgpackr-extract: true
   sharp: true
 overrides:
   typescript: 6.0.3

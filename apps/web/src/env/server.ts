@@ -16,6 +16,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
     RESEND_API_KEY: z.string(),
     FROM_EMAIL: z.email().default("noreply@tablekeep.com"),
+    UPLOADTHING_TOKEN: z.string(),
     DATABASE_URL: z.url(),
     DATA_SOURCE: z.url().default("https://www.dnd5eapi.co"),
     NODE_ENV: z
@@ -35,6 +36,7 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,
+    UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
     DATABASE_URL: process.env.DATABASE_URL,
     DATA_SOURCE: process.env.DATA_SOURCE,
     NODE_ENV: process.env.NODE_ENV,
