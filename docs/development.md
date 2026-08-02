@@ -71,6 +71,20 @@ The magic-link plugin is configured, but its sender is currently a no-op. Do not
 - Keep schema files organized by domain under `apps/web/src/server/db/schema/`, and re-export them from `schema/index.ts`.
 - Add tRPC routers under `apps/web/src/server/api/routers/`, then compose them in `index.ts`.
 
+### Profile onboarding
+
+Authenticated users whose name is empty are redirected to `/new-profile` before
+they can enter another product page. The Next.js proxy applies the redirect
+across page routes, while protected layouts and pages still validate sessions
+server-side. Keep `/sign-in` public and `/new-profile` available to incomplete
+users so the redirect flow cannot loop.
+
+Profile pictures are staged locally with the shared `useFileUpload` hook and
+uploaded only when the React Hook Form profile form is submitted. The custom
+uploader uses UploadThing's function API against `/api/files`; its client-side
+byte limit and server-side UploadThing string limit both derive from
+`MAX_FILE_SIZE` in `apps/web/src/lib/constants.ts`.
+
 ## Campaign-data design
 
 When game-domain tables are introduced, model ownership and membership before convenience fields. A typical server-side authorization path is:

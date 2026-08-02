@@ -7,7 +7,7 @@ import { getSession } from "@/server/better-auth/server";
 const file = createUploadthing();
 
 export const fileRouter = {
-  imageUploader: file({
+  profileImage: file({
     image: {
       maxFileSize: MAX_FILE_SIZE,
       maxFileCount: 1,
