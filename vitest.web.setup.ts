@@ -1,6 +1,6 @@
 import { afterEach, vi } from "vitest";
 
-process.env.BASE_URL = "http://localhost:3000";
+process.env.VERCEL_URL = "http://localhost:3000";
 process.env.BETTER_AUTH_SECRET =
   "tablekeep-test-secret-at-least-thirty-two-characters";
 process.env.GOOGLE_CLIENT_ID = "tablekeep-test-client";

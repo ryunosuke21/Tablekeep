@@ -16,7 +16,9 @@ export const auth = betterAuth({
     debugLogs: env.LOG_LEVEL === "debug",
   }),
   appName: "Tablekeep",
-  baseURL: env.BASE_URL,
+  baseURL: env.VERCEL_URL
+    ? `https://${env.VERCEL_URL}`
+    : "http://localhost:3000",
   emailAndPassword: {
     enabled: false,
   },
