@@ -42,13 +42,15 @@ Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to 
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `BASE_URL` | Yes | Public URL for the app; use `http://localhost:3000` locally. |
-| `NEXT_PUBLIC_DOCS_URL` | No | Public documentation URL used by the product Help link; defaults to `http://localhost:3001/docs`. |
 | `DATABASE_URL` | Yes | PostgreSQL connection URL. |
 | `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret. |
 | `BETTER_AUTH_SECRET` | Production | Secret used by Better Auth; set it locally as well when testing auth. |
+| `NEXT_PUBLIC_DOCS_URL` | No | Public documentation URL used by the product Help link; defaults to `http://localhost:3001/docs`. |
+| `DATA_SOURCE` | No | Reference-data API base URL; defaults to `https://www.dnd5eapi.co`. |
 | `LOG_LEVEL` | No | `debug`, `info`, `warn`, or `error`; defaults to `info`. |
+
+The product’s public URL comes from Vercel’s `VERCEL_URL` system variable in deployed environments (via the T3 Env Vercel preset), and falls back to `http://localhost:3000` locally. You do not need to set an app URL in `.env`.
 
 `apps/docs` reads one public variable through T3 Env.
 
