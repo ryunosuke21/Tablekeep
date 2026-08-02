@@ -15,4 +15,6 @@ export const gitConfig = {
 export const appUrl = env.NEXT_PUBLIC_APP_URL;
 
 /** This site's own public URL, used to resolve Open Graph image paths. */
-export const siteUrl = env.NEXT_PUBLIC_SITE_URL;
+export const siteUrl = env.VERCEL_URL
+  ? `https://${env.VERCEL_URL}`
+  : "http://localhost:3001";

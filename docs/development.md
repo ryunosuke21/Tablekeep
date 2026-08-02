@@ -50,12 +50,13 @@ Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to 
 | `BETTER_AUTH_SECRET` | Production | Secret used by Better Auth; set it locally as well when testing auth. |
 | `LOG_LEVEL` | No | `debug`, `info`, `warn`, or `error`; defaults to `info`. |
 
-`apps/docs` reads two public variables through T3 Env.
+`apps/docs` reads one public variable through T3 Env.
 
 | Variable | Required | Description |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_URL` | Deployment | Where every "Open Tablekeep" link points; defaults to `http://localhost:3000`. |
-| `NEXT_PUBLIC_SITE_URL` | Deployment | The site's own public URL, used to resolve Open Graph images; defaults to `http://localhost:3001`. |
+
+The site's own public URL (used for Open Graph image resolution) comes from Vercel's `VERCEL_URL` system variable in deployed environments, and falls back to `http://localhost:3001` locally.
 
 The magic-link plugin is configured, but its sender is currently a no-op. Do not describe email sign-in as working until a delivery service is integrated.
 
