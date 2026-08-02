@@ -29,7 +29,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
 } from "@tablekeep/ui/components/sidebar";
 import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
@@ -130,7 +129,6 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarSeparator />
       <SidebarContent>
         <NavigationGroup label="Personal" items={personalNavigation} />
         <NavigationGroup label="Wiki" items={wikiNavigation} />
@@ -152,7 +150,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
           <FeedbackDialog />
         </SidebarMenu>
-        <SidebarSeparator className="mx-0" />
         <UserMenu />
       </SidebarFooter>
       <SidebarRail />
