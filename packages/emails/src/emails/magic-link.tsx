@@ -16,8 +16,8 @@ import {
   Text,
 } from "react-email";
 
-import { BarebonesFonts, barebonesBoxedTailwindConfig } from "@/styles";
-import type { AdditionalLinks } from "@/types/additional";
+import { BarebonesFonts, barebonesBoxedTailwindConfig } from "../styles";
+import type { AdditionalLinks } from "../types/additional";
 
 type MagicLinkProps = {
   appName: string;

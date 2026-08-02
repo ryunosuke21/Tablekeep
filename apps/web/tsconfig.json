@@ -27,6 +27,8 @@
     "incremental": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@tablekeep/emails": ["../../packages/emails/src/index.ts"],
+      "@tablekeep/emails/*": ["../../packages/emails/src/*"],
       "@tablekeep/ui/*": ["../../packages/ui/src/*"]
     }
   },

@@ -1,28 +1,37 @@
 {
   "name": "@tablekeep/emails",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./emails/*": "./src/emails/*.tsx",
+    "./styles": "./src/styles/index.ts",
+    "./styles/*": "./src/styles/*",
+    "./types/*": "./src/types/*.ts"
+  },
   "scripts": {
     "dev": "email dev --dir src/emails --port 3002",
     "build": "email build --dir src/emails --packageManager pnpm",
+    "check-types": "tsc --noEmit",
     "resend": "email resend reset && pnpm resend:setup",
     "resend:setup": "email resend setup"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
+  "peerDependencies": {
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "dependencies": {
+    "react-email": "^6.9.1",
+    "tailwindcss": "catalog:"
+  },
   "devDependencies": {
     "@react-email/ui": "^6.9.1",
     "@tablekeep/config": "workspace:*",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "tailwindcss": "catalog:"
-  },
-  "dependencies": {
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-email": "^6.9.1"
+    "typescript": "catalog:"
   }
 }

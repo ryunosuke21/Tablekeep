@@ -8,7 +8,7 @@ import "./src/env/client";
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  transpilePackages: ["@tablekeep/ui"],
+  transpilePackages: ["@tablekeep/emails", "@tablekeep/ui"],
   experimental: {
     authInterrupts: true,
   },
