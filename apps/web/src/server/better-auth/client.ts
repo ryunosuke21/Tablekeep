@@ -6,6 +6,8 @@ import {
 } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
+import { campaignOrganizationClient } from "@tablekeep/campaign-auth/client";
+
 import { access, roles } from "@/server/better-auth/admin";
 import type { auth } from "@/server/better-auth/config";
 
@@ -17,6 +19,7 @@ export const authClient = createAuthClient({
     }),
     multiSessionClient(),
     magicLinkClient(),
+    campaignOrganizationClient,
     inferAdditionalFields<typeof auth>(),
   ],
 });

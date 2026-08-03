@@ -10,9 +10,14 @@ import {
 } from "@tablekeep/ui/components/avatar";
 import { Card, CardContent } from "@tablekeep/ui/components/card";
 
-import type { CampaignSummary } from "@/server/api/mocks/dashboard";
+import type { RouterOutputs } from "@/trpc/react";
 
-const toneClasses: Record<CampaignSummary["tone"], string> = {
+export type CampaignListItem =
+  RouterOutputs["campaign"]["list"]["items"][number];
+
+// Exhaustive over the campaign_colors enum: a new value fails type-checking
+// here instead of rendering an unstyled card.
+const colorClasses: Record<CampaignListItem["colors"], string> = {
   lilac: "bg-campaign-lilac",
   rose: "bg-campaign-rose",
   sage: "bg-campaign-sage",
@@ -35,7 +40,9 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function formatNextSession(nextSession: CampaignSummary["nextSession"]) {
+export function formatNextSession(
+  nextSession: CampaignListItem["nextSession"],
+) {
   if (!nextSession) {
     return "Next session not scheduled";
   }
@@ -44,19 +51,20 @@ function formatNextSession(nextSession: CampaignSummary["nextSession"]) {
     month: "short",
     day: "numeric",
     timeZone: nextSession.timeZone,
-  }).format(new Date(nextSession.startsAt));
+  }).format(nextSession.startsAt);
   const timeFormatter = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
     timeZone: nextSession.timeZone,
   });
-  const startTime = timeFormatter.format(new Date(nextSession.startsAt));
-  const endTime = timeFormatter.format(new Date(nextSession.endsAt));
+  const startTime = timeFormatter.format(nextSession.startsAt);
+  if (!nextSession.endsAt) return `${date} · ${startTime}`;
+  const endTime = timeFormatter.format(nextSession.endsAt);
 
   return `${date} · ${startTime}–${endTime}`;
 }
 
-export function CampaignCard({ campaign }: { campaign: CampaignSummary }) {
+export function CampaignCard({ campaign }: { campaign: CampaignListItem }) {
   const visibleMembers = campaign.members.slice(0, 4);
   const remainingMembers = Math.max(
     campaign.memberCount - visibleMembers.length,
@@ -70,11 +78,11 @@ export function CampaignCard({ campaign }: { campaign: CampaignSummary }) {
       className="group block h-full rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <Card
-        className={`h-full min-h-44 gap-0 py-0 transition-[transform,box-shadow,ring-color] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:ring-foreground/20 motion-reduce:transform-none motion-reduce:transition-none ${toneClasses[campaign.tone]}`}
+        className={`h-full min-h-44 gap-0 py-0 transition-[transform,box-shadow,ring-color] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-lg group-hover:ring-foreground/20 motion-reduce:transform-none motion-reduce:transition-none ${colorClasses[campaign.colors]}`}
       >
         <CardContent className="flex h-full min-h-44 flex-col p-5">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="font-semibold text-base tracking-[-0.02em]">
+            <h3 className="min-w-0 break-words font-semibold text-base tracking-[-0.02em]">
               {campaign.name}
             </h3>
             <span className="shrink-0 rounded-full bg-background/55 px-2 py-1 font-medium text-[9px] text-foreground/65 uppercase tracking-[0.12em]">
@@ -86,6 +94,12 @@ export function CampaignCard({ campaign }: { campaign: CampaignSummary }) {
             <IconClock className="size-3.5" />
             <span>{formatNextSession(campaign.nextSession)}</span>
           </p>
+
+          {campaign.description ? (
+            <p className="mt-3 line-clamp-2 text-foreground/70 text-sm leading-snug">
+              {campaign.description}
+            </p>
+          ) : null}
 
           <div className="mt-auto flex items-end justify-between pt-7">
             <AvatarGroup

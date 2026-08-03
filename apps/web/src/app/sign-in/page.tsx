@@ -5,13 +5,22 @@ import Link from "next/link";
 import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
 import { SignInForm } from "@/components/auth/sign-in-form";
+import { readDestination } from "@/lib/redirect-destination";
 
 export const metadata: Metadata = {
   title: "Sign in | Tablekeep",
   description: "Sign in to your Tablekeep account.",
 };
 
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  // The destination is attacker-supplied, so it is validated again here even
+  // though the proxy already validated the value it forwarded.
+  const destination = readDestination(await searchParams);
+
   return (
     <main className="grid min-h-svh bg-background lg:grid-cols-2">
       <section className="flex min-h-svh flex-col p-6 sm:p-8 lg:p-10">
@@ -28,7 +37,7 @@ export default function SignInPage() {
 
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-sm">
-            <SignInForm />
+            <SignInForm destination={destination} />
           </div>
         </div>
 

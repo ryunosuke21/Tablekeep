@@ -21,6 +21,6 @@ test("the public site communicates status and links to the two surfaces", async 
     docsLink.click(),
   ]);
   await expect(
-    page.getByRole("heading", { name: "Hello World" }),
+    page.getByRole("heading", { name: "Tablekeep documentation" }),
   ).toBeVisible();
 });

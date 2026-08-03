@@ -11,10 +11,13 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError, z } from "zod";
 
+import { campaignMemberCan } from "@tablekeep/campaign-auth/access";
+
 import { dndApi } from "@/server/api/data-source";
 import { graphqlClient } from "@/server/api/graphql";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
+import { getCampaignForMemberById } from "@/server/db/queries/campaign";
 
 /**
  * 1. CONTEXT
@@ -136,6 +139,84 @@ export const protectedProcedure = t.procedure
         session: { ...ctx.session, user: ctx.session.user },
       },
     });
+  });
+
+/**
+ * Insertion point for the closed-beta allowlist. Until that gate exists, campaign
+ * procedures have the same authentication requirements as protected procedures.
+ */
+export const betaProcedure = protectedProcedure;
+
+export const campaignScopeSchema = z.object({
+  campaignId: z.uuid(),
+});
+
+export const campaignMemberProcedure = betaProcedure
+  .input(campaignScopeSchema)
+  .use(async ({ ctx, input, next }) => {
+    const result = await getCampaignForMemberById(
+      ctx.db,
+      input.campaignId,
+      ctx.session.user.id,
+    );
+
+    // Do not disclose whether a campaign exists to callers who are not members.
+    if (!result) {
+      throw new TRPCError({ code: "NOT_FOUND" });
+    }
+
+    const { memberId, memberRole, memberSince, ...campaign } = result;
+
+    return next({
+      ctx: {
+        campaign,
+        member: {
+          id: memberId,
+          role: memberRole,
+          since: memberSince,
+        },
+      },
+    });
+  });
+
+function assertCampaignDm(role: string) {
+  if (!campaignMemberCan(role, { organization: ["update"] })) {
+    throw new TRPCError({ code: "FORBIDDEN" });
+  }
+}
+
+/** DM-only campaign access. Archived campaigns remain readable but immutable. */
+export const campaignDmProcedure = campaignMemberProcedure
+  .use(({ ctx, next }) => {
+    assertCampaignDm(ctx.member.role);
+    return next();
+  })
+  .use(({ ctx, next, type }) => {
+    if (type === "mutation" && ctx.campaign.status === "archived") {
+      throw new TRPCError({ code: "PRECONDITION_FAILED" });
+    }
+
+    return next();
+  });
+
+/**
+ * The sole archived-campaign mutation bypass. Runtime path validation prevents
+ * accidentally using this builder for any operation other than `restore`.
+ */
+export const campaignRestoreProcedure = campaignMemberProcedure
+  .use(({ ctx, next }) => {
+    assertCampaignDm(ctx.member.role);
+    return next();
+  })
+  .use(({ ctx, next, path, type }) => {
+    if (type !== "mutation" || path.split(".").at(-1) !== "restore") {
+      throw new TRPCError({ code: "METHOD_NOT_SUPPORTED" });
+    }
+    if (ctx.campaign.status !== "archived") {
+      throw new TRPCError({ code: "PRECONDITION_FAILED" });
+    }
+
+    return next();
   });
 
 export const paginationSchema = z.object({

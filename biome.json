@@ -30,8 +30,8 @@
       "!**/wrangler.jsonc",
       "!**/.source",
       "!**/convex/_generated",
-      "!!**/.agents/skills/html-plan/references/html-effectiveness",
-      "!!**/.claude/skills/html-plan/references/html-effectiveness"
+      "!**/.agents",
+      "!**/.claude"
     ]
   },
   "formatter": {

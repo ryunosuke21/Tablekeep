@@ -24,3 +24,15 @@ function fileSizeToBytes(fileSize: string): number {
 }
 
 export const MAX_FILE_SIZE_BYTES = fileSizeToBytes(MAX_FILE_SIZE);
+
+/** Closed-beta guardrails for campaign-owned data. */
+export const MAX_ACTIVE_CAMPAIGNS_PER_USER = 10;
+export const MAX_CAMPAIGN_MEMBERS = 12;
+export const MAX_PENDING_CAMPAIGN_INVITATIONS = 20;
+export const CAMPAIGN_INVITE_TTL_DAYS = 14;
+export const CAMPAIGN_INVITE_TTL_SECONDS =
+  CAMPAIGN_INVITE_TTL_DAYS * 24 * 60 * 60;
+export const CAMPAIGN_SCHEDULE_HORIZON_DAYS = 90;
+
+/** A second safety bound in addition to the date horizon. */
+export const MAX_CAMPAIGN_SCHEDULE_OCCURRENCES = 256;

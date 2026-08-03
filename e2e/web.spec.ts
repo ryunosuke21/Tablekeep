@@ -4,12 +4,9 @@ test("the product app protects the dashboard and keeps public APIs available", a
   page,
   request,
 }) => {
-  const navigationResponse = await page.goto("http://localhost:3000");
+  await page.goto("http://localhost:3000");
 
-  expect(navigationResponse?.status()).toBe(401);
-  await expect(
-    page.getByText("Sign in required", { exact: true }),
-  ).toBeVisible();
+  expect(page.url()).toBe("http://localhost:3000/sign-in?next=%2F");
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
@@ -28,4 +25,29 @@ test("the product app protects the dashboard and keeps public APIs available", a
   expect(mockResponse.ok()).toBe(true);
   const result = (await mockResponse.json()) as { operations: string[] };
   expect(result.operations).toEqual([]);
+});
+
+test("campaign routes are protected and keep the requested destination", async ({
+  page,
+}) => {
+  await page.goto("http://localhost:3000/campaigns");
+
+  expect(page.url()).toBe("http://localhost:3000/sign-in?next=%2Fcampaigns");
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue with Google" }),
+  ).toBeVisible();
+});
+
+test("an invitation link keeps its destination through the sign-in redirect", async ({
+  page,
+}) => {
+  await page.goto("http://localhost:3000/join/ABCDE-FGHIJ");
+
+  expect(page.url()).toBe(
+    "http://localhost:3000/sign-in?next=%2Fjoin%2FABCDE-FGHIJ",
+  );
+  await expect(page.getByLabel("Email address")).toBeVisible();
 });

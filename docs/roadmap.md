@@ -1,6 +1,6 @@
 # Tablekeep product roadmap
 
-> **Status:** Approved product direction; implementation has not started.
+> **Status:** Active implementation. M2 private campaigns is implemented; the M1 closed-beta gate and M3–M7 remain planned.
 >
 > **Launch target:** Closed beta.
 >
@@ -279,16 +279,18 @@ The official API documentation is available at:
 
 Milestones describe dependency order and user outcomes. Calendar estimates should be added only after implementation tasks are broken down and team capacity is known.
 
-| Milestone | Scope | Depends on | Exit signal |
-| --- | --- | --- | --- |
-| M0: Product shell | Branding, sign-in, onboarding, responsive authenticated navigation | Existing auth foundation | A signed-in user reaches a stable application home |
-| M1: Closed-beta gate | Admission controls and beta administration | M0 | Only approved testers can enter the app |
-| M2: Private campaigns | Campaigns, roles, link/code invites, email invites, removal, authorization helpers | M0–M1 | A DM and players complete a secure membership lifecycle |
-| M3: Player essentials | Base character, campaign attachment, DM overrides, HP, conditions, inventory, currency | M2 | A player prepares a character and a DM applies a reversible campaign override |
-| M4: Spellbooks | SRD adapter, cached spell details, custom spells, preparation and resource tracking | M3 | A player prepares spells that remain usable during an upstream outage |
-| M5: DM table view | Party overview and role-safe campaign navigation | M3–M4 | A DM scans effective party state from one screen |
-| M6: Shared encounters | Initiative, encounter revisions, player view, consistency and recovery | M2–M3 | DM and players complete an encounter while seeing the same state |
-| M7: Beta hardening | Tests, migrations, monitoring, backup/restore, privacy and usability | M0–M6 | The closed-beta release checklist passes |
+| Milestone | Status | Scope | Depends on | Exit signal |
+| --- | --- | --- | --- | --- |
+| M0: Product shell | In progress | Branding, sign-in, onboarding, responsive authenticated navigation | Existing auth foundation | A signed-in user reaches a stable application home |
+| M1: Closed-beta gate | Planned | Admission controls and beta administration | M0 | Only approved testers can enter the app |
+| M2: Private campaigns | Implemented | Campaigns, roles, link/code invites, email invites, removal, authorization helpers, archival, recurring sessions | M0–M1 | A DM and players complete a secure membership lifecycle |
+| M3: Player essentials | Planned | Base character, campaign attachment, DM overrides, HP, conditions, inventory, currency | M2 | A player prepares a character and a DM applies a reversible campaign override |
+| M4: Spellbooks | Planned | SRD adapter, cached spell details, custom spells, preparation and resource tracking | M3 | A player prepares spells that remain usable during an upstream outage |
+| M5: DM table view | Planned | Party overview and role-safe campaign navigation | M3–M4 | A DM scans effective party state from one screen |
+| M6: Shared encounters | Planned | Initiative, encounter revisions, player view, consistency and recovery | M2–M3 | DM and players complete an encounter while seeing the same state |
+| M7: Beta hardening | Planned | Tests, migrations, monitoring, backup/restore, privacy and usability | M0–M6 | The closed-beta release checklist passes |
+
+M2 was implemented ahead of M1 with a deliberate `betaProcedure` composition seam. Until M1 replaces that alias with an allowlist-aware procedure, any authenticated account that can enter the product can use campaign features. This is an implementation dependency still to close before the invitation-only beta.
 
 ## MVP non-goals
 
@@ -450,4 +452,3 @@ Exact targets can be set when the beta group size is known. At minimum, measure:
 - Upstream spell API failures and cache effectiveness.
 - Support requests involving permissions, missing data, or unclear overrides.
 - Qualitative feedback on whether Tablekeep reduced bookkeeping without distracting from play.
-

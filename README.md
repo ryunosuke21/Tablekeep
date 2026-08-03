@@ -2,7 +2,7 @@
 
 Tablekeep is a tabletop companion for in-person Dungeons & Dragons campaigns. It is designed to keep the information a group reaches for at the table—characters, spells, inventory, encounters, and rolls—in one shared, practical place without replacing the physical game.
 
-> **Project status:** Tablekeep is in its foundation phase. The repository currently contains the web application, authentication, database integration, the shared UI system, and the marketing/documentation site. The game-facing features below describe the intended product, not functionality that is already available.
+> **Project status:** Tablekeep now includes private campaigns: persisted campaign settings, DM/player membership, link/code and email invitations, member management, archival, and recurring session scheduling. The closed-beta admission gate, characters, spellbooks, party tools, and encounters remain planned work.
 
 ## The two applications
 
@@ -26,7 +26,8 @@ Tablekeep ships as two separate Next.js applications:
 
 ### For Dungeon Masters
 
-- Campaign and party management.
+- Create and manage private campaigns, invitations, members, and recurring session schedules. **Implemented.**
+- Party management beyond the campaign roster. **Planned.**
 - Encounter tools, including initiative tracking and hit-point management.
 - Monster reference and encounter preparation.
 - Shop creation and inventory management for in-world vendors.
