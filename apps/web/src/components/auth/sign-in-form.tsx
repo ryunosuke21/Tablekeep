@@ -10,6 +10,7 @@ import { Field, FieldError, FieldLabel } from "@tablekeep/ui/components/field";
 import { Input } from "@tablekeep/ui/components/input";
 import { LoadingSwap } from "@tablekeep/ui/components/loading-swap";
 
+import { safeDestination, withDestination } from "@/lib/redirect-destination";
 import { authClient } from "@/server/better-auth/client";
 
 const magicLinkSchema = z.object({
@@ -19,7 +20,13 @@ const magicLinkSchema = z.object({
 
 type MagicLinkFormValues = z.infer<typeof magicLinkSchema>;
 
-export function SignInForm() {
+export function SignInForm({
+  destination = null,
+}: {
+  destination?: string | null;
+}) {
+  // Revalidate at this boundary: the value reaches Better Auth's callbackURL.
+  const returnTo = safeDestination(destination);
   const googleForm = useForm();
   const emailForm = useForm<MagicLinkFormValues>({
     resolver: zodResolver(magicLinkSchema),
@@ -40,7 +47,8 @@ export function SignInForm() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: returnTo ?? "/",
+        newUserCallbackURL: withDestination("/new-profile", returnTo),
       });
 
       if (result.error) {
@@ -64,8 +72,8 @@ export function SignInForm() {
     try {
       const result = await authClient.signIn.magicLink({
         email: values.email,
-        callbackURL: "/",
-        newUserCallbackURL: "/new-profile",
+        callbackURL: returnTo ?? "/",
+        newUserCallbackURL: withDestination("/new-profile", returnTo),
       });
 
       if (result.error) {

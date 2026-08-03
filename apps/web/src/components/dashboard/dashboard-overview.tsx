@@ -1,26 +1,26 @@
 "use client";
 
 import { IconFlag3, IconUsersGroup } from "@tabler/icons-react";
+import Link from "next/link";
 
+import { Button } from "@tablekeep/ui/components/button";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@tablekeep/ui/components/empty";
 
-import type {
-  CampaignSummary,
-  CharacterSummary,
-} from "@/server/api/mocks/dashboard";
+import type { CharacterSummary } from "@/server/api/mocks/dashboard";
 
-import { CampaignCard } from "./campaign-card";
+import { CampaignCard, type CampaignListItem } from "./campaign-card";
 import { CharacterCard } from "./character-card";
 import { ExpandableCardCollection } from "./expandable-card-collection";
 
 type DashboardOverviewProps = {
-  campaigns: CampaignSummary[];
+  campaigns: CampaignListItem[];
   characters: CharacterSummary[];
 };
 
@@ -58,9 +58,18 @@ export function DashboardOverview({
                 </EmptyMedia>
                 <EmptyTitle>No campaigns yet</EmptyTitle>
                 <EmptyDescription>
-                  Campaigns you create or join will appear here.
+                  Start a campaign you will run, or join one with the code your
+                  DM shared.
                 </EmptyDescription>
               </EmptyHeader>
+              <EmptyContent>
+                <Button asChild>
+                  <Link href="/campaigns/new">Create a campaign</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/join">Join with a code</Link>
+                </Button>
+              </EmptyContent>
             </Empty>
           }
         />

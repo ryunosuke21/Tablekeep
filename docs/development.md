@@ -85,15 +85,41 @@ uploader uses UploadThing's function API against `/api/files`; its client-side
 byte limit and server-side UploadThing string limit both derive from
 `MAX_FILE_SIZE` in `apps/web/src/lib/constants.ts`.
 
-## Campaign-data design
+## Campaign data and authorization
 
-When game-domain tables are introduced, model ownership and membership before convenience fields. A typical server-side authorization path is:
+Private campaigns are implemented in `apps/web`. The normal authorization path is:
 
 ```text
-authenticated session → campaign membership → campaign role/permission → requested resource
+authenticated session
+  → betaProcedure seam
+  → active campaign membership
+  → campaign role/permission
+  → requested resource
 ```
 
-Scope every campaign query by the verified campaign and membership. A client-provided user ID, campaign ID, or hidden screen is never authorization.
+`betaProcedure` currently aliases `protectedProcedure`; M1 will replace that seam with the closed-beta allowlist. Campaign membership never derives from the site-wide Better Auth administrator role. `campaignMemberProcedure` returns `NOT_FOUND` for a missing campaign and for a non-member so private campaign existence is not disclosed. `campaignDmProcedure` additionally checks the campaign-scoped Better Auth access-control role and rejects writes to archived campaigns. Only the restore procedure bypasses the archived-write guard.
+
+The Better Auth organization plugin is configured as the campaign identity/membership adapter through `packages/campaign-auth`. Better Auth 1.6.25 does not expose sufficient hooks to enforce Tablekeep's last-DM and archival rules on all stock organization mutations, so the stock create, update, delete, remove-member, update-role, and leave HTTP paths are disabled. Campaign mutations go through tRPC and the query layer. The wrapper carries both `disableMigration` and `disableMigrations` because the plugin descriptor and table normalizer inspect different spellings; campaign tables remain owned by the app's Drizzle schema and migration.
+
+### Membership history
+
+`campaign_members` contains active rows only. Removing or leaving deletes the active row immediately, which makes every membership-scoped read deny access on its next request. `campaign_member_events` is append-only history for joins, removals, departures, and role changes. This model was chosen instead of a soft-status membership row because Better Auth's organization plugin treats membership rows as active and hard-deletes them.
+
+Last-DM checks are enforced in the same PostgreSQL statement as role changes, removal, and departure. These statements take a campaign-scoped advisory transaction lock and lock the current DM rows before writing. Account deletion remains a limitation: the user foreign key cascades the active membership, so deleting the sole DM account can orphan a campaign. Account deletion must gain a transfer/archive guard before self-service deletion ships.
+
+### Invitations
+
+Email invitations use Better Auth's opaque invitation ID, recipient check, compare-and-swap acceptance, and the existing email delivery service. Shareable codes are app-owned, human-enterable, expiring, revocable, role-specific secrets. They are stored in plaintext because a DM must be able to retrieve and share the current code; access to that value is restricted to DM-only responses. Codes exclude ambiguous glyphs and are never accepted without an authenticated session.
+
+Link-code acceptance, membership-cap enforcement, use-count claiming, membership creation, and history insertion are one locked SQL statement. Regeneration similarly revokes the previous code and inserts its replacement atomically. Preview and acceptance are limited in process to 20 attempts per user and operation per minute; email resend is limited to once per invitation per minute. These are closed-beta, single-process controls and must move to a shared store before horizontally scaling the web app. Better Auth's direct `organization/invite-member` resend branch can bypass the app's resend throttle and its archived hook; the supported UI/tRPC path is guarded, and the stock invitation endpoint must be disabled or gateway-limited before untrusted direct API access is supported.
+
+### Scheduling and atomic writes
+
+Campaigns store a bounded RFC 5545 recurrence rule, start instant, IANA time zone, and duration. `campaign_occurrence_overrides` stores only cancellations, reschedules, and added one-off sessions. Expansion uses `rrule` and `luxon`, is horizon/count bounded, preserves wall-clock time across daylight-saving changes, and looks back far enough to include a recent occurrence rescheduled into the future. Replacing or clearing a recurrence removes stale rule-bound overrides while preserving added one-offs.
+
+The web app uses Drizzle's Neon HTTP driver, which does not support interactive transactions. Dependent campaign writes use single data-modifying CTE statements, conditional updates, and advisory transaction locks instead of `db.transaction()`. Do not enable the Better Auth adapter's transaction option for this driver.
+
+The migration for this feature is `apps/web/drizzle/0001_elite_shadow_king.sql`. Use `pnpm db:migrate` in shared environments; reserve `db:push` for disposable databases.
 
 ## Database workflow
 

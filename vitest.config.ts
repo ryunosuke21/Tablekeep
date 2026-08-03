@@ -22,6 +22,14 @@ export default defineConfig({
         "apps/web/src/server/api/routers/skills.ts",
         "apps/web/src/server/api/routers/classes.ts",
         "apps/web/src/server/api/routers/spells.ts",
+        "apps/web/src/server/api/routers/campaign/*.ts",
+        "apps/web/src/server/domain/campaign/*.ts",
+        "apps/web/src/lib/redirect-destination.ts",
+        "apps/web/src/lib/profile-redirect.ts",
+        "apps/web/src/lib/validation/campaign.ts",
+        "packages/campaign-auth/src/access.ts",
+        "packages/campaign-auth/src/server.ts",
+        "packages/emails/src/emails/campaign-invite.tsx",
         "apps/docs/src/components/marketing/hero.tsx",
         "apps/docs/src/components/marketing/where-it-stands.tsx",
         "packages/ui/src/components/button.tsx",
@@ -41,6 +49,14 @@ export default defineConfig({
     },
     projects: [
       {
+        test: {
+          name: "campaign-auth-node",
+          root: fromRoot("packages/campaign-auth"),
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+        },
+      },
+      {
         resolve: {
           alias: {
             "@": fromRoot("apps/web/src"),
@@ -53,6 +69,32 @@ export default defineConfig({
           environment: "node",
           include: ["src/**/*.test.ts"],
           setupFiles: [fromRoot("vitest.web.setup.ts")],
+        },
+      },
+      {
+        test: {
+          name: "emails-node",
+          root: fromRoot("packages/emails"),
+          environment: "node",
+          include: ["src/**/*.test.tsx"],
+        },
+      },
+      {
+        resolve: {
+          alias: {
+            "@": fromRoot("apps/web/src"),
+            "@tablekeep/ui": fromRoot("packages/ui/src"),
+          },
+        },
+        test: {
+          name: "web-jsdom",
+          root: fromRoot("apps/web"),
+          environment: "jsdom",
+          include: ["src/**/*.test.tsx"],
+          setupFiles: [
+            fromRoot("vitest.web.setup.ts"),
+            fromRoot("vitest.dom.setup.ts"),
+          ],
         },
       },
       {

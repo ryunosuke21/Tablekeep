@@ -35,6 +35,7 @@ import { cn } from "@tablekeep/ui/lib/utils";
 
 import { env } from "@/env/client";
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
+import { safeDestination } from "@/lib/redirect-destination";
 import { useUploadThing } from "@/lib/uploadthing";
 import { authClient } from "@/server/better-auth/client";
 
@@ -51,12 +52,19 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 type NewProfileFormProps = {
   email: string;
   initialImage: string | null | undefined;
+  destination?: string | null;
 };
 
 const docsHomeUrl = new URL("/", env.NEXT_PUBLIC_DOCS_URL).toString();
 
-export function NewProfileForm({ email, initialImage }: NewProfileFormProps) {
+export function NewProfileForm({
+  email,
+  initialImage,
+  destination = null,
+}: NewProfileFormProps) {
   const router = useRouter();
+  // Validated at this boundary too: it becomes a client-side navigation.
+  const returnTo = safeDestination(destination);
   const [uploadProgress, setUploadProgress] = useState(0);
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -113,7 +121,7 @@ export function NewProfileForm({ email, initialImage }: NewProfileFormProps) {
         return;
       }
 
-      router.replace("/");
+      router.replace(returnTo ?? "/");
       router.refresh();
     } catch {
       form.setError("root", {

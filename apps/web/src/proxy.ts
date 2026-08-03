@@ -2,20 +2,30 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { getProfileRedirect } from "@/lib/profile-redirect";
+import {
+  readDestination,
+  safeDestination,
+  withDestination,
+} from "@/lib/redirect-destination";
 import { auth } from "@/server/better-auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (pathname === "/sign-in") {
-    return NextResponse.next();
-  }
-
   const session = await auth.api.getSession({ headers: request.headers });
-  const destination = getProfileRedirect(pathname, session?.user);
+  const requestedPath = safeDestination(
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
+  );
+  const destination =
+    readDestination(request.nextUrl.searchParams) ?? requestedPath;
+  const redirect = getProfileRedirect(pathname, session?.user, destination);
 
-  return destination
-    ? NextResponse.redirect(new URL(destination, request.url))
+  return redirect
+    ? NextResponse.redirect(
+        new URL(
+          withDestination(redirect.pathname, redirect.destination),
+          request.url,
+        ),
+      )
     : NextResponse.next();
 }
 
