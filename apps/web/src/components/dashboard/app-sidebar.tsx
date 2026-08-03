@@ -34,6 +34,7 @@ import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
 import { env } from "@/env/client";
 
+import { CreateNewDialog } from "./create-new-dialog";
 import { FeedbackDialog } from "./feedback-dialog";
 import { UserMenu } from "./user-menu";
 
@@ -130,6 +131,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        <CreateNewDialog />
         <NavigationGroup label="Personal" items={personalNavigation} />
         <NavigationGroup label="Wiki" items={wikiNavigation} />
       </SidebarContent>
