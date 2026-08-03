@@ -1,15 +1,24 @@
+"use client";
+
+import { IconUserPlus } from "@tabler/icons-react";
+
+import { Button } from "@tablekeep/ui/components/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@tablekeep/ui/components/dialog";
+
 import type { RouterOutputs } from "@/trpc/react";
 
 import { EmailInviteForm } from "./email-invite-form";
 import { InviteLinkField } from "./invite-link-field";
-import { PendingInviteList } from "./pending-invite-list";
 
 type Invites = RouterOutputs["campaign"]["invites"]["list"];
 
-/**
- * DM-only invitation controls. This panel is only rendered for a DM, and the
- * data it shows comes from a DM-only procedure — the server is the boundary.
- */
 export function InvitePanel({
   campaignId,
   invites,
@@ -18,37 +27,44 @@ export function InvitePanel({
   invites: Invites;
 }) {
   return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        <div>
-          <h3 className="font-medium text-sm">Share a link or code</h3>
-          <p className="text-muted-foreground text-sm">
-            Anyone with the code can join until it expires or you revoke it.
-          </p>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>
+          <IconUserPlus />
+          Invite people
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Invite people</DialogTitle>
+          <DialogDescription>
+            Send a private email invitation or share one table-wide link.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-2 space-y-7">
+          <section className="space-y-3 rounded-xl border p-4">
+            <div>
+              <h3 className="font-medium">Email invitation</h3>
+              <p className="mt-1 text-muted-foreground text-sm">
+                Only the invited address can accept it.
+              </p>
+            </div>
+            <EmailInviteForm campaignId={campaignId} />
+          </section>
+          <section className="space-y-3 rounded-xl border p-4">
+            <div>
+              <h3 className="font-medium">Shareable link</h3>
+              <p className="mt-1 text-muted-foreground text-sm">
+                Anyone with this code can join while it is active.
+              </p>
+            </div>
+            <InviteLinkField
+              campaignId={campaignId}
+              linkCode={invites.linkCodes[0]}
+            />
+          </section>
         </div>
-        <InviteLinkField
-          campaignId={campaignId}
-          linkCode={invites.linkCodes[0]}
-        />
-      </section>
-
-      <section className="space-y-3">
-        <div>
-          <h3 className="font-medium text-sm">Invite by email</h3>
-          <p className="text-muted-foreground text-sm">
-            Sends one invitation that only the invited address can accept.
-          </p>
-        </div>
-        <EmailInviteForm campaignId={campaignId} />
-      </section>
-
-      <section className="space-y-3">
-        <h3 className="font-medium text-sm">Pending invitations</h3>
-        <PendingInviteList
-          campaignId={campaignId}
-          invitations={invites.emailInvitations}
-        />
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

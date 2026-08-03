@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { ArchiveCampaignDialog } from "@/components/campaigns/archive-campaign-dialog";
 import { CampaignForm } from "@/components/campaigns/campaign-form";
+import { CampaignMediaForm } from "@/components/campaigns/campaign-media-form";
 import { LeaveCampaignDialog } from "@/components/campaigns/leave-campaign-dialog";
 import { ScheduleForm } from "@/components/campaigns/schedule-form";
 
@@ -79,21 +80,29 @@ export default async function CampaignSettingsPage({
       </SettingsSection>
 
       <SettingsSection
-        title="Campaign address"
-        description="The link stays the same when you rename the campaign, so shared links keep working."
-      >
-        <p className="break-all font-mono text-sm">
-          /campaigns/{campaign.slug}
-        </p>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Session cadence"
-        description="Sessions come from this rule. Cancel or move single weeks from the overview ledger."
+        title="Campaign images"
+        description="Give the campaign profile a recognizable cover and icon."
       >
         {isArchived ? (
           <p className="text-muted-foreground text-sm">
-            Restore the campaign to change its cadence.
+            Restore the campaign to change its images.
+          </p>
+        ) : (
+          <CampaignMediaForm
+            campaignId={campaign.id}
+            logo={campaign.logo}
+            bannerImage={campaign.bannerImage}
+          />
+        )}
+      </SettingsSection>
+
+      <SettingsSection
+        title="Schedule"
+        description="Choose when your group usually meets. Your device supplies the time zone automatically."
+      >
+        {isArchived ? (
+          <p className="text-muted-foreground text-sm">
+            Restore the campaign to change its schedule.
           </p>
         ) : (
           <ScheduleForm campaignId={campaign.id} schedule={schedule} />

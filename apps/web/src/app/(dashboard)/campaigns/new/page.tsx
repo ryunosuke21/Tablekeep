@@ -25,8 +25,7 @@ export default function NewCampaignPage() {
           New campaign
         </h1>
         <p className="mt-2 text-muted-foreground">
-          You become its DM. Invite players and set a session cadence once it
-          exists.
+          You become its DM. Invite players and set a schedule once it exists.
         </p>
       </header>
 

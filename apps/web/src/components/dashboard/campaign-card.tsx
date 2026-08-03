@@ -58,6 +58,7 @@ export function formatNextSession(
     timeZone: nextSession.timeZone,
   });
   const startTime = timeFormatter.format(nextSession.startsAt);
+  if (!nextSession.endsAt) return `${date} · ${startTime}`;
   const endTime = timeFormatter.format(nextSession.endsAt);
 
   return `${date} · ${startTime}–${endTime}`;

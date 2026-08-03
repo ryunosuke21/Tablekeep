@@ -134,6 +134,7 @@ export const auth = betterAuth({
           },
           additionalFields: {
             description: { type: "string", required: false },
+            bannerImage: { type: "string", required: false },
             colors: {
               type: "string",
               required: true,

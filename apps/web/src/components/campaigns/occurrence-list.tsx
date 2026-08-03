@@ -27,7 +27,6 @@ import { toast } from "@tablekeep/ui/components/sonner";
 
 import {
   currentTimeZone,
-  formatDuration,
   formatSessionDay,
   formatSessionRange,
   toDateTimeLocalValue,
@@ -65,7 +64,6 @@ function OccurrenceDialog({
   submitLabel,
   isPending,
   defaultValue,
-  defaultDuration,
   timeZone,
   onSubmit,
 }: {
@@ -76,16 +74,10 @@ function OccurrenceDialog({
   submitLabel: string;
   isPending: boolean;
   defaultValue: string;
-  defaultDuration: number;
   timeZone: string;
-  onSubmit: (values: {
-    startsAt: Date;
-    durationMinutes: number;
-    title: string;
-  }) => void;
+  onSubmit: (values: { startsAt: Date; title: string }) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
-  const [duration, setDuration] = useState(String(defaultDuration));
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -110,22 +102,6 @@ function OccurrenceDialog({
             <FieldDescription>
               Entered in {timeZone}, the campaign&apos;s time zone.
             </FieldDescription>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="occurrence-duration">
-              Length in minutes
-            </FieldLabel>
-            <Input
-              id="occurrence-duration"
-              type="number"
-              min={15}
-              max={1440}
-              step={15}
-              value={duration}
-              onChange={(event) => setDuration(event.target.value)}
-              disabled={isPending}
-            />
           </Field>
 
           <Field>
@@ -159,25 +135,14 @@ function OccurrenceDialog({
             disabled={isPending}
             onClick={() => {
               const startsAt = toInstant(value, timeZone);
-              const durationMinutes = Number(duration);
-
               if (!startsAt) {
                 setError("Choose a valid date and time.");
-                return;
-              }
-              if (
-                !Number.isInteger(durationMinutes) ||
-                durationMinutes < 15 ||
-                durationMinutes > 1440
-              ) {
-                setError("Use a length between 15 and 1440 minutes.");
                 return;
               }
 
               setError(null);
               onSubmit({
                 startsAt,
-                durationMinutes,
                 title: label.trim(),
               });
             }}
@@ -204,10 +169,9 @@ export function OccurrenceList({
   canManage: boolean;
 }) {
   const router = useRouter();
-  const defaultDuration = schedule.durationMinutes ?? 180;
   const [moving, setMoving] = useState<Occurrence | null>(null);
   const [adding, setAdding] = useState(false);
-  // A campaign with no cadence has no zone of its own. Read the browser zone
+  // A campaign with no schedule has no zone of its own. Read the browser zone
   // after mount so the server-rendered markup and the first client render match.
   const [timeZone, setTimeZone] = useState(schedule.timeZone ?? "UTC");
 
@@ -246,7 +210,7 @@ export function OccurrenceList({
   if (schedule.occurrences.length === 0 && !canManage) {
     return (
       <p className="text-muted-foreground text-sm">
-        No sessions in the next 90 days. Your DM sets the cadence.
+        No sessions in the next 90 days. Your DM sets the schedule.
       </p>
     );
   }
@@ -255,7 +219,7 @@ export function OccurrenceList({
     <div className="space-y-4">
       {schedule.occurrences.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          No sessions in the next 90 days. Set a cadence in Settings, or add a
+          No sessions in the next 90 days. Set a schedule in Settings, or add a
           single session below.
         </p>
       ) : null}
@@ -268,7 +232,6 @@ export function OccurrenceList({
           const stamp = stampFor(occurrence.state);
           const shownStart =
             occurrence.startsAt ?? occurrence.occurrenceStartAt;
-          const length = formatDuration(occurrence.durationMinutes);
 
           return (
             <li
@@ -301,9 +264,6 @@ export function OccurrenceList({
                         occurrence.endsAt,
                         timeZone,
                       )}
-                  {length && occurrence.state !== "cancelled"
-                    ? ` · ${length}`
-                    : ""}
                   {occurrence.state === "rescheduled"
                     ? ` · moved from ${formatSessionDay(
                         occurrence.occurrenceStartAt,
@@ -473,16 +433,14 @@ export function OccurrenceList({
             moving.startsAt ?? moving.occurrenceStartAt,
             timeZone,
           )}
-          defaultDuration={moving.durationMinutes ?? defaultDuration}
           timeZone={timeZone}
-          onSubmit={({ startsAt, durationMinutes, title }) =>
+          onSubmit={({ startsAt, title }) =>
             override.mutate({
               campaignId,
               override: {
                 kind: "rescheduled",
                 occurrenceStartAt: moving.occurrenceStartAt,
                 startsAt,
-                durationMinutes,
                 ...(title ? { title } : {}),
               },
             })
@@ -496,19 +454,17 @@ export function OccurrenceList({
           open
           onOpenChange={setAdding}
           title="Add a session"
-          description="A one-off session outside the usual cadence."
+          description="A one-off session outside the usual schedule."
           submitLabel="Add session"
           isPending={override.isPending}
           defaultValue={toDateTimeLocalValue(new Date(), timeZone)}
-          defaultDuration={defaultDuration}
           timeZone={timeZone}
-          onSubmit={({ startsAt, durationMinutes, title }) =>
+          onSubmit={({ startsAt, title }) =>
             override.mutate({
               campaignId,
               override: {
                 kind: "added",
                 occurrenceStartAt: startsAt,
-                durationMinutes,
                 ...(title ? { title } : {}),
               },
             })

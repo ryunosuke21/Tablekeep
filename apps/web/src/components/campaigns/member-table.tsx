@@ -34,114 +34,163 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function MemberTable({
-  campaignId,
-  campaignName,
-  members,
-  viewerUserId,
-  viewerRole,
-  canManage,
-}: {
+type SharedProps = {
   campaignId: string;
   campaignName: string;
-  members: CampaignMember[];
   viewerUserId: string;
   viewerRole: "dm" | "player";
   canManage: boolean;
-}) {
-  const dmCount = members.filter((member) => member.role === "dm").length;
+  dmCount: number;
+};
+
+function MemberActions({
+  member,
+  ...props
+}: SharedProps & { member: CampaignMember }) {
+  const isViewer = member.userId === props.viewerUserId;
+  if (isViewer && props.viewerRole === "dm" && props.dmCount === 1) {
+    return <span className="text-muted-foreground text-xs">Only DM</span>;
+  }
+  if (isViewer) {
+    return (
+      <LeaveCampaignDialog
+        campaignId={props.campaignId}
+        campaignName={props.campaignName}
+        isOnlyDm={false}
+        variant="ghost"
+      />
+    );
+  }
+  if (props.canManage) {
+    return (
+      <RemoveMemberDialog
+        campaignId={props.campaignId}
+        memberId={member.id}
+        memberName={member.name}
+        campaignName={props.campaignName}
+      />
+    );
+  }
+  return null;
+}
+
+function RoleControl({
+  member,
+  ...props
+}: SharedProps & { member: CampaignMember }) {
+  const isViewer = member.userId === props.viewerUserId;
+  return props.canManage && !isViewer ? (
+    <MemberRoleSelect
+      campaignId={props.campaignId}
+      memberId={member.id}
+      memberName={member.name}
+      role={member.role}
+    />
+  ) : (
+    <Badge variant={member.role === "dm" ? "default" : "outline"}>
+      {CAMPAIGN_ROLE_LABELS[member.role]}
+    </Badge>
+  );
+}
+
+export function MemberTable(
+  props: Omit<SharedProps, "dmCount"> & { members: CampaignMember[] },
+) {
+  const shared = {
+    ...props,
+    dmCount: props.members.filter((member) => member.role === "dm").length,
+  };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Member</TableHead>
-          <TableHead>Role</TableHead>
-          <TableHead className="hidden sm:table-cell">Joined</TableHead>
-          <TableHead className="text-right">
-            <span className="sr-only">Actions</span>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {members.map((member) => {
-          const isViewer = member.userId === viewerUserId;
+    <>
+      <div className="grid gap-4 md:hidden">
+        {props.members.map((member) => (
+          <article
+            key={member.id}
+            className="rounded-2xl border bg-background p-5 shadow-xs"
+          >
+            <div className="flex items-start gap-4">
+              <Avatar className="size-12">
+                {member.image ? (
+                  <AvatarImage src={member.image} alt="" />
+                ) : null}
+                <AvatarFallback>{initials(member.name)}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  {member.name}
+                  {member.userId === props.viewerUserId ? (
+                    <span className="ml-2 text-muted-foreground text-xs">
+                      You
+                    </span>
+                  ) : null}
+                </p>
+                <p
+                  className="mt-1 text-muted-foreground text-xs"
+                  suppressHydrationWarning
+                >
+                  Joined {formatDate(member.joinedAt)}
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex items-center justify-between gap-3 border-t pt-4">
+              <RoleControl member={member} {...shared} />
+              <MemberActions member={member} {...shared} />
+            </div>
+          </article>
+        ))}
+      </div>
 
-          return (
-            <TableRow key={member.id}>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar size="sm">
-                    {member.image ? (
-                      <AvatarImage src={member.image} alt="" />
-                    ) : null}
-                    <AvatarFallback>{initials(member.name)}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
+      <div className="hidden overflow-hidden rounded-2xl border md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Member</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Joined</TableHead>
+              <TableHead className="text-right">
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {props.members.map((member) => (
+              <TableRow key={member.id}>
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar size="sm">
+                      {member.image ? (
+                        <AvatarImage src={member.image} alt="" />
+                      ) : null}
+                      <AvatarFallback>{initials(member.name)}</AvatarFallback>
+                    </Avatar>
                     <p className="truncate font-medium text-sm">
                       {member.name}
-                      {isViewer ? (
+                      {member.userId === props.viewerUserId ? (
                         <span className="ml-2 text-muted-foreground text-xs">
                           You
                         </span>
                       ) : null}
                     </p>
-                    {/* Dates render in the reader's zone, which the server
-                        cannot know: keep the client value. */}
-                    <p
-                      className="text-muted-foreground text-xs sm:hidden"
-                      suppressHydrationWarning
-                    >
-                      Joined {formatDate(member.joinedAt)}
-                    </p>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                {canManage && !isViewer ? (
-                  <MemberRoleSelect
-                    campaignId={campaignId}
-                    memberId={member.id}
-                    memberName={member.name}
-                    role={member.role}
-                  />
-                ) : (
-                  <Badge variant={member.role === "dm" ? "default" : "outline"}>
-                    {CAMPAIGN_ROLE_LABELS[member.role]}
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell
-                className="hidden text-muted-foreground text-sm tabular-nums sm:table-cell"
-                suppressHydrationWarning
-              >
-                {formatDate(member.joinedAt)}
-              </TableCell>
-              <TableCell className="text-right">
-                {isViewer && viewerRole === "dm" && dmCount === 1 ? (
-                  // Leaving is blocked server-side for the only DM. The
-                  // Settings page explains the two ways out.
-                  <span className="text-muted-foreground text-xs">Only DM</span>
-                ) : isViewer ? (
-                  <LeaveCampaignDialog
-                    campaignId={campaignId}
-                    campaignName={campaignName}
-                    isOnlyDm={false}
-                    variant="ghost"
-                  />
-                ) : canManage ? (
-                  <RemoveMemberDialog
-                    campaignId={campaignId}
-                    memberId={member.id}
-                    memberName={member.name}
-                    campaignName={campaignName}
-                  />
-                ) : null}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                </TableCell>
+                <TableCell>
+                  <RoleControl member={member} {...shared} />
+                </TableCell>
+                <TableCell
+                  className="text-muted-foreground text-sm tabular-nums"
+                  suppressHydrationWarning
+                >
+                  {formatDate(member.joinedAt)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <MemberActions member={member} {...shared} />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }

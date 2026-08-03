@@ -24,6 +24,7 @@ import {
   deserializeRecurrence,
   expandScheduleOccurrences,
   isGeneratedOccurrence,
+  parseRecurrenceRule,
   serializeRecurrence,
 } from "@/server/domain/campaign/schedule";
 
@@ -138,12 +139,12 @@ export const campaignScheduleRouter = createTRPCRouter({
   set: campaignDmProcedure
     .input(campaignScheduleSchema.extend({ campaignId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const recurrence = serializeRecurrence(input.recurrence);
       const result = await setCampaignSchedule(ctx.db, ctx.campaign.id, {
-        recurrence,
+        recurrence: serializeRecurrence(
+          parseRecurrenceRule(input.recurrenceRule),
+        ),
         recurrenceStartAt: input.startAt,
         recurrenceTimeZone: input.timeZone,
-        recurrenceDurationMinutes: input.durationMinutes,
       });
       if (!result) throw new TRPCError({ code: "NOT_FOUND" });
       return resolveCampaignSchedulePayload(ctx.db, result);

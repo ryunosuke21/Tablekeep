@@ -44,7 +44,7 @@ export type OccurrenceOverride = {
 
 export type ResolvedOccurrence = {
   startsAt: Date;
-  endsAt: Date;
+  endsAt: Date | null;
   timeZone: string;
 };
 
@@ -130,17 +130,19 @@ export function deserializeRecurrence(value: string): StructuredRecurrence {
   };
 }
 
+/** Parse and validate the normalized RFC 5545 rule accepted by the API. */
+export const parseRecurrenceRule = deserializeRecurrence;
+
 export function assertCompleteSchedule(schedule: CampaignSchedule): void {
   const values = [
     schedule.recurrence,
     schedule.recurrenceStartAt,
     schedule.recurrenceTimeZone,
-    schedule.recurrenceDurationMinutes,
   ];
   const populated = values.filter((value) => value !== null).length;
   if (populated !== 0 && populated !== values.length) {
     throw new Error(
-      "A campaign schedule must provide its rule, start, time zone, and duration together.",
+      "A campaign schedule must provide its rule, start, and time zone together.",
     );
   }
 }
@@ -248,7 +250,7 @@ export function resolveNextOccurrence(
     DateTime.fromJSDate(context.now)
       .plus({ days: CAMPAIGN_SCHEDULE_HORIZON_DAYS })
       .toJSDate();
-  const durationMinutes = schedule.recurrenceDurationMinutes ?? 0;
+  const durationMinutes = schedule.recurrenceDurationMinutes;
   // A recent original occurrence may have been moved forward into the horizon.
   // Keep the lookback bounded to the same horizon used for forward expansion.
   const expansionStart = DateTime.fromJSDate(context.now)
@@ -289,12 +291,16 @@ export function resolveNextOccurrence(
     [...generated, ...added]
       .map(({ startsAt, durationMinutes: occurrenceDuration }) => ({
         startsAt,
-        endsAt: new Date(startsAt.getTime() + occurrenceDuration * 60_000),
+        endsAt:
+          occurrenceDuration === null
+            ? null
+            : new Date(startsAt.getTime() + occurrenceDuration * 60_000),
         timeZone,
       }))
       .filter(
         (occurrence) =>
-          occurrence.endsAt.getTime() > context.now.getTime() &&
+          (occurrence.endsAt ?? occurrence.startsAt).getTime() >=
+            context.now.getTime() &&
           occurrence.startsAt.getTime() <= horizon.getTime(),
       )
       .sort(

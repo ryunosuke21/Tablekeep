@@ -1,9 +1,4 @@
-import {
-  describeRecurrence,
-  formatDate,
-  formatDuration,
-  formatSessionRange,
-} from "@/lib/campaign-format";
+import { describeRecurrence, formatSessionTime } from "@/lib/campaign-format";
 import type { RouterOutputs } from "@/trpc/react";
 
 export type CampaignSchedulePayload =
@@ -20,7 +15,7 @@ function Line({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** The cadence half of the session ledger: what the table agreed to. */
+/** A compact summary of when the table plays. */
 export function ScheduleSummary({
   schedule,
 }: {
@@ -29,23 +24,15 @@ export function ScheduleSummary({
   if (!schedule.recurrence || !schedule.startAt) {
     return (
       <p className="text-muted-foreground text-sm">
-        No cadence set. Sessions added by hand still show in the ledger.
+        No repeating schedule yet. One-off sessions still appear below.
       </p>
     );
   }
 
-  const duration = formatDuration(schedule.durationMinutes);
-  const endsAt =
-    schedule.durationMinutes === null
-      ? null
-      : new Date(
-          schedule.startAt.getTime() + schedule.durationMinutes * 60_000,
-        );
-
   return (
-    <dl className="divide-y">
+    <dl className="grid gap-3 sm:grid-cols-2">
       <Line
-        label="Cadence"
+        label="Repeats"
         value={describeRecurrence(
           schedule.recurrence,
           schedule.startAt,
@@ -53,21 +40,9 @@ export function ScheduleSummary({
         )}
       />
       <Line
-        label="Time"
-        value={formatSessionRange(schedule.startAt, endsAt, schedule.timeZone)}
+        label="Starts"
+        value={formatSessionTime(schedule.startAt, schedule.timeZone)}
       />
-      {duration ? <Line label="Length" value={duration} /> : null}
-      <Line label="Time zone" value={schedule.timeZone ?? "Not set"} />
-      <Line
-        label="Started"
-        value={formatDate(schedule.startAt, schedule.timeZone)}
-      />
-      {schedule.recurrence.until ? (
-        <Line
-          label="Ends"
-          value={formatDate(schedule.recurrence.until, schedule.timeZone)}
-        />
-      ) : null}
     </dl>
   );
 }

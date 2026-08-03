@@ -17,16 +17,14 @@ const schedule: CampaignSchedulePayload = {
 };
 
 describe("ScheduleSummary", () => {
-  it("describes the cadence in plain language", () => {
+  it("describes the schedule in plain language", () => {
     render(<ScheduleSummary schedule={schedule} />);
 
     expect(screen.getByText("Every other Saturday")).toBeInTheDocument();
-    expect(screen.getByText("5:00 PM–9:00 PM")).toBeInTheDocument();
-    expect(screen.getByText("4h")).toBeInTheDocument();
-    expect(screen.getByText("America/Tegucigalpa")).toBeInTheDocument();
+    expect(screen.getByText("5:00 PM")).toBeInTheDocument();
   });
 
-  it("explains that no cadence is set", () => {
+  it("explains that no schedule is set", () => {
     render(
       <ScheduleSummary
         schedule={{
@@ -39,6 +37,6 @@ describe("ScheduleSummary", () => {
       />,
     );
 
-    expect(screen.getByText(/no cadence set/i)).toBeInTheDocument();
+    expect(screen.getByText(/no repeating schedule yet/i)).toBeInTheDocument();
   });
 });

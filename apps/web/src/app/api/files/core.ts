@@ -28,6 +28,21 @@ export const fileRouter = {
 
       return { uploadedBy: metadata.userId, url: file.ufsUrl };
     }),
+  campaignImage: file({
+    image: {
+      maxFileSize: MAX_FILE_SIZE,
+      maxFileCount: 2,
+    },
+  })
+    .middleware(async () => {
+      const session = await getSession();
+      if (!session?.user) throw new UploadThingError("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => ({
+      uploadedBy: metadata.userId,
+      url: file.ufsUrl,
+    })),
 } satisfies FileRouter;
 
 export type TablekeepFileRouter = typeof fileRouter;

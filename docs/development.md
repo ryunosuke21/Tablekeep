@@ -115,7 +115,9 @@ Link-code acceptance, membership-cap enforcement, use-count claiming, membership
 
 ### Scheduling and atomic writes
 
-Campaigns store a bounded RFC 5545 recurrence rule, start instant, IANA time zone, and duration. `campaign_occurrence_overrides` stores only cancellations, reschedules, and added one-off sessions. Expansion uses `rrule` and `luxon`, is horizon/count bounded, preserves wall-clock time across daylight-saving changes, and looks back far enough to include a recent occurrence rescheduled into the future. Replacing or clearing a recurrence removes stale rule-bound overrides while preserving added one-offs.
+Campaigns store a bounded RFC 5545 recurrence rule, start instant, and inferred IANA time zone. The schedule form submits the normalized RRULE string directly; it does not ask for a session length or expose a time-zone picker. `campaign_occurrence_overrides` stores only cancellations, reschedules, and added one-off sessions. Expansion uses `rrule` and `luxon`, is horizon/count bounded, preserves wall-clock time across daylight-saving changes, and looks back far enough to include a recent occurrence rescheduled into the future. Replacing or clearing a recurrence removes stale rule-bound overrides while preserving added one-offs.
+
+Campaign profiles use Better Auth's organization `logo` field for the campaign icon and the app-owned `bannerImage` organization field for the cover image. Both are private campaign details updated through the DM-only campaign procedure; authenticated uploads are staged through UploadThing before those URLs are attached to the campaign.
 
 The web app uses Drizzle's Neon HTTP driver, which does not support interactive transactions. Dependent campaign writes use single data-modifying CTE statements, conditional updates, and advisory transaction locks instead of `db.transaction()`. Do not enable the Better Auth adapter's transaction option for this driver.
 

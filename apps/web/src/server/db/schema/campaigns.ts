@@ -47,6 +47,7 @@ export const campaigns = pgTable(
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     logo: text("logo"),
+    bannerImage: text("banner_image"),
     metadata: text("metadata"),
     description: text("description"),
     colors: campaignColors("colors").default("lilac").notNull(),
@@ -73,9 +74,9 @@ export const campaigns = pgTable(
     check(
       "campaigns_schedule_complete_check",
       sql`(
-        (${table.recurrence} is null and ${table.recurrenceStartAt} is null and ${table.recurrenceTimeZone} is null and ${table.recurrenceDurationMinutes} is null)
+        (${table.recurrence} is null and ${table.recurrenceStartAt} is null and ${table.recurrenceTimeZone} is null)
         or
-        (${table.recurrence} is not null and ${table.recurrenceStartAt} is not null and ${table.recurrenceTimeZone} is not null and ${table.recurrenceDurationMinutes} is not null)
+        (${table.recurrence} is not null and ${table.recurrenceStartAt} is not null and ${table.recurrenceTimeZone} is not null)
       )`,
     ),
     check(
@@ -246,10 +247,6 @@ export const campaignOccurrenceOverrides = pgTable(
     check(
       "campaign_occurrence_overrides_duration_check",
       sql`${table.durationMinutes} is null or ${table.durationMinutes} > 0`,
-    ),
-    check(
-      "campaign_occurrence_overrides_added_duration_check",
-      sql`${table.kind} <> 'added' or ${table.durationMinutes} is not null`,
     ),
   ],
 );

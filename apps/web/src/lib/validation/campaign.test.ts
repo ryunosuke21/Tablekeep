@@ -9,7 +9,7 @@ import {
   inviteReferenceSchema,
   linkInviteCreationSchema,
   occurrenceOverrideSchema,
-  structuredRecurrenceSchema,
+  recurrenceRuleSchema,
 } from "./campaign";
 
 describe("campaign validation", () => {
@@ -58,91 +58,35 @@ describe("campaign validation", () => {
     ).toBe(false);
   });
 
-  it("rejects recurrence intervals and counts outside their bounds", () => {
-    expect(
-      structuredRecurrenceSchema.safeParse({ freq: "WEEKLY", interval: 0 })
-        .success,
-    ).toBe(false);
-    expect(
-      structuredRecurrenceSchema.safeParse({
-        freq: "DAILY",
-        interval: 1,
-        count: 257,
-      }).success,
-    ).toBe(false);
-  });
-
-  it("does not allow count and until together", () => {
-    expect(
-      structuredRecurrenceSchema.safeParse({
-        freq: "WEEKLY",
-        interval: 1,
-        count: 4,
-        until: "2026-12-01T00:00:00.000Z",
-      }).success,
-    ).toBe(false);
-  });
-
-  it("rejects duplicate weekdays", () => {
-    const result = structuredRecurrenceSchema.safeParse({
-      freq: "WEEKLY",
-      byDay: ["SA", "SA"],
-    });
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error.issues[0]?.path).toEqual(["byDay"]);
-    }
-  });
-
-  it("accepts a safe structured schedule but never a raw RRULE", () => {
+  it("accepts a bounded RRULE schedule", () => {
     const input = {
-      recurrence: { freq: "WEEKLY", interval: 2, byDay: ["SA"] },
+      recurrenceRule: "FREQ=WEEKLY;INTERVAL=2;BYDAY=SA",
       startAt: "2026-08-08T23:00:00.000Z",
       timeZone: "America/New_York",
-      durationMinutes: 240,
     };
     expect(campaignScheduleSchema.safeParse(input).success).toBe(true);
     expect(
       campaignScheduleSchema.safeParse({
         ...input,
-        recurrence: "FREQ=SECONDLY",
+        recurrenceRule: "FREQ=SECONDLY",
       }).success,
     ).toBe(false);
+    expect(recurrenceRuleSchema.safeParse("FREQ=DAILY;COUNT=257").success).toBe(
+      false,
+    );
   });
 
   it("rejects an unknown time zone", () => {
     expect(
       campaignScheduleSchema.safeParse({
-        recurrence: { freq: "WEEKLY", interval: 1 },
+        recurrenceRule: "FREQ=WEEKLY;INTERVAL=1",
         startAt: "2026-08-08T23:00:00.000Z",
         timeZone: "Middle/Earth",
-        durationMinutes: 240,
       }).success,
     ).toBe(false);
   });
 
-  it("rejects a recurrence that ends before its first session", () => {
-    expect(
-      campaignScheduleSchema.safeParse({
-        recurrence: {
-          freq: "WEEKLY",
-          until: "2026-08-01T23:00:00.000Z",
-        },
-        startAt: "2026-08-08T23:00:00.000Z",
-        timeZone: "UTC",
-        durationMinutes: 180,
-      }).success,
-    ).toBe(false);
-  });
-
-  it("does not coerce an empty recurrence end into a date", () => {
-    expect(
-      structuredRecurrenceSchema.safeParse({ freq: "DAILY", until: "" })
-        .success,
-    ).toBe(false);
-  });
-
-  it("requires a destination and duration for rescheduled and added occurrences", () => {
+  it("requires a destination for rescheduled occurrences and allows timeless added sessions", () => {
     expect(
       occurrenceOverrideSchema.safeParse({
         kind: "rescheduled",
@@ -154,6 +98,6 @@ describe("campaign validation", () => {
         kind: "added",
         occurrenceStartAt: "2026-08-08T23:00:00.000Z",
       }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 });

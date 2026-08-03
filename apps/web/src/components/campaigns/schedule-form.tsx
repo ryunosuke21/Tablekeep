@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { useRouter } from "next/navigation";
 
@@ -20,36 +20,71 @@ import {
 import { toast } from "@tablekeep/ui/components/sonner";
 import { cn } from "@tablekeep/ui/lib/utils";
 
+import { currentTimeZone, WEEKDAY_LABELS } from "@/lib/campaign-format";
 import {
-  currentTimeZone,
-  toDateTimeLocalValue,
-  WEEKDAY_LABELS,
-} from "@/lib/campaign-format";
-import type {
-  RecurrenceFrequency,
-  RecurrenceWeekday,
+  type RecurrenceFrequency,
+  type RecurrenceWeekday,
+  serializeRecurrence,
 } from "@/server/domain/campaign/schedule";
 import { api } from "@/trpc/react";
 
 import { ConfirmActionDialog } from "./confirm-action-dialog";
 import type { CampaignSchedulePayload } from "./schedule-summary";
 
-const frequencies: Array<{ value: RecurrenceFrequency; label: string }> = [
-  { value: "WEEKLY", label: "Weekly" },
-  { value: "DAILY", label: "Daily" },
-  { value: "MONTHLY", label: "Monthly" },
-];
+type RepeatChoice = "daily" | "weekdays" | "weekly" | "monthly" | "custom";
 
 const weekdays = Object.keys(WEEKDAY_LABELS) as RecurrenceWeekday[];
+const luxonWeekday: Record<number, RecurrenceWeekday> = {
+  1: "MO",
+  2: "TU",
+  3: "WE",
+  4: "TH",
+  5: "FR",
+  6: "SA",
+  7: "SU",
+};
 
-const intervals = [1, 2, 3, 4] as const;
-
-function intervalLabel(interval: number, freq: RecurrenceFrequency) {
-  const unit = freq === "WEEKLY" ? "week" : freq === "DAILY" ? "day" : "month";
-  return interval === 1 ? `Every ${unit}` : `Every ${interval} ${unit}s`;
+function timeValue(date: Date | null, timeZone: string | null) {
+  const value = date
+    ? DateTime.fromJSDate(date, { zone: timeZone ?? undefined })
+    : DateTime.now()
+        .setZone(timeZone ?? undefined)
+        .plus({ days: 1 })
+        .set({ hour: 19, minute: 0 });
+  return value.toFormat("HH:mm");
 }
 
-/** Set or clear the campaign cadence. Occurrences are derived from it. */
+function initialChoice(schedule: CampaignSchedulePayload): RepeatChoice {
+  const recurrence = schedule.recurrence;
+  if (!recurrence) return "weekly";
+  if (recurrence.interval !== 1) return "custom";
+  if (recurrence.freq === "DAILY") return "daily";
+  if (recurrence.freq === "MONTHLY") return "monthly";
+  if (recurrence.byDay?.join(",") === "MO,TU,WE,TH,FR") return "weekdays";
+  return recurrence.byDay && recurrence.byDay.length > 1 ? "custom" : "weekly";
+}
+
+function anchorFor(
+  time: string,
+  timeZone: string,
+  byDay?: RecurrenceWeekday[],
+) {
+  const [hour = 19, minute = 0] = time.split(":").map(Number);
+  let anchor = DateTime.now()
+    .setZone(timeZone)
+    .set({ hour, minute, second: 0, millisecond: 0 });
+  if (anchor <= DateTime.now().setZone(timeZone))
+    anchor = anchor.plus({ days: 1 });
+  if (byDay?.length) {
+    for (let offset = 0; offset < 7; offset += 1) {
+      const candidate = anchor.plus({ days: offset });
+      if (byDay.includes(luxonWeekday[candidate.weekday] ?? "MO"))
+        return candidate;
+    }
+  }
+  return anchor;
+}
+
 export function ScheduleForm({
   campaignId,
   schedule,
@@ -58,222 +93,206 @@ export function ScheduleForm({
   schedule: CampaignSchedulePayload;
 }) {
   const router = useRouter();
-  const zones =
-    typeof Intl.supportedValuesOf === "function"
-      ? Intl.supportedValuesOf("timeZone")
-      : [];
-  // The saved zone renders identically on the server and the client. Without
-  // one, the browser zone is only read after mount so the markup still matches.
   const [timeZone, setTimeZone] = useState(schedule.timeZone ?? "UTC");
-  const [freq, setFreq] = useState<RecurrenceFrequency>(
+  const [time, setTime] = useState(() =>
+    timeValue(schedule.startAt, schedule.timeZone),
+  );
+  const [repeat, setRepeat] = useState<RepeatChoice>(() =>
+    initialChoice(schedule),
+  );
+  const [frequency, setFrequency] = useState<RecurrenceFrequency>(
     schedule.recurrence?.freq ?? "WEEKLY",
   );
   const [interval, setInterval] = useState(schedule.recurrence?.interval ?? 1);
   const [byDay, setByDay] = useState<RecurrenceWeekday[]>(
     schedule.recurrence?.byDay ?? [],
   );
-  const [startAt, setStartAt] = useState(
-    schedule.startAt
-      ? toDateTimeLocalValue(schedule.startAt, schedule.timeZone)
-      : "",
-  );
-  const [durationMinutes, setDurationMinutes] = useState(
-    String(schedule.durationMinutes ?? 180),
-  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (schedule.timeZone) return;
+    setTimeZone(currentTimeZone());
+  }, []);
 
-    const browserZone = currentTimeZone();
-    setTimeZone(browserZone);
-    setStartAt((current) =>
-      current === ""
-        ? toDateTimeLocalValue(nextEveningIn(browserZone), browserZone)
-        : current,
-    );
-  }, [schedule.timeZone]);
+  const displayAnchor = schedule.startAt
+    ? DateTime.fromJSDate(schedule.startAt).setZone(timeZone)
+    : DateTime.now().setZone(timeZone);
+  const localDay =
+    schedule.recurrence?.byDay?.[0] ??
+    luxonWeekday[displayAnchor.weekday] ??
+    "MO";
+  const localDayLabel = WEEKDAY_LABELS[localDay];
+  const localDate = displayAnchor.day;
+  const repeatOptions = useMemo(
+    () =>
+      [
+        { value: "daily", label: "Every day" },
+        { value: "weekdays", label: "Every weekday (Monday to Friday)" },
+        { value: "weekly", label: `Every week on ${localDayLabel}` },
+        { value: "monthly", label: `Every month on day ${localDate}` },
+        { value: "custom", label: "Custom…" },
+      ] satisfies Array<{ value: RepeatChoice; label: string }>,
+    [localDate, localDayLabel],
+  );
 
   const setSchedule = api.campaign.schedule.set.useMutation({
     onSuccess: () => {
-      toast.success("Session cadence saved");
+      toast.success("Schedule saved");
       router.refresh();
     },
     onError: (mutationError) => setError(mutationError.message),
   });
-
   const clearSchedule = api.campaign.schedule.clear.useMutation({
     onSuccess: () => {
-      toast.success("Session cadence cleared");
+      toast.success("Schedule cleared");
       router.refresh();
     },
     onError: (mutationError) => setError(mutationError.message),
   });
-
   const isPending = setSchedule.isPending || clearSchedule.isPending;
 
   function submit() {
     setError(null);
-    const parsedStart = DateTime.fromISO(startAt, { zone: timeZone });
-    const minutes = Number(durationMinutes);
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      setError("Choose a valid start time.");
+      return;
+    }
 
-    if (!parsedStart.isValid) {
-      setError("Choose the date and time of the first session.");
-      return;
-    }
-    if (!Number.isInteger(minutes) || minutes < 15 || minutes > 1440) {
-      setError("Use a session length between 15 and 1440 minutes.");
-      return;
-    }
+    const recurrence =
+      repeat === "daily"
+        ? { freq: "DAILY" as const, interval: 1 }
+        : repeat === "weekdays"
+          ? {
+              freq: "WEEKLY" as const,
+              interval: 1,
+              byDay: ["MO", "TU", "WE", "TH", "FR"] as RecurrenceWeekday[],
+            }
+          : repeat === "weekly"
+            ? { freq: "WEEKLY" as const, interval: 1, byDay: [localDay] }
+            : repeat === "monthly"
+              ? { freq: "MONTHLY" as const, interval: 1 }
+              : {
+                  freq: frequency,
+                  interval,
+                  ...(frequency === "WEEKLY" && byDay.length ? { byDay } : {}),
+                };
+    const startAt = anchorFor(time, timeZone, recurrence.byDay).toJSDate();
 
     setSchedule.mutate({
       campaignId,
+      recurrenceRule: serializeRecurrence(recurrence),
+      startAt,
       timeZone,
-      durationMinutes: minutes,
-      startAt: parsedStart.toJSDate(),
-      recurrence: {
-        freq,
-        interval,
-        ...(freq === "WEEKLY" && byDay.length > 0 ? { byDay } : {}),
-      },
     });
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <FieldGroup>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor="schedule-freq">Repeats</FieldLabel>
+            <FieldLabel htmlFor="schedule-time">Session starts at</FieldLabel>
+            <Input
+              id="schedule-time"
+              type="time"
+              value={time}
+              disabled={isPending}
+              onChange={(event) => setTime(event.target.value)}
+            />
+            <FieldDescription>
+              Times use your device time zone ({timeZone}).
+            </FieldDescription>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="schedule-repeat">Repeats</FieldLabel>
             <NativeSelect
+              id="schedule-repeat"
               className="w-full"
-              id="schedule-freq"
-              value={freq}
+              value={repeat}
               disabled={isPending}
               onChange={(event) =>
-                setFreq(event.target.value as RecurrenceFrequency)
+                setRepeat(event.target.value as RepeatChoice)
               }
             >
-              {frequencies.map((option) => (
+              {repeatOptions.map((option) => (
                 <NativeSelectOption key={option.value} value={option.value}>
                   {option.label}
                 </NativeSelectOption>
               ))}
             </NativeSelect>
           </Field>
-
-          <Field>
-            <FieldLabel htmlFor="schedule-interval">How often</FieldLabel>
-            <NativeSelect
-              className="w-full"
-              id="schedule-interval"
-              value={interval}
-              disabled={isPending}
-              onChange={(event) => setInterval(Number(event.target.value))}
-            >
-              {intervals.map((option) => (
-                <NativeSelectOption key={option} value={option}>
-                  {intervalLabel(option, freq)}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
         </div>
 
-        {freq === "WEEKLY" ? (
-          <Field>
-            <FieldLabel>Days you play</FieldLabel>
-            <div className="flex flex-wrap gap-2">
-              {weekdays.map((day) => {
-                const selected = byDay.includes(day);
-
-                return (
-                  <Button
-                    key={day}
-                    type="button"
-                    size="sm"
-                    variant={selected ? "default" : "outline"}
-                    aria-pressed={selected}
-                    disabled={isPending}
-                    className={cn("w-12", selected && "font-semibold")}
-                    onClick={() =>
-                      setByDay((current) =>
-                        current.includes(day)
-                          ? current.filter((value) => value !== day)
-                          : [...current, day],
-                      )
+        {repeat === "custom" ? (
+          <div className="rounded-xl border bg-muted/25 p-4 sm:p-5">
+            <div className="grid gap-4 sm:grid-cols-[1fr_1fr]">
+              <Field>
+                <FieldLabel htmlFor="custom-frequency">Repeat every</FieldLabel>
+                <div className="grid grid-cols-[5rem_1fr] gap-2">
+                  <Input
+                    id="custom-interval"
+                    type="number"
+                    min={1}
+                    max={52}
+                    value={interval}
+                    onChange={(event) =>
+                      setInterval(Number(event.target.value))
+                    }
+                  />
+                  <NativeSelect
+                    id="custom-frequency"
+                    value={frequency}
+                    onChange={(event) =>
+                      setFrequency(event.target.value as RecurrenceFrequency)
                     }
                   >
-                    <span className="sr-only">{WEEKDAY_LABELS[day]}</span>
-                    <span aria-hidden="true">{day}</span>
-                  </Button>
-                );
-              })}
+                    <NativeSelectOption value="DAILY">days</NativeSelectOption>
+                    <NativeSelectOption value="WEEKLY">
+                      weeks
+                    </NativeSelectOption>
+                    <NativeSelectOption value="MONTHLY">
+                      months
+                    </NativeSelectOption>
+                  </NativeSelect>
+                </div>
+              </Field>
             </div>
-            <FieldDescription>
-              Leave empty to use the weekday of the first session.
-            </FieldDescription>
-          </Field>
+
+            {frequency === "WEEKLY" ? (
+              <Field className="mt-5">
+                <FieldLabel>Repeat on</FieldLabel>
+                <div className="flex flex-wrap gap-2">
+                  {weekdays.map((day) => {
+                    const selected = byDay.includes(day);
+                    return (
+                      <Button
+                        key={day}
+                        type="button"
+                        size="icon-sm"
+                        variant={selected ? "default" : "outline"}
+                        aria-label={WEEKDAY_LABELS[day]}
+                        aria-pressed={selected}
+                        className={cn(
+                          "rounded-full",
+                          selected && "font-semibold",
+                        )}
+                        onClick={() =>
+                          setByDay((current) =>
+                            current.includes(day)
+                              ? current.filter((value) => value !== day)
+                              : [...current, day],
+                          )
+                        }
+                      >
+                        {WEEKDAY_LABELS[day].slice(0, 1)}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </Field>
+            ) : null}
+          </div>
         ) : null}
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field>
-            <FieldLabel htmlFor="schedule-start">First session</FieldLabel>
-            <Input
-              id="schedule-start"
-              type="datetime-local"
-              value={startAt}
-              disabled={isPending}
-              onChange={(event) => setStartAt(event.target.value)}
-            />
-            <FieldDescription>Entered in {timeZone}.</FieldDescription>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="schedule-duration">
-              Length in minutes
-            </FieldLabel>
-            <Input
-              id="schedule-duration"
-              type="number"
-              min={15}
-              max={1440}
-              step={15}
-              value={durationMinutes}
-              disabled={isPending}
-              onChange={(event) => setDurationMinutes(event.target.value)}
-            />
-          </Field>
-        </div>
-
-        <Field>
-          <FieldLabel htmlFor="schedule-zone">Time zone</FieldLabel>
-          {zones.length > 0 ? (
-            <NativeSelect
-              className="w-full"
-              id="schedule-zone"
-              value={timeZone}
-              disabled={isPending}
-              onChange={(event) => setTimeZone(event.target.value)}
-            >
-              {zones.map((zone) => (
-                <NativeSelectOption key={zone} value={zone}>
-                  {zone}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          ) : (
-            <Input
-              id="schedule-zone"
-              value={timeZone}
-              disabled={isPending}
-              onChange={(event) => setTimeZone(event.target.value)}
-            />
-          )}
-          <FieldDescription>
-            Session times stay put in this zone when clocks change.
-          </FieldDescription>
-        </Field>
       </FieldGroup>
 
       <div aria-live="polite" className="min-h-5 text-sm">
@@ -283,20 +302,19 @@ export function ScheduleForm({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Button type="button" onClick={submit} disabled={isPending}>
           <LoadingSwap isLoading={setSchedule.isPending}>
-            Save cadence
+            Save schedule
           </LoadingSwap>
         </Button>
-
         {schedule.recurrence ? (
           <ConfirmActionDialog
             trigger={
               <Button type="button" variant="outline" disabled={isPending}>
-                Clear cadence
+                Clear schedule
               </Button>
             }
-            title="Clear the session cadence?"
-            consequence="Upcoming recurring sessions disappear from the ledger for everyone in the campaign. Sessions you added by hand stay."
-            confirmLabel="Clear cadence"
+            title="Clear the schedule?"
+            consequence="Upcoming repeating sessions disappear for everyone. One-off sessions stay."
+            confirmLabel="Clear schedule"
             isPending={clearSchedule.isPending}
             onConfirm={() => clearSchedule.mutate({ campaignId })}
           />
@@ -304,12 +322,4 @@ export function ScheduleForm({
       </div>
     </div>
   );
-}
-
-function nextEveningIn(timeZone: string) {
-  return DateTime.now()
-    .setZone(timeZone)
-    .plus({ days: 1 })
-    .set({ hour: 19, minute: 0, second: 0, millisecond: 0 })
-    .toJSDate();
 }

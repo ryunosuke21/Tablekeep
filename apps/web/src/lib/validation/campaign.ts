@@ -7,8 +7,7 @@ import {
 } from "@/lib/constants";
 import {
   isSupportedTimeZone,
-  RECURRENCE_FREQUENCIES,
-  RECURRENCE_WEEKDAYS,
+  parseRecurrenceRule,
 } from "@/server/domain/campaign/schedule";
 
 export const campaignColorSchema = z.enum(["lilac", "rose", "sage", "sky"]);
@@ -25,6 +24,13 @@ const campaignDescriptionSchema = z
   .trim()
   .max(280, "Use 280 characters or fewer.");
 
+const campaignImageSchema = z
+  .string()
+  .trim()
+  .url("Use a valid image URL.")
+  .max(2_048, "The image URL is too long.")
+  .nullable();
+
 export const campaignDetailsSchema = z.object({
   name: campaignNameSchema,
   description: campaignDescriptionSchema.optional(),
@@ -37,10 +43,16 @@ export const campaignUpdateSchema = z
     name: campaignNameSchema.optional(),
     description: campaignDescriptionSchema.optional(),
     colors: campaignColorSchema.optional(),
+    logo: campaignImageSchema.optional(),
+    bannerImage: campaignImageSchema.optional(),
   })
   .refine(
-    ({ name, description, colors }) =>
-      name !== undefined || description !== undefined || colors !== undefined,
+    ({ name, description, colors, logo, bannerImage }) =>
+      name !== undefined ||
+      description !== undefined ||
+      colors !== undefined ||
+      logo !== undefined ||
+      bannerImage !== undefined,
     { message: "Provide at least one campaign detail to update." },
   );
 
@@ -95,60 +107,41 @@ const safeDateSchema = z.preprocess(
   z.coerce.date(),
 );
 
-export const structuredRecurrenceSchema = z
-  .object({
-    freq: z.enum(RECURRENCE_FREQUENCIES),
-    interval: z.number().int().min(1).max(52).default(1),
-    byDay: z.array(z.enum(RECURRENCE_WEEKDAYS)).max(7).optional(),
-    until: safeDateSchema.optional(),
-    count: z
-      .number()
-      .int()
-      .min(1)
-      .max(MAX_CAMPAIGN_SCHEDULE_OCCURRENCES)
-      .optional(),
-  })
-  .strict()
+export const recurrenceRuleSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(512)
   .superRefine((value, context) => {
-    if (value.until && value.count) {
+    try {
+      const parsed = parseRecurrenceRule(value);
+      if (
+        parsed.interval < 1 ||
+        parsed.interval > 52 ||
+        (parsed.count !== undefined &&
+          (parsed.count < 1 ||
+            parsed.count > MAX_CAMPAIGN_SCHEDULE_OCCURRENCES))
+      ) {
+        throw new Error("Unsafe recurrence bounds");
+      }
+    } catch {
       context.addIssue({
         code: "custom",
-        message: "Choose either an end date or an occurrence count, not both.",
-      });
-    }
-    if (value.byDay && new Set(value.byDay).size !== value.byDay.length) {
-      context.addIssue({
-        code: "custom",
-        path: ["byDay"],
-        message: "Weekdays must be unique.",
+        message: "Use a supported daily, weekly, or monthly repeat rule.",
       });
     }
   });
 
 export const campaignScheduleSchema = z
   .object({
-    recurrence: structuredRecurrenceSchema,
+    recurrenceRule: recurrenceRuleSchema,
     startAt: safeDateSchema,
     timeZone: z
       .string()
       .trim()
       .refine(isSupportedTimeZone, "Choose a supported IANA time zone."),
-    durationMinutes: z
-      .number()
-      .int()
-      .min(15)
-      .max(24 * 60),
   })
-  .strict()
-  .superRefine((value, context) => {
-    if (value.recurrence.until && value.recurrence.until < value.startAt) {
-      context.addIssue({
-        code: "custom",
-        path: ["recurrence", "until"],
-        message: "The recurrence end must be after its first session.",
-      });
-    }
-  });
+  .strict();
 
 const overrideMetadata = {
   durationMinutes: z
@@ -181,11 +174,7 @@ export const occurrenceOverrideSchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("added"),
       occurrenceStartAt: safeDateSchema,
-      durationMinutes: z
-        .number()
-        .int()
-        .min(15)
-        .max(24 * 60),
+      durationMinutes: overrideMetadata.durationMinutes,
       title: overrideMetadata.title,
       notes: overrideMetadata.notes,
     })
@@ -194,7 +183,4 @@ export const occurrenceOverrideSchema = z.discriminatedUnion("kind", [
 
 export type CampaignDetailsInput = z.infer<typeof campaignDetailsSchema>;
 export type CampaignScheduleInput = z.infer<typeof campaignScheduleSchema>;
-export type StructuredRecurrenceInput = z.infer<
-  typeof structuredRecurrenceSchema
->;
 export type OccurrenceOverrideInput = z.infer<typeof occurrenceOverrideSchema>;

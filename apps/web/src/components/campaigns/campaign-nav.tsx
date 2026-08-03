@@ -10,9 +10,15 @@ export function CampaignNav({ slug, isDm }: { slug: string; isDm: boolean }) {
   const base = `/campaigns/${slug}`;
   const items = [
     { href: base, label: "Overview" },
+    { href: `${base}/characters`, label: "Characters" },
     { href: `${base}/members`, label: "Members" },
     // Settings is DM-only in the interface; the server enforces it as well.
-    ...(isDm ? [{ href: `${base}/settings`, label: "Settings" }] : []),
+    ...(isDm
+      ? [
+          { href: `${base}/invites`, label: "Invites" },
+          { href: `${base}/settings`, label: "Settings" },
+        ]
+      : []),
   ];
 
   return (

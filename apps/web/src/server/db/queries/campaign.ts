@@ -270,6 +270,8 @@ export type CampaignDetailsUpdate = Partial<{
   name: string;
   description: string | null;
   colors: "lilac" | "rose" | "sage" | "sky";
+  logo: string | null;
+  bannerImage: string | null;
 }>;
 
 export async function updateCampaign(
@@ -807,7 +809,6 @@ export type CampaignScheduleUpdate = {
   recurrence: string;
   recurrenceStartAt: Date;
   recurrenceTimeZone: string;
-  recurrenceDurationMinutes: number;
 };
 
 export async function setCampaignSchedule(
@@ -820,7 +821,7 @@ export async function setCampaignSchedule(
     recurrence: string;
     recurrenceStartAt: Date;
     recurrenceTimeZone: string;
-    recurrenceDurationMinutes: number;
+    recurrenceDurationMinutes: null;
   }>(sql`
     with scheduled_campaign as (
       update campaigns
@@ -828,7 +829,7 @@ export async function setCampaignSchedule(
         recurrence = ${schedule.recurrence},
         recurrence_start_at = ${schedule.recurrenceStartAt},
         recurrence_time_zone = ${schedule.recurrenceTimeZone},
-        recurrence_duration_minutes = ${schedule.recurrenceDurationMinutes},
+        recurrence_duration_minutes = null,
         updated_at = now()
       where id = ${campaignId}
         and status = 'active'

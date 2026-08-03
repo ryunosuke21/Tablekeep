@@ -102,7 +102,7 @@ type RecurrenceDescription = {
   byDay?: RecurrenceWeekday[];
 };
 
-/** A plain-language cadence, e.g. "Every other Saturday". */
+/** A plain-language schedule, e.g. "Every other Saturday". */
 export function describeRecurrence(
   recurrence: RecurrenceDescription,
   startAt: Date | null,
