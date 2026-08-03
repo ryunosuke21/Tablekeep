@@ -218,6 +218,8 @@ export type CreateCampaignInput = {
   name: string;
   description?: string | null;
   colors?: "lilac" | "rose" | "sage" | "sky";
+  logo?: string | null;
+  bannerImage?: string | null;
   creatorId: string;
 };
 
@@ -233,12 +235,16 @@ export async function createCampaign(
         hashtextextended('campaign-create:' || ${input.creatorId}, 0)
       ) as acquired
     ), new_campaign as (
-      insert into campaigns (slug, name, description, colors, created_by_id)
+      insert into campaigns (
+        slug, name, description, colors, logo, banner_image, created_by_id
+      )
       select
         ${input.slug},
         ${input.name},
         ${input.description ?? null},
         ${input.colors ?? "lilac"}::campaign_colors,
+        ${input.logo ?? null},
+        ${input.bannerImage ?? null},
         ${input.creatorId}
       from creator_lock
       where (

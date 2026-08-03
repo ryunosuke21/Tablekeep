@@ -68,7 +68,6 @@ export default async function CampaignSettingsPage({
           </dl>
         ) : (
           <CampaignForm
-            mode="edit"
             campaignId={campaign.id}
             defaultValues={{
               name: campaign.name,

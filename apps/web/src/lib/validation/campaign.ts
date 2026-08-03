@@ -35,6 +35,8 @@ export const campaignDetailsSchema = z.object({
   name: campaignNameSchema,
   description: campaignDescriptionSchema.optional(),
   colors: campaignColorSchema.default("lilac"),
+  logo: campaignImageSchema.optional(),
+  bannerImage: campaignImageSchema.optional(),
 });
 
 export const campaignUpdateSchema = z

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { CampaignForm } from "@/components/campaigns/campaign-form";
+import { NewCampaignForm } from "@/components/campaigns/new-campaign-form";
 import { MAX_ACTIVE_CAMPAIGNS_PER_USER } from "@/lib/constants";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function NewCampaignPage() {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+    <main className="flex w-full flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
       <nav aria-label="Breadcrumb" className="text-muted-foreground text-sm">
         <Link href="/campaigns" className="hover:text-foreground">
           Campaigns
@@ -20,20 +20,11 @@ export default function NewCampaignPage() {
         <span className="text-foreground">New</span>
       </nav>
 
-      <header className="mt-5">
-        <h1 className="font-semibold text-3xl tracking-[-0.04em]">
-          New campaign
-        </h1>
-        <p className="mt-2 text-muted-foreground">
-          You become its DM. Invite players and set a schedule once it exists.
-        </p>
-      </header>
-
-      <div className="mt-8">
-        <CampaignForm mode="create" />
+      <div className="mt-6">
+        <NewCampaignForm />
       </div>
 
-      <p className="mt-8 text-muted-foreground text-xs">
+      <p className="mt-8 pb-8 text-muted-foreground text-xs">
         During the beta you can keep up to {MAX_ACTIVE_CAMPAIGNS_PER_USER}{" "}
         active campaigns.
       </p>

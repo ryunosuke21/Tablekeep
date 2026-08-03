@@ -29,38 +29,17 @@ import { CampaignColorsPicker } from "./campaign-colors-picker";
 /** Form state uses the schema input: `colors` gains its default on parse. */
 type CampaignFormValues = z.input<typeof campaignDetailsSchema>;
 
-type CampaignFormProps =
-  | { mode: "create" }
-  | {
-      mode: "edit";
-      campaignId: string;
-      defaultValues: CampaignDetailsInput;
-    };
+type CampaignFormProps = {
+  campaignId: string;
+  defaultValues: CampaignDetailsInput;
+};
 
 export function CampaignForm(props: CampaignFormProps) {
   const router = useRouter();
   const form = useForm<CampaignFormValues, unknown, CampaignDetailsInput>({
     resolver: zodResolver(campaignDetailsSchema),
-    defaultValues:
-      props.mode === "edit"
-        ? props.defaultValues
-        : { name: "", description: "", colors: "lilac" },
+    defaultValues: props.defaultValues,
     mode: "onSubmit",
-  });
-
-  const createCampaign = api.campaign.create.useMutation({
-    onSuccess: ({ slug }) => {
-      toast.success("Campaign created");
-      router.push(`/campaigns/${slug}`);
-      // The campaigns index and dashboard were rendered before this campaign
-      // existed, so drop the client router cache as well.
-      router.refresh();
-    },
-    onError: (error) => {
-      form.setError("root", {
-        message: error.message || "The campaign could not be created.",
-      });
-    },
   });
 
   const updateCampaign = api.campaign.update.useMutation({
@@ -75,16 +54,11 @@ export function CampaignForm(props: CampaignFormProps) {
     },
   });
 
-  const isPending = createCampaign.isPending || updateCampaign.isPending;
+  const isPending = updateCampaign.isPending;
   const rootError = form.formState.errors.root?.message;
 
   function submit(values: CampaignDetailsInput) {
     form.clearErrors("root");
-
-    if (props.mode === "create") {
-      createCampaign.mutate(values);
-      return;
-    }
 
     updateCampaign.mutate({
       campaignId: props.campaignId,
@@ -169,21 +143,8 @@ export function CampaignForm(props: CampaignFormProps) {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button type="submit" disabled={isPending} className="sm:w-fit">
-            <LoadingSwap isLoading={isPending}>
-              {props.mode === "create" ? "Create campaign" : "Save details"}
-            </LoadingSwap>
+            <LoadingSwap isLoading={isPending}>Save details</LoadingSwap>
           </Button>
-          {props.mode === "create" ? (
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={isPending}
-              onClick={() => router.push("/campaigns")}
-              className="sm:w-fit"
-            >
-              Cancel
-            </Button>
-          ) : null}
         </div>
 
         <div aria-live="polite" className="min-h-5 text-sm">
