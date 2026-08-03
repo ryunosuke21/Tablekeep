@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "claude-delegate": {
+      "source": "amelnagdy/delegate-skills",
+      "sourceType": "github",
+      "skillPath": "skills/claude-delegate/SKILL.md",
+      "computedHash": "6dcfbc656a51e40a68212b78b226dd74ff2040c296b05ffd1135653b8724f30c"
+    },
+    "codex-delegate": {
+      "source": "amelnagdy/delegate-skills",
+      "sourceType": "github",
+      "skillPath": "skills/codex-delegate/SKILL.md",
+      "computedHash": "afb5a983408b01bb842cc9ba8f8e4c7beeafbb86c85915eb5e24a63b3ec1bc63"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
