@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import {
   RadioGroup,
   RadioGroupItem,
@@ -30,6 +32,9 @@ export function CampaignColorsPicker({
   disabled?: boolean;
   id?: string;
 }) {
+  const generatedId = useId();
+  const groupId = id ?? generatedId;
+
   return (
     <RadioGroup
       id={id}
@@ -39,17 +44,18 @@ export function CampaignColorsPicker({
       disabled={disabled}
     >
       {colorOrder.map((color) => {
-        const labelId = `campaign-color-${color}`;
+        const optionId = `${groupId}-${color}`;
 
         return (
-          <div
+          <label
             key={color}
+            htmlFor={optionId}
             className={cn(
-              "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors has-disabled:opacity-60",
+              "flex cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-accent/50 has-disabled:cursor-not-allowed has-disabled:opacity-60",
               value === color ? "border-foreground/40" : "border-input",
             )}
           >
-            <RadioGroupItem value={color} aria-labelledby={labelId} />
+            <RadioGroupItem id={optionId} value={color} />
             <span
               aria-hidden="true"
               className={cn(
@@ -57,8 +63,8 @@ export function CampaignColorsPicker({
                 swatchClasses[color],
               )}
             />
-            <span id={labelId}>{CAMPAIGN_COLOR_LABELS[color]}</span>
-          </div>
+            <span>{CAMPAIGN_COLOR_LABELS[color]}</span>
+          </label>
         );
       })}
     </RadioGroup>
