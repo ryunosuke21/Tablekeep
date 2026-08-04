@@ -10,7 +10,7 @@ import { inviteCodeEntrySchema } from "@/lib/validation/campaign";
 import { previewInvite } from "../_lib/preview";
 
 export const metadata: Metadata = {
-  title: "Campaign invitation | Tablekeep",
+  title: "Campaign invitation",
   description: "Review a campaign invitation before joining.",
 };
 

@@ -10,7 +10,7 @@ import { SwitchAccountButton } from "@/components/campaigns/switch-account-butto
 import { previewInvite } from "../../_lib/preview";
 
 export const metadata: Metadata = {
-  title: "Campaign invitation | Tablekeep",
+  title: "Campaign invitation",
   description: "Review a campaign invitation sent to your email address.",
 };
 

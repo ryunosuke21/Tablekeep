@@ -2,10 +2,11 @@ import { IconArrowRight, IconBrandGithub } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { APP_NAME } from "@tablekeep/shared";
 import { Button } from "@tablekeep/ui/components/button";
 import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
-import { appName, appUrl, docsRoute, gitConfig } from "@/lib/shared";
+import { appUrl, docsRoute, gitConfig } from "@/lib/shared";
 
 const repoUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 const BANNER_ART = "/banner.png";
@@ -90,7 +91,7 @@ export function Closing() {
             <div>
               <span className="inline-flex items-center gap-2">
                 <TablekeepIcon className="h-6 w-[17px] text-foreground" />
-                <span className="text-xl tracking-tight">{appName}</span>
+                <span className="text-xl tracking-tight">{APP_NAME}</span>
               </span>
               <p className="mt-4 max-w-xs text-muted-foreground text-sm leading-relaxed">
                 A companion for campaigns played together, in person.
@@ -120,7 +121,7 @@ export function Closing() {
 
           <div className="mt-12 flex flex-col gap-4 border-border/60 border-t pt-8 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-lg text-muted-foreground/80 text-xs leading-relaxed">
-              {appName} is an independent project and is not affiliated with or
+              {APP_NAME} is an independent project and is not affiliated with or
               endorsed by Wizards of the Coast. &ldquo;Dungeons &amp;
               Dragons&rdquo; is used descriptively.
             </p>

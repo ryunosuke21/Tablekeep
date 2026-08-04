@@ -1,8 +1,9 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
+import { APP_NAME } from "@tablekeep/shared";
 import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
-import { appName, appUrl, docsRoute, gitConfig } from "./shared";
+import { appUrl, docsRoute, gitConfig } from "./shared";
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -10,7 +11,7 @@ export function baseOptions(): BaseLayoutProps {
       title: (
         <span className="inline-flex items-center gap-2">
           <TablekeepIcon className="h-[22px] w-[15px] text-foreground" />
-          <span className="font-medium tracking-tight">{appName}</span>
+          <span className="font-medium tracking-tight">{APP_NAME}</span>
         </span>
       ),
     },
@@ -20,7 +21,7 @@ export function baseOptions(): BaseLayoutProps {
         url: docsRoute,
       },
       {
-        text: "Open Tablekeep",
+        text: `Open ${APP_NAME}`,
         url: appUrl,
         external: true,
       },

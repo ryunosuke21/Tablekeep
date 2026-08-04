@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import { APP_NAME } from "@tablekeep/shared";
 import { TablekeepIcon } from "@tablekeep/ui/icons/tablekeep";
 
 import { SignInForm } from "@/components/auth/sign-in-form";
 import { readDestination } from "@/lib/redirect-destination";
 
 export const metadata: Metadata = {
-  title: "Sign in | Tablekeep",
-  description: "Sign in to your Tablekeep account.",
+  title: "Sign in",
+  description: `Sign in to your ${APP_NAME} account.`,
 };
 
 export default async function SignInPage({
@@ -27,12 +28,12 @@ export default async function SignInPage({
         <Link
           href="/"
           className="flex w-fit items-center gap-2.5 font-semibold tracking-tight"
-          aria-label="Tablekeep home"
+          aria-label={`${APP_NAME} home`}
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-tk-keep text-white shadow-sm">
             <TablekeepIcon className="h-5 w-auto" />
           </span>
-          <span>Tablekeep</span>
+          <span>{APP_NAME}</span>
         </Link>
 
         <div className="flex flex-1 items-center justify-center py-12">

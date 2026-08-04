@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { APP_NAME } from "@tablekeep/shared";
+
 import { renderCampaignInvite } from "./campaign-invite";
 
 const props = {
-  appName: "Tablekeep",
+  appName: APP_NAME,
   campaignName: "The Ember Coast",
   inviterName: "Mara Voss",
   role: "player" as const,

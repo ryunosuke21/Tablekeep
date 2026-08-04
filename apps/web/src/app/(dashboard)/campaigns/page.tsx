@@ -17,7 +17,7 @@ import { CampaignCard } from "@/components/dashboard/campaign-card";
 import { api } from "@/trpc/server";
 
 export const metadata: Metadata = {
-  title: "Campaigns | Tablekeep",
+  title: "Campaigns",
   description: "The campaigns you run and the tables you have joined.",
 };
 

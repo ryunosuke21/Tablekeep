@@ -6,6 +6,7 @@ import { IconMessageCircle } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 
+import { APP_NAME } from "@tablekeep/shared";
 import { Button } from "@tablekeep/ui/components/button";
 import {
   Dialog,
@@ -58,7 +59,7 @@ export function FeedbackDialog() {
   const submitFeedback = api.feedback.submit.useMutation({
     onSuccess: ({ reference }) => {
       toast.success("Feedback sent", {
-        description: `Thanks for helping shape Tablekeep. Reference ${reference}.`,
+        description: `Thanks for helping shape ${APP_NAME}. Reference ${reference}.`,
       });
       setOpen(false);
       form.reset();
@@ -92,7 +93,7 @@ export function FeedbackDialog() {
           <DialogHeader>
             <DialogTitle>Send feedback</DialogTitle>
             <DialogDescription>
-              Tell us what would make Tablekeep easier to use at the table.
+              Tell us what would make {APP_NAME} easier to use at the table.
             </DialogDescription>
           </DialogHeader>
 

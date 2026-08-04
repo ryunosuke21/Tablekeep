@@ -122,6 +122,7 @@ start a matching disposable database and run `pnpm --filter web db:push` before
 apps/web/                 The product: Next.js app routes, server code, and Drizzle schema
 apps/docs/                The public site: marketing, landing page, and product documentation
 packages/ui/              Shared UI primitives, styles, and utilities
+packages/shared/          Shared product copy and text-focused utilities
 packages/config/          Shared TypeScript configuration
 docs/                     Internal product and contributor documentation
 AGENTS.md                 Instructions for coding agents

@@ -6,10 +6,10 @@ import { admin, magicLink, multiSession } from "better-auth/plugins";
 
 import { createCampaignOrganization } from "@tablekeep/campaign-auth/server";
 import { renderCampaignInvite, renderMagicLink } from "@tablekeep/emails";
+import { APP_NAME } from "@tablekeep/shared";
 
 import { env } from "@/env/server";
 import {
-  APP_NAME,
   CAMPAIGN_INVITE_TTL_SECONDS,
   MAX_CAMPAIGN_MEMBERS,
   MAX_PENDING_CAMPAIGN_INVITATIONS,

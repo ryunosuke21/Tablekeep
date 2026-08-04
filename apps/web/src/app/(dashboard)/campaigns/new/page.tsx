@@ -5,7 +5,7 @@ import { NewCampaignForm } from "@/components/campaigns/new-campaign-form";
 import { MAX_ACTIVE_CAMPAIGNS_PER_USER } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "New campaign | Tablekeep",
+  title: "New campaign",
   description: "Create a campaign you will run.",
 };
 

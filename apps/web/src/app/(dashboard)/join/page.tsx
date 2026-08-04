@@ -6,7 +6,7 @@ import { Button } from "@tablekeep/ui/components/button";
 import { JoinCodeForm } from "@/components/campaigns/join-code-form";
 
 export const metadata: Metadata = {
-  title: "Join a campaign | Tablekeep",
+  title: "Join a campaign",
   description: "Enter the invitation code your DM shared.",
 };
 

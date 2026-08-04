@@ -22,6 +22,7 @@
     "react-dom": "catalog:"
   },
   "dependencies": {
+    "@tablekeep/shared": "workspace:*",
     "react-email": "^6.9.1",
     "tailwindcss": "catalog:"
   },

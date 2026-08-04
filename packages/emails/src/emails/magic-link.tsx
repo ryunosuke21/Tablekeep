@@ -16,6 +16,8 @@ import {
   Text,
 } from "react-email";
 
+import { APP_NAME, EMAIL_TAGLINE } from "@tablekeep/shared";
+
 import { BarebonesFonts, barebonesBoxedTailwindConfig } from "../styles";
 import type { AdditionalLinks } from "../types/additional";
 
@@ -147,7 +149,7 @@ export const MagicLink = ({
                 <Row>
                   <Column className="px-6 py-10 text-center">
                     <Text className="mx-auto mt-0 mb-8 max-w-[280px] text-center font-13 font-sans text-fg-3">
-                      Less bookkeeping at the table — more time to play.
+                      {EMAIL_TAGLINE}
                     </Text>
 
                     <Text className="mt-4 mb-5 text-center font-11 font-sans text-fg-3">
@@ -177,7 +179,7 @@ export const renderMagicLink = (props: MagicLinkProps) =>
   render(<MagicLink {...props} />);
 
 MagicLink.PreviewProps = {
-  appName: "Tablekeep",
+  appName: APP_NAME,
   url: "http://localhost:3000/magic-link",
   baseUrl: "http://localhost:3000",
 } satisfies MagicLinkProps;
