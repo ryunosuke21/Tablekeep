@@ -12,7 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "dev": "next dev --turbo",
+    "dev": "next dev",
     "preview": "next build && next start",
     "start": "next start",
     "check-types": "node --eval \"require('node:fs').rmSync('.next/dev/types', { recursive: true, force: true })\" && next typegen && tsc --noEmit"
@@ -39,7 +39,7 @@
     "graphql": "^17.0.2",
     "graphql-request": "^7.4.0",
     "luxon": "3.7.2",
-    "next": "16.2.12",
+    "next": "16.3.0",
     "next-themes": "catalog:",
     "postgres": "^3.4.4",
     "radix-ui": "^1.6.7",
