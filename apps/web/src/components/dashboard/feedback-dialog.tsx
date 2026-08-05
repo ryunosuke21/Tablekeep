@@ -74,12 +74,12 @@ export function FeedbackDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
-        <DialogTrigger asChild>
-          <SidebarMenuButton tooltip="Feedback">
+        <SidebarMenuButton asChild tooltip="Feedback">
+          <DialogTrigger>
             <IconMessageCircle />
             <span>Feedback</span>
-          </SidebarMenuButton>
-        </DialogTrigger>
+          </DialogTrigger>
+        </SidebarMenuButton>
       </SidebarMenuItem>
       <DialogContent className="sm:max-w-md">
         <form
