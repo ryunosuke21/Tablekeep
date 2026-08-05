@@ -24,25 +24,43 @@ type Catalog = {
   subclassesByClass: Record<string, string[]>;
 };
 
+/** The wiki caps a page at 50 entries, which covers the reference classes. */
+const CATALOG_LIMIT = 50;
+const catalogQueryOptions = {
+  retry: false,
+  staleTime: 60 * 60 * 1000,
+} as const;
+
 /**
- * Reference classes are a convenience. The query never retries and its failure
- * is silent, because every field here also accepts a homebrew name.
+ * Reference classes are a convenience. The queries never retry and their
+ * failure is silent, because every field here also accepts a homebrew name.
+ * Classes and subclasses are separate wiki pages, so subclasses are grouped
+ * back under their parent class for the subclass suggestions.
  */
 function useClassCatalog(): Catalog {
-  const catalog = api.classes.list.useQuery(
-    { limit: 100 },
-    { retry: false, staleTime: 60 * 60 * 1000 },
+  const classes = api.wiki.classes.list.useQuery(
+    { limit: CATALOG_LIMIT, kind: "class" },
+    catalogQueryOptions,
   );
-  const entries = catalog.data ?? [];
+  const subclasses = api.wiki.classes.list.useQuery(
+    { limit: CATALOG_LIMIT, kind: "subclass" },
+    catalogQueryOptions,
+  );
+
+  const subclassesByClass: Record<string, string[]> = {};
+  for (const entry of subclasses.data?.items ?? []) {
+    const parent = entry.parentClass?.name.trim().toLowerCase();
+    if (!entry.isSubclass || !parent) continue;
+    const group = subclassesByClass[parent] ?? [];
+    group.push(entry.name);
+    subclassesByClass[parent] = group;
+  }
 
   return {
-    names: entries.map((entry) => entry.name),
-    subclassesByClass: Object.fromEntries(
-      entries.map((entry) => [
-        entry.name.toLowerCase(),
-        (entry.subclasses ?? []).map((subclass) => subclass.name),
-      ]),
-    ),
+    names: (classes.data?.items ?? [])
+      .filter((entry) => !entry.isSubclass)
+      .map((entry) => entry.name),
+    subclassesByClass,
   };
 }
 

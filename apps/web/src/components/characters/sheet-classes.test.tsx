@@ -13,8 +13,32 @@ const { SheetClasses } = await import("./sheet-classes");
 
 type SheetClass = RouterOutputs["character"]["sheet"]["get"]["classes"][number];
 
+type WikiClass = RouterOutputs["wiki"]["classes"]["list"]["items"][number];
+
 const campaignId = "33333333-3333-3333-3333-333333333333";
 const sheetId = "22222222-2222-2222-2222-222222222222";
+
+const wikiSource: WikiClass["source"] = {
+  key: "srd-2024",
+  name: "System Reference Document 5.2",
+  displayName: "5e 2024 Rules",
+  gameSystem: { key: "5e-2024", name: "5th Edition 2024" },
+  permalink: "https://example.test/srd-2024",
+  publisher: { key: "wizards-of-the-coast", name: "Wizards of the Coast" },
+};
+
+function wikiClass(
+  overrides: Partial<WikiClass> & { key: string; name: string },
+): WikiClass {
+  return {
+    source: wikiSource,
+    casterType: "full",
+    hitDice: "1d8",
+    isSubclass: false,
+    parentClass: null,
+    ...overrides,
+  };
+}
 
 function sheetClass(
   overrides: Partial<SheetClass> & { id: string },
@@ -129,14 +153,24 @@ describe("SheetClasses", () => {
   });
 
   it("offers catalog suggestions when the reference data loads", async () => {
-    trpc.setQueryData("classes.list", [
-      {
-        index: "bard",
-        name: "Bard",
-        hit_die: 8,
-        subclasses: [{ index: "lore", name: "College of Lore" }],
+    trpc.setQueryData("wiki.classes.list", {
+      items: [
+        wikiClass({ key: "srd-2024_bard", name: "Bard" }),
+        wikiClass({
+          key: "srd-2024_college-of-lore",
+          name: "College of Lore",
+          isSubclass: true,
+          parentClass: { key: "srd-2024_bard", name: "Bard" },
+        }),
+      ],
+      pageInfo: {
+        count: 2,
+        page: 1,
+        limit: 50,
+        hasNextPage: false,
+        hasPreviousPage: false,
       },
-    ]);
+    });
     renderClasses([]);
 
     const input = screen.getByLabelText("Add a class");

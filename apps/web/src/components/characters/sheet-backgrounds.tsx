@@ -19,13 +19,16 @@ import { SheetRow } from "./sheet-section";
 type SheetBackground =
   RouterOutputs["character"]["sheet"]["get"]["backgrounds"][number];
 
+/** The wiki caps a page at 50 entries, enough for the reference backgrounds. */
+const CATALOG_LIMIT = 50;
+
 /** Suggestions only; a failed catalog leaves the field a plain text input. */
 function useBackgroundNames() {
-  const catalog = api.backgrounds.list.useQuery(
-    { limit: 100 },
+  const catalog = api.wiki.backgrounds.list.useQuery(
+    { limit: CATALOG_LIMIT },
     { retry: false, staleTime: 60 * 60 * 1000 },
   );
-  return (catalog.data ?? []).map((entry) => entry.name);
+  return (catalog.data?.items ?? []).map((entry) => entry.name);
 }
 
 function BackgroundRow({
