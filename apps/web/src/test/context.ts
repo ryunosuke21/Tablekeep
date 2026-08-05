@@ -8,9 +8,11 @@ export function testContext(
 ): TRPCContext {
   return {
     headers: new Headers(),
-    graphql: { request },
-    dndApi: async () => ({}),
     db: {},
+    open5e: {
+      get: request,
+      list: request,
+    },
     session,
   } as unknown as TRPCContext;
 }

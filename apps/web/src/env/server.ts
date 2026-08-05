@@ -18,7 +18,7 @@ export const env = createEnv({
     FROM_EMAIL: z.email().default("noreply@tablekeep.com"),
     UPLOADTHING_TOKEN: z.string(),
     DATABASE_URL: z.url(),
-    DATA_SOURCE: z.url().default("https://www.dnd5eapi.co"),
+    DATA_SOURCE: z.url().default("https://api.open5e.com/v2"),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),

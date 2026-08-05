@@ -21,10 +21,23 @@ test("the product app protects the dashboard and keeps public APIs available", a
   expect(health.ok()).toBe(true);
   expect(await health.text()).toContain('"status":"ok"');
 
+  const spellList = await request.get(
+    "http://localhost:3000/api/trpc/wiki.spells.list",
+    {
+      params: {
+        input: JSON.stringify({ json: { limit: 1 } }),
+      },
+    },
+  );
+  expect(spellList.ok()).toBe(true);
+  expect(await spellList.text()).toContain('"key":"srd-2024_test-spark"');
+
   const mockResponse = await request.get("http://127.0.0.1:4100/requests");
   expect(mockResponse.ok()).toBe(true);
   const result = (await mockResponse.json()) as { operations: string[] };
-  expect(result.operations).toEqual([]);
+  expect(result.operations).toEqual([
+    "GET /v2/spells/?page=1&limit=1&fields=key%2Cname%2Cdocument%2Clevel%2Cschool%2Cclasses%2Ccasting_time%2Cconcentration%2Critual%2Cverbal%2Csomatic%2Cmaterial&document__key__in=srd-2024",
+  ]);
 });
 
 test("campaign routes are protected and keep the requested destination", async ({

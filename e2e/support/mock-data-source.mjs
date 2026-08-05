@@ -5,17 +5,46 @@ const port = 4100;
 const operations = [];
 
 const spell = {
-  index: "test-spark",
+  key: "srd-2024_test-spark",
   name: "Test Spark",
+  desc: "A small magical spark.",
+  higher_level: "Damage increases with the slot level.",
   level: 0,
-  school: { index: "evocation", name: "Evocation" },
-  casting_time: "1 action",
-  range: "30 feet",
-  duration: "Instantaneous",
+  school: { key: "evocation", name: "Evocation" },
+  classes: [{ key: "srd-2024_wizard", name: "Wizard" }],
+  casting_time: "action",
+  reaction_condition: null,
+  range: 30,
+  range_text: "30 feet",
+  range_unit: "feet",
+  duration: "instantaneous",
   concentration: false,
   ritual: false,
-  components: ["V", "S"],
-  attack_type: "ranged",
+  verbal: true,
+  somatic: true,
+  material: false,
+  material_specified: null,
+  material_cost: null,
+  material_consumed: false,
+  target_type: "creature",
+  target_count: 1,
+  saving_throw_ability: "",
+  attack_roll: true,
+  damage_roll: "1d6",
+  damage_types: ["fire"],
+  shape_type: null,
+  shape_size: null,
+  shape_size_unit: null,
+  casting_options: [],
+  document: {
+    key: "srd-2024",
+    name: "System Reference Document 5.2",
+    display_name: "5e 2024 Rules",
+    type: "SOURCE",
+    publisher: { key: "wizards-of-the-coast", name: "Wizards of the Coast" },
+    gamesystem: { key: "5e-2024", name: "5th Edition 2024" },
+    permalink: "https://example.test/srd-2024",
+  },
 };
 
 function json(response, status, body) {
@@ -32,36 +61,26 @@ const server = createServer((request, response) => {
     return json(response, 200, { operations });
   }
 
-  if (request.method !== "POST" || request.url !== "/graphql") {
-    return json(response, 404, { error: "Unknown test data-source route" });
+  const url = new URL(request.url ?? "/", `http://${hostname}:${port}`);
+  if (request.method === "GET" && url.pathname === "/v2/spells/") {
+    operations.push(`${request.method} ${url.pathname}${url.search}`);
+    return json(response, 200, {
+      count: 1,
+      next: null,
+      previous: null,
+      results: [spell],
+    });
   }
 
-  let body = "";
-  request.setEncoding("utf8");
-  request.on("data", (chunk) => {
-    body += chunk;
-  });
-  request.on("end", () => {
-    let query;
+  if (
+    request.method === "GET" &&
+    url.pathname === "/v2/spells/srd-2024_test-spark/"
+  ) {
+    operations.push(`${request.method} ${url.pathname}`);
+    return json(response, 200, spell);
+  }
 
-    try {
-      ({ query } = JSON.parse(body));
-    } catch {
-      json(response, 400, { error: "Invalid JSON request" });
-      return;
-    }
-
-    if (typeof query === "string" && /query\s+Spells\b/.test(query)) {
-      operations.push("Spells");
-      json(response, 200, { data: { spells: [spell] } });
-      return;
-    }
-
-    operations.push("Unknown");
-    json(response, 400, {
-      errors: [{ message: "Unexpected GraphQL operation in browser test" }],
-    });
-  });
+  return json(response, 404, { error: "Unknown test data-source route" });
 });
 
 server.listen(port, hostname, () => {
