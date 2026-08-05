@@ -13,11 +13,10 @@ import { ZodError, z } from "zod";
 
 import { campaignMemberCan } from "@tablekeep/campaign-auth/access";
 
-import { dndApi } from "@/server/api/data-source";
-import { graphqlClient } from "@/server/api/graphql";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
 import { getCampaignForMemberById } from "@/server/db/queries/campaign";
+import { open5eClient } from "@/server/reference-data/open5e/client";
 
 /**
  * 1. CONTEXT
@@ -37,9 +36,8 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   });
 
   return {
-    graphql: graphqlClient,
-    dndApi,
     db,
+    open5e: open5eClient,
     session,
     ...opts,
   };

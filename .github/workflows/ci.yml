@@ -30,7 +30,7 @@ jobs:
       FROM_EMAIL: noreply@tablekeep.test
       UPLOADTHING_TOKEN: tablekeep-ci-uploadthing-token
       DATABASE_URL: postgresql://tablekeep:tablekeep@127.0.0.1:5432/tablekeep_test
-      DATA_SOURCE: http://127.0.0.1:4100
+      DATA_SOURCE: http://127.0.0.1:4100/v2
       LOG_LEVEL: warn
     steps:
       - name: Check out repository
@@ -109,7 +109,7 @@ jobs:
       UPLOADTHING_TOKEN: tablekeep-browser-uploadthing-token
       # Job containers reach service containers by their service label.
       DATABASE_URL: postgresql://tablekeep:tablekeep@postgres:5432/tablekeep_test
-      DATA_SOURCE: http://127.0.0.1:4100
+      DATA_SOURCE: http://127.0.0.1:4100/v2
       LOG_LEVEL: warn
     steps:
       - name: Check out repository

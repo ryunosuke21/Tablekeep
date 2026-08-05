@@ -161,25 +161,26 @@ The MVP is complete when a DM and at least one player can use Tablekeep to prepa
 
 ### External spell source
 
-Use the [D&D 5e SRD API](https://www.dnd5eapi.co/) as the initial catalog source. It provides unauthenticated REST and GraphQL access. The documented production dataset currently covers the 2014 SRD.
+Use the [Open5e API](https://open5e.com/api-docs) as the initial catalog source.
+Tablekeep uses the versioned V2 REST API and restricts catalog requests to the
+`srd-2024` document (System Reference Document 5.2).
 
 For the MVP:
 
-- Prefer the versioned REST endpoints for spell lists and spell details because the required access pattern is simple.
+- Use the versioned V2 REST endpoints for spell lists and spell details.
 - Wrap the upstream service behind a server-side Tablekeep adapter so application components do not depend directly on its response format.
-- Keep the adapter replaceable with the GraphQL endpoint or another appropriately licensed source.
-- Record the upstream source, version, and spell index with imported records.
+- Keep the adapter replaceable with another appropriately licensed source.
+- Record the upstream source, version, and source-qualified spell key with imported records.
 - Cache catalog responses conservatively and handle upstream timeouts or unavailability.
 - Store enough approved spell detail with a campaign sheet's saved spellbook that an upstream outage does not make prepared spells unusable at the table.
 - Review and satisfy the source data's attribution and license requirements before closed beta distribution.
 - Do not imply that the API contains every officially published spell.
 
-The official API documentation is available at:
+The API and source documentation is available at:
 
-- [API introduction and endpoints](https://5e-bits.github.io/docs/introduction)
-- [Spell list filtering](https://5e-bits.github.io/docs/api/get-list-of-spells-with-optional-filtering)
-- [GraphQL tutorial](https://5e-bits.github.io/docs/tutorials/beginner/graphql)
-- [Source database and license notes](https://github.com/5e-bits/5e-database)
+- [Open5e API overview](https://open5e.com/api-docs)
+- [Open5e data sources](https://open5e.com/sources)
+- [SRD 5.2 source record](https://api.open5e.com/v2/documents/?key=srd-2024)
 
 ### Work
 
