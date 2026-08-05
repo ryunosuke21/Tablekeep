@@ -10,6 +10,7 @@ import {
   sql,
 } from "drizzle-orm";
 import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { alias } from "drizzle-orm/pg-core";
 
 import {
   MAX_CHARACTERS_PER_USER,
@@ -60,16 +61,18 @@ export async function listCharactersForOwner(
   ownerId: string,
   status: CharacterStatusFilter = "active",
 ) {
+  const ownedCharacter = alias(characters, "owned_character");
+  const ownedCharacterId = sql.raw('"owned_character"."id"');
   const statusPredicate =
     status === "all"
       ? undefined
       : status === "deleted"
-        ? isNotNull(characters.deletedAt)
-        : isNull(characters.deletedAt);
+        ? isNotNull(ownedCharacter.deletedAt)
+        : isNull(ownedCharacter.deletedAt);
 
   return db
     .select({
-      ...getTableColumns(characters),
+      ...getTableColumns(ownedCharacter),
       sheets: sql<
         Array<{
           id: string;
@@ -103,14 +106,14 @@ export async function listCharactersForOwner(
         inner join campaign_members membership
           on membership.campaign_id = sheet.campaign_id
           and membership.user_id = ${ownerId}
-        where sheet.char_id = ${characters.id}
+        where sheet.char_id = ${ownedCharacterId}
           and sheet.owner_id = ${ownerId}
           and sheet.retired_at is null
       ), '[]'::jsonb)`,
     })
-    .from(characters)
-    .where(and(eq(characters.ownerId, ownerId), statusPredicate))
-    .orderBy(desc(characters.updatedAt));
+    .from(ownedCharacter)
+    .where(and(eq(ownedCharacter.ownerId, ownerId), statusPredicate))
+    .orderBy(desc(ownedCharacter.updatedAt));
 }
 
 export async function getCharacterForOwnerBySlug(

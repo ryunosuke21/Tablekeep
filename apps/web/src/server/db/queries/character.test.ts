@@ -43,9 +43,19 @@ describe("character persistence", () => {
     ).resolves.toEqual([]);
 
     const predicate = compile(where.mock.calls[0]?.[0]);
-    expect(predicate.sql).toContain('"characters"."owner_id" = $1');
-    expect(predicate.sql).toContain('"characters"."deleted_at" is not null');
+    expect(predicate.sql).toContain('"owned_character"."owner_id" = $1');
+    expect(predicate.sql).toContain(
+      '"owned_character"."deleted_at" is not null',
+    );
     expect(predicate.params).toEqual(["owner-1"]);
+
+    const selection = select.mock.calls[0]?.[0] as {
+      sheets: Parameters<PgDialect["sqlToQuery"]>[0];
+    };
+    const sheets = compile(selection.sheets);
+    expect(sheets.sql).toContain(
+      'where sheet.char_id = "owned_character"."id"',
+    );
   });
 
   it("scopes slug reads to the owner and excludes deleted characters", async () => {
