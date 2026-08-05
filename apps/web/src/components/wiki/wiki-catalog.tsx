@@ -12,16 +12,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@tablekeep/ui/components/button";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@tablekeep/ui/components/drawer";
+import { ButtonGroup } from "@tablekeep/ui/components/button-group";
 import {
   Empty,
   EmptyDescription,
@@ -29,8 +20,20 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@tablekeep/ui/components/empty";
+import {
+  createFilter,
+  type Filter,
+  type FilterFieldConfig,
+  Filters,
+} from "@tablekeep/ui/components/filters";
 import { Input } from "@tablekeep/ui/components/input";
 import { Spinner } from "@tablekeep/ui/components/spinner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@tablekeep/ui/components/tooltip";
 
 import {
   WIKI_CATEGORY_META,
@@ -62,7 +65,7 @@ function ClassesCatalog(props: CatalogProps) {
     {
       limit: 20,
       name: props.query.q || undefined,
-      kind: (props.query.kind as "class" | "subclass" | "all") ?? "class",
+      kind: (props.query.kind as "class" | "subclass" | "all") ?? "all",
     },
     {
       enabled: props.query.view === "cards",
@@ -78,7 +81,7 @@ function SpeciesCatalog(props: CatalogProps) {
     {
       limit: 20,
       name: props.query.q || undefined,
-      kind: (props.query.kind as "species" | "subspecies" | "all") ?? "species",
+      kind: (props.query.kind as "species" | "subspecies" | "all") ?? "all",
     },
     {
       enabled: props.query.view === "cards",
@@ -383,22 +386,34 @@ function CatalogHeader({
     );
     return () => window.clearTimeout(timeout);
   }, [query.q, search, update]);
-  const filterCount = useMemo(
-    () =>
-      [
-        query.kind && !["class", "species", "mundane"].includes(query.kind),
-        query.level !== undefined,
-        query.crMin !== undefined,
-        query.crMax !== undefined,
-        query.acMin !== undefined,
-        query.acMax !== undefined,
-      ].filter(Boolean).length,
-    [query],
+  const fields = useMemo(() => filterFieldsFor(category), [category]);
+  const filters = useMemo(
+    () => filtersFromQuery(category, query),
+    [category, query],
+  );
+  const onFiltersChange = useCallback(
+    (nextFilters: Filter<string>[]) => {
+      const changes: Record<string, string | number | null> = {
+        kind: null,
+        level: null,
+        crMin: null,
+        crMax: null,
+        acMin: null,
+        acMax: null,
+        page: null,
+      };
+      for (const filter of nextFilters) {
+        const value = filter.values[0];
+        if (value !== undefined && value !== "") changes[filter.field] = value;
+      }
+      update(changes);
+    },
+    [update],
   );
 
   return (
     <>
-      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <header>
         <div>
           <p className="font-mono text-[10px] text-tk-ember uppercase tracking-[0.18em]">
             Rules field guide
@@ -407,39 +422,18 @@ function CatalogHeader({
             <h1 className="font-semibold text-3xl tracking-[-0.04em] sm:text-4xl">
               {meta.title}
             </h1>
-            <span className="rounded-full bg-muted px-2.5 py-1 font-mono text-muted-foreground text-xs tabular-nums">
-              {count}
+            <span className="rounded-full border bg-card px-2.5 py-1 font-mono text-muted-foreground text-xs tabular-nums shadow-xs">
+              {count.toLocaleString()} entries
             </span>
           </div>
           <p className="mt-2 max-w-xl text-muted-foreground">
             {meta.description}
           </p>
         </div>
-        <fieldset className="inline-flex w-fit rounded-xl border bg-card p-1">
-          <legend className="sr-only">Choose a view</legend>
-          <Button
-            size="sm"
-            variant={query.view === "cards" ? "secondary" : "ghost"}
-            aria-pressed={query.view === "cards"}
-            onClick={() => update({ view: null, page: null, limit: null })}
-          >
-            <IconCards />
-            Cards
-          </Button>
-          <Button
-            size="sm"
-            variant={query.view === "table" ? "secondary" : "ghost"}
-            aria-pressed={query.view === "table"}
-            onClick={() => update({ view: "table", page: 1 })}
-          >
-            <IconList />
-            Table
-          </Button>
-        </fieldset>
       </header>
-      <div className="mt-8 flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-        <div className="flex gap-2">
-          <label htmlFor="wiki-search" className="relative flex-1">
+      <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="w-full rounded-xl border bg-card p-1.5 shadow-sm lg:max-w-md">
+          <label htmlFor="wiki-search" className="relative block">
             <span className="sr-only">Search {meta.title.toLowerCase()}</span>
             <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -447,7 +441,7 @@ function CatalogHeader({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={`Search ${meta.title.toLowerCase()}…`}
-              className="h-11 pr-10 pl-9"
+              className="h-10 border-0 bg-transparent pr-10 pl-9 shadow-none focus-visible:ring-0"
             />
             {search ? (
               <button
@@ -460,184 +454,156 @@ function CatalogHeader({
               </button>
             ) : null}
           </label>
-          <div className="sm:hidden">
-            <MobileFilters
-              category={category}
-              query={query}
-              filterCount={filterCount}
-            />
-          </div>
         </div>
-        <div className="hidden items-end gap-3 sm:flex">
-          <FilterFields category={category} query={query} />
-          <ClearFiltersButton compact />
+        <div className="flex flex-wrap items-start gap-3 lg:justify-end">
+          {fields.length ? (
+            <div className="rounded-xl border bg-card p-1.5 shadow-sm">
+              <Filters
+                filters={filters}
+                fields={fields}
+                onChange={onFiltersChange}
+                allowMultiple={false}
+                showSearchInput={false}
+                size="sm"
+                trigger={
+                  <Button variant="ghost" className="h-9">
+                    <IconFilter />
+                    Filters
+                    {filters.length ? (
+                      <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground tabular-nums">
+                        {filters.length}
+                      </span>
+                    ) : null}
+                  </Button>
+                }
+              />
+            </div>
+          ) : null}
+          <TooltipProvider>
+            <fieldset className="rounded-xl border bg-card p-1.5 shadow-sm">
+              <legend className="sr-only">Choose a view</legend>
+              <ButtonGroup>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon-lg"
+                      variant={query.view === "cards" ? "secondary" : "ghost"}
+                      aria-label="Card view"
+                      aria-pressed={query.view === "cards"}
+                      onClick={() =>
+                        update({ view: null, page: null, limit: null })
+                      }
+                    >
+                      <IconCards />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Card view</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon-lg"
+                      variant={query.view === "table" ? "secondary" : "ghost"}
+                      aria-label="Table view"
+                      aria-pressed={query.view === "table"}
+                      onClick={() => update({ view: "table", page: 1 })}
+                    >
+                      <IconList />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Table view</TooltipContent>
+                </Tooltip>
+              </ButtonGroup>
+            </fieldset>
+          </TooltipProvider>
         </div>
       </div>
     </>
   );
 }
 
-function MobileFilters({
-  category,
-  query,
-  filterCount,
-}: {
-  category: WikiCategory;
-  query: WikiQueryState;
-  filterCount: number;
-}) {
-  return (
-    <Drawer>
-      <DrawerTrigger asChild>
-        <Button variant="outline" className="h-11">
-          <IconFilter />
-          <span>Filters</span>
-          {filterCount > 0 ? (
-            <span className="rounded-full bg-primary px-1.5 text-primary-foreground text-xs">
-              {filterCount}
-            </span>
-          ) : null}
-        </Button>
-      </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Filters</DrawerTitle>
-          <DrawerDescription>
-            Narrow this list to what you need.
-          </DrawerDescription>
-        </DrawerHeader>
-        <div className="space-y-4 overflow-y-auto px-4 pb-2">
-          <FilterFields category={category} query={query} />
-        </div>
-        <DrawerFooter>
-          <DrawerClose asChild>
-            <Button>Done</Button>
-          </DrawerClose>
-          <ClearFiltersButton />
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
-  );
-}
-
-function FilterFields({
-  category,
-  query,
-}: {
-  category: WikiCategory;
-  query: WikiQueryState;
-}) {
-  const update = useUrlUpdate();
-  const selectClass =
-    "h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
-  if (category === "classes" || category === "species") {
-    const base = category === "classes" ? "class" : "species";
-    const child = category === "classes" ? "subclass" : "subspecies";
-    return (
-      <label className="flex min-w-44 flex-1 flex-col gap-1.5 font-medium text-xs">
-        Kind
-        <select
-          className={selectClass}
-          value={query.kind ?? base}
-          onChange={(event) =>
-            update({
-              kind: event.target.value === base ? null : event.target.value,
-              page: null,
-            })
-          }
-        >
-          <option value={base}>
-            {category === "classes" ? "Classes" : "Species"}
-          </option>
-          <option value={child}>
-            {category === "classes" ? "Subclasses" : "Subspecies"}
-          </option>
-          <option value="all">All</option>
-        </select>
-      </label>
-    );
-  }
+function filterFieldsFor(category: WikiCategory): FilterFieldConfig<string>[] {
+  if (category === "classes")
+    return [
+      {
+        key: "kind",
+        label: "Kind",
+        type: "select",
+        searchable: false,
+        options: [
+          { value: "class", label: "Classes" },
+          { value: "subclass", label: "Subclasses" },
+        ],
+      },
+    ];
+  if (category === "species")
+    return [
+      {
+        key: "kind",
+        label: "Kind",
+        type: "select",
+        searchable: false,
+        options: [
+          { value: "species", label: "Species" },
+          { value: "subspecies", label: "Subspecies" },
+        ],
+      },
+    ];
   if (category === "items")
-    return (
-      <label className="flex min-w-44 flex-1 flex-col gap-1.5 font-medium text-xs">
-        Kind
-        <select
-          className={selectClass}
-          value={query.kind ?? "mundane"}
-          onChange={(event) =>
-            update({
-              kind:
-                event.target.value === "mundane" ? null : event.target.value,
-              page: null,
-            })
-          }
-        >
-          <option value="mundane">Everyday items</option>
-          <option value="magic">Magic items</option>
-        </select>
-      </label>
-    );
+    return [
+      {
+        key: "kind",
+        label: "Kind",
+        type: "select",
+        searchable: false,
+        options: [
+          { value: "mundane", label: "Everyday items" },
+          { value: "magic", label: "Magic items" },
+        ],
+      },
+    ];
   if (category === "spells")
-    return (
-      <label className="flex min-w-44 flex-1 flex-col gap-1.5 font-medium text-xs">
-        Level
-        <select
-          className={selectClass}
-          value={query.level ?? ""}
-          onChange={(event) =>
-            update({ level: event.target.value || null, page: null })
-          }
-        >
-          <option value="">All levels</option>
-          <option value="0">Cantrips</option>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => (
-            <option key={level} value={level}>
-              Level {level}
-            </option>
-          ))}
-        </select>
-      </label>
-    );
+    return [
+      {
+        key: "level",
+        label: "Level",
+        type: "select",
+        searchable: false,
+        options: [
+          { value: "0", label: "Cantrips" },
+          ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => ({
+            value: String(level),
+            label: `Level ${level}`,
+          })),
+        ],
+      },
+    ];
   if (category === "creatures")
-    return (
-      <div className="grid flex-1 grid-cols-2 gap-3 lg:grid-cols-4">
-        {(
-          [
-            ["crMin", "Min CR"],
-            ["crMax", "Max CR"],
-            ["acMin", "Min AC"],
-            ["acMax", "Max AC"],
-          ] as const
-        ).map(([key, label]) => (
-          <label
-            htmlFor={`wiki-filter-${key}`}
-            key={key}
-            className="flex flex-col gap-1.5 font-medium text-xs"
-          >
-            {label}
-            <Input
-              id={`wiki-filter-${key}`}
-              type="number"
-              min="0"
-              step={key.startsWith("cr") ? "0.125" : "1"}
-              className="h-11"
-              value={query[key] ?? ""}
-              onChange={(event) =>
-                update({ [key]: event.target.value || null, page: null })
-              }
-            />
-          </label>
-        ))}
-      </div>
-    );
-  return (
-    <p className="flex-1 self-center text-muted-foreground text-sm">
-      Search by name to narrow this list.
-    </p>
-  );
+    return [
+      { key: "crMin", label: "Minimum CR", type: "text", placeholder: "0" },
+      { key: "crMax", label: "Maximum CR", type: "text", placeholder: "30" },
+      { key: "acMin", label: "Minimum AC", type: "text", placeholder: "0" },
+      { key: "acMax", label: "Maximum AC", type: "text", placeholder: "30" },
+    ];
+  return [];
 }
 
-function ClearFiltersButton({ compact = false }: { compact?: boolean }) {
+function filtersFromQuery(category: WikiCategory, query: WikiQueryState) {
+  const filters: Filter<string>[] = [];
+  if (query.kind && category !== "items")
+    filters.push(createFilter("kind", "is", [query.kind]));
+  if (category === "items" && query.kind === "magic")
+    filters.push(createFilter("kind", "is", ["magic"]));
+  if (query.level !== undefined)
+    filters.push(createFilter("level", "is", [String(query.level)]));
+  for (const key of ["crMin", "crMax", "acMin", "acMax"] as const) {
+    if (query[key] !== undefined)
+      filters.push(createFilter(key, "is", [String(query[key])]));
+  }
+  return filters;
+}
+
+function ClearFiltersButton() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -645,7 +611,6 @@ function ClearFiltersButton({ compact = false }: { compact?: boolean }) {
   return (
     <Button
       variant="ghost"
-      size={compact ? "sm" : "default"}
       onClick={() =>
         router.replace(view === "table" ? `${pathname}?view=table` : pathname, {
           scroll: false,

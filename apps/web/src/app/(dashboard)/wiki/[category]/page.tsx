@@ -43,7 +43,7 @@ export default async function WikiCategoryPage({
         page,
         limit,
         name,
-        kind: (query.kind as "class" | "subclass" | "all") ?? "class",
+        kind: (query.kind as "class" | "subclass" | "all") ?? "all",
       });
       break;
     case "species":
@@ -51,7 +51,7 @@ export default async function WikiCategoryPage({
         page,
         limit,
         name,
-        kind: (query.kind as "species" | "subspecies" | "all") ?? "species",
+        kind: (query.kind as "species" | "subspecies" | "all") ?? "all",
       });
       break;
     case "spells":

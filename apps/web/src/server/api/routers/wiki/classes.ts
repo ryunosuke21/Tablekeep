@@ -18,7 +18,7 @@ import {
 
 const listInputSchema = wikiPageInputSchema.extend({
   name: z.string().min(1).optional(),
-  kind: z.enum(["class", "subclass", "all"]).default("class"),
+  kind: z.enum(["class", "subclass", "all"]).default("all"),
 });
 
 export const wikiClassesRouter = createTRPCRouter({

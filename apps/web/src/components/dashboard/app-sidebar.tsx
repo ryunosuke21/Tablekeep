@@ -44,7 +44,6 @@ const personalNavigation = [
 ] as const;
 
 const wikiNavigation = [
-  { title: "Wiki home", href: "/wiki", icon: IconBook2 },
   { title: "Species", href: "/wiki/species", icon: IconMasksTheater },
   { title: "Backgrounds", href: "/wiki/backgrounds", icon: IconWallpaper },
   { title: "Classes", href: "/wiki/classes", icon: IconSword },

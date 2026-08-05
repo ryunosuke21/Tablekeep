@@ -19,11 +19,13 @@ export function WikiArtwork({
   recordKey,
   priority = false,
   className,
+  sizes = "(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw",
 }: {
   category: WikiCategory;
   recordKey?: string;
   priority?: boolean;
   className?: string;
+  sizes?: string;
 }) {
   const meta = WIKI_CATEGORY_META[category];
   return (
@@ -33,7 +35,7 @@ export function WikiArtwork({
         alt=""
         fill
         priority={priority}
-        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+        sizes={sizes}
         className={cn(
           "object-cover transition-transform duration-500 group-hover:scale-[1.025] motion-reduce:transition-none",
           recordKey ? stablePosition(recordKey) : "object-center",

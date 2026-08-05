@@ -56,6 +56,10 @@ function readableValue(value: string | null | undefined, fallback = "None") {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function softBadge(value: ReactNode) {
+  return <Badge variant="secondary">{value}</Badge>;
+}
+
 function factsFor(category: WikiCategory, item: WikiListItem): Fact[] {
   switch (category) {
     case "classes": {
@@ -103,7 +107,7 @@ function factsFor(category: WikiCategory, item: WikiListItem): Fact[] {
     case "feats": {
       const value = item as WikiFeatListItem;
       return [
-        { label: "Type", value: value.type || "Feat" },
+        { label: "Type", value: readableValue(value.type, "Feat") },
         {
           label: "Needs",
           value: value.hasPrerequisite ? "Prerequisite" : "None",
@@ -129,6 +133,154 @@ function factsFor(category: WikiCategory, item: WikiListItem): Fact[] {
     }
     default:
       return [{ label: "Source", value: sourceName(item) }];
+  }
+}
+
+function tableFactsFor(
+  category: WikiCategory,
+  item: WikiListItem,
+  itemKind?: WikiItemKind,
+): Fact[] {
+  switch (category) {
+    case "classes": {
+      const value = item as WikiClassListItem;
+      return [
+        {
+          label: "Kind",
+          value: softBadge(value.isSubclass ? "Subclass" : "Class"),
+        },
+        {
+          label: "Hit die",
+          value: <DiceRoll expression={value.hitDice} compact />,
+        },
+        { label: "Magic", value: softBadge(readableValue(value.casterType)) },
+        { label: "Base class", value: value.parentClass?.name ?? "—" },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    }
+    case "creatures": {
+      const value = item as WikiCreatureListItem;
+      return [
+        { label: "CR", value: softBadge(value.challengeRating) },
+        {
+          label: "Armor",
+          value: (
+            <span className="inline-flex items-center gap-1.5">
+              <IconShield className="size-4 text-tk-ember" />
+              {value.armorClass}
+            </span>
+          ),
+        },
+        {
+          label: "Hit points",
+          value: (
+            <span className="inline-flex items-center gap-1.5">
+              <IconHeart className="size-4 text-tk-ember" />
+              {value.hitPoints}
+            </span>
+          ),
+        },
+        { label: "Size", value: softBadge(value.size.name) },
+        { label: "Type", value: value.type.name },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    }
+    case "spells": {
+      const value = item as WikiSpellListItem;
+      return [
+        { label: "Level", value: softBadge(spellLevel(value.level)) },
+        { label: "School", value: softBadge(value.school.name) },
+        { label: "Casting time", value: value.castingTime },
+        {
+          label: "Components",
+          value: (
+            <div className="flex gap-1">
+              {value.components.length
+                ? value.components.map((part) => (
+                    <Badge key={part} variant="secondary">
+                      {part}
+                    </Badge>
+                  ))
+                : "—"}
+            </div>
+          ),
+        },
+        {
+          label: "Classes",
+          value:
+            value.classes
+              .slice(0, 3)
+              .map((entry) => entry.name)
+              .join(", ") || "—",
+        },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    }
+    case "species": {
+      const value = item as WikiSpeciesListItem;
+      return [
+        {
+          label: "Kind",
+          value: softBadge(value.isSubspecies ? "Subspecies" : "Species"),
+        },
+        { label: "Parent", value: value.parentSpecies?.name ?? "—" },
+        { label: "Use", value: "Character option" },
+        { label: "Rules", value: "2024 rules" },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    }
+    case "feats": {
+      const value = item as WikiFeatListItem;
+      return [
+        { label: "Type", value: softBadge(readableValue(value.type, "Feat")) },
+        {
+          label: "Prerequisite",
+          value: value.hasPrerequisite ? softBadge("Required") : "None",
+        },
+        { label: "Use", value: "Character option" },
+        { label: "Rules", value: "2024 rules" },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    }
+    case "items": {
+      const value = item as WikiItemListItem | WikiMagicItemListItem;
+      return [
+        {
+          label: "Kind",
+          value: softBadge(itemKind === "magic" ? "Magic" : "Everyday"),
+        },
+        { label: "Category", value: value.category.name },
+        {
+          label: "Rarity",
+          value:
+            "rarity" in value ? softBadge(value.rarity?.name ?? "Common") : "—",
+        },
+        {
+          label: "Attunement",
+          value:
+            "requiresAttunement" in value
+              ? value.requiresAttunement
+                ? softBadge("Required")
+                : "No"
+              : "—",
+        },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    }
+    case "backgrounds":
+      return [
+        { label: "Kind", value: softBadge("Background") },
+        { label: "Use", value: "Character option" },
+        { label: "Rules", value: "2024 rules" },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
+    case "rules":
+      return [
+        { label: "Kind", value: softBadge("Rule") },
+        { label: "Library", value: "Core rules" },
+        { label: "Rules", value: "2024 rules" },
+        { label: "Source", value: softBadge(sourceName(item)) },
+      ];
   }
 }
 
@@ -205,54 +357,68 @@ export function WikiTableView({
   items: WikiListItem[];
   itemKind?: WikiItemKind;
 }) {
-  const labels = factsFor(
-    category,
-    items[0] ?? ({ key: "", name: "", sourceKey: "" } as WikiListItem),
-  )
-    .slice(0, 3)
-    .map((fact) => fact.label);
-
+  const columns = items[0]
+    ? tableFactsFor(category, items[0], itemKind).map((fact) => fact.label)
+    : [];
   return (
-    <div className="overflow-x-auto rounded-xl border bg-card">
-      <Table className="min-w-[42rem]">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="sticky left-0 z-10 min-w-48 bg-card">
-              Name
-            </TableHead>
-            {labels.map((label) => (
-              <TableHead key={label}>{label}</TableHead>
-            ))}
-            <TableHead>Source</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => {
-            const facts = factsFor(category, item).slice(0, 3);
-            return (
-              <TableRow key={item.key}>
-                <TableCell className="sticky left-0 z-10 bg-card font-medium">
-                  <Link
-                    className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    href={detailHref(category, item, itemKind)}
-                  >
-                    {item.name}
-                  </Link>
-                </TableCell>
-                {facts.map((fact) => (
-                  <TableCell key={fact.label}>{fact.value}</TableCell>
-                ))}
-                {labels.slice(facts.length).map((label) => (
-                  <TableCell key={`empty-${label}`}>—</TableCell>
-                ))}
-                <TableCell>
-                  <Badge variant="secondary">{sourceName(item)}</Badge>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+      <div className="overflow-x-auto">
+        <Table className="min-w-[64rem]">
+          <TableHeader className="bg-muted/55">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="sticky left-0 z-20 min-w-72 bg-muted/95 pl-5 backdrop-blur">
+                Entry
+              </TableHead>
+              {columns.map((label) => (
+                <TableHead key={label} className="whitespace-nowrap">
+                  {label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => {
+              const facts = tableFactsFor(category, item, itemKind);
+              return (
+                <TableRow
+                  key={item.key}
+                  className="group h-[4.75rem] hover:bg-muted/35"
+                >
+                  <TableCell className="sticky left-0 z-10 bg-card py-2 pl-3 group-hover:bg-[color-mix(in_oklch,var(--card),var(--muted)_35%)]">
+                    <Link
+                      href={detailHref(category, item, itemKind)}
+                      className="flex items-center gap-3 rounded-lg p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <WikiArtwork
+                        category={category}
+                        recordKey={item.key}
+                        className="h-12 w-16 shrink-0 rounded-lg border"
+                        sizes="64px"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold">
+                          {item.name}
+                        </span>
+                        <span className="mt-0.5 block truncate font-mono text-[10px] text-muted-foreground">
+                          {item.key}
+                        </span>
+                      </span>
+                    </Link>
+                  </TableCell>
+                  {facts.map((fact) => (
+                    <TableCell
+                      key={fact.label}
+                      className="whitespace-nowrap text-sm"
+                    >
+                      {fact.value}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

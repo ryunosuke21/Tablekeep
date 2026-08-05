@@ -57,7 +57,7 @@ describe("Wiki routers", () => {
     });
   });
 
-  it("defaults class lists to base classes and supports subclasses", async () => {
+  it("defaults class lists to all entries and supports subclasses", async () => {
     request.mockResolvedValue(pageFixture(classFixture()));
     const caller = wikiClassesRouter.createCaller(testContext(request));
 
@@ -66,7 +66,7 @@ describe("Wiki routers", () => {
       page: 1,
       limit: 20,
       name__contains: undefined,
-      is_subclass: false,
+      is_subclass: undefined,
       fields: "key,name,document,hit_dice,caster_type,subclass_of",
     });
 
@@ -144,11 +144,11 @@ describe("Wiki routers", () => {
     });
   });
 
-  it("uses species/subspecies filters without separate routers", async () => {
+  it("shows all species by default without a hidden kind filter", async () => {
     request.mockResolvedValue(pageFixture(speciesFixture()));
     const caller = wikiSpeciesRouter.createCaller(testContext(request));
 
-    await caller.list({ kind: "all" });
+    await caller.list();
     expect(request).toHaveBeenCalledWith("species", expect.anything(), {
       page: 1,
       limit: 20,

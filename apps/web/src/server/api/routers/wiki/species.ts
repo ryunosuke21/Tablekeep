@@ -18,7 +18,7 @@ import {
 
 const listInputSchema = wikiPageInputSchema.extend({
   name: z.string().min(1).optional(),
-  kind: z.enum(["species", "subspecies", "all"]).default("species"),
+  kind: z.enum(["species", "subspecies", "all"]).default("all"),
 });
 
 export const wikiSpeciesRouter = createTRPCRouter({

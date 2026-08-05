@@ -98,6 +98,40 @@ const classes = classNames.map((name, index) => ({
   document: spell.document,
 }));
 
+const species = Array.from({ length: 63 }, (_, index) => ({
+  key: index === 0 ? "srd-2024_dragonborn" : `srd-2024_species-${index + 1}`,
+  name: index === 0 ? "Dragonborn" : `Species ${index + 1}`,
+  desc: "A playable people with distinct gifts and traits.",
+  is_subspecies: index > 49,
+  subspecies_of:
+    index > 49 ? { key: "srd-2024_species-2", name: "Species 2" } : null,
+  traits:
+    index === 0
+      ? [
+          {
+            name: "Size",
+            desc: "Medium (about 5–7 feet tall)",
+            type: "SIZE",
+            order: 1,
+          },
+          { name: "Speed", desc: "30 feet", type: "SPEED", order: 2 },
+          {
+            name: "Draconic Ancestry",
+            desc: "Your lineage stems from a dragon progenitor. Choose a kind from the table.\n\nTable: Draconic Ancestors\n\n| Dragon | Damage Type |\n|---|---|\n| Black | Acid |\n| Blue | Lightning |\n| Red | Fire |\n| Silver | Cold |",
+            type: null,
+            order: 3,
+          },
+          {
+            name: "Breath Weapon",
+            desc: "Exhale magical energy. A creature takes 1d10 damage on a failed save.",
+            type: null,
+            order: 4,
+          },
+        ]
+      : [],
+  document: spell.document,
+}));
+
 function json(response, status, body) {
   response.writeHead(status, { "Content-Type": "application/json" });
   response.end(JSON.stringify(body));
@@ -144,6 +178,44 @@ const server = createServer((request, response) => {
           : null,
       results: filtered.slice(start, start + limit),
     });
+  }
+
+  if (request.method === "GET" && url.pathname === "/v2/species/") {
+    operations.push(`${request.method} ${url.pathname}${url.search}`);
+    const page = Number(url.searchParams.get("page") ?? 1);
+    const limit = Number(url.searchParams.get("limit") ?? 20);
+    const query = (url.searchParams.get("name__icontains") ?? "").toLowerCase();
+    const baseOnly = url.searchParams.get("subspecies_of__isnull");
+    const filtered = species.filter(
+      (item) =>
+        item.name.toLowerCase().includes(query) &&
+        (baseOnly === null || item.is_subspecies === (baseOnly === "false")),
+    );
+    const start = (page - 1) * limit;
+    return json(response, 200, {
+      count: filtered.length,
+      next:
+        start + limit < filtered.length
+          ? `http://${hostname}:${port}/v2/species/?page=${page + 1}`
+          : null,
+      previous:
+        page > 1
+          ? `http://${hostname}:${port}/v2/species/?page=${page - 1}`
+          : null,
+      results: filtered.slice(start, start + limit),
+    });
+  }
+
+  if (
+    request.method === "GET" &&
+    url.pathname.startsWith("/v2/species/srd-2024_")
+  ) {
+    operations.push(`${request.method} ${url.pathname}`);
+    const key = url.pathname.split("/").filter(Boolean).at(-1);
+    const result = species.find((item) => item.key === key);
+    return result
+      ? json(response, 200, result)
+      : json(response, 404, { error: "Not found" });
   }
 
   if (

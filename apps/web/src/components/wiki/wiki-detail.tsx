@@ -2,8 +2,17 @@ import type { ReactNode } from "react";
 import {
   IconArrowLeft,
   IconBolt,
+  IconBook2,
+  IconCards,
+  IconClock,
+  IconFlame,
   IconHeart,
+  IconListDetails,
   IconShield,
+  IconSparkles,
+  IconSword,
+  IconTable,
+  IconWand,
 } from "@tabler/icons-react";
 import Link from "next/link";
 
@@ -31,7 +40,7 @@ import { DiceRoll } from "./dice-roll";
 import { WikiProse } from "./dice-text";
 import { WikiArtwork } from "./wiki-artwork";
 
-type Fact = { label: string; value: ReactNode };
+type Fact = { label: string; value: ReactNode; icon?: ReactNode };
 
 function readableValue(value: string | null | undefined, fallback = "None") {
   if (!value) return fallback;
@@ -48,11 +57,73 @@ function DetailSection({
   title: string;
   children: ReactNode;
 }) {
+  const icon = sectionIcon(title);
   return (
-    <section className="border-t pt-8">
-      <h2 className="font-semibold text-xl tracking-[-0.03em]">{title}</h2>
-      <div className="mt-4">{children}</div>
+    <section className="rounded-2xl border bg-background/55 p-5 shadow-xs sm:p-6">
+      <div className="flex items-center gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          {icon}
+        </span>
+        <h2 className="font-semibold text-xl tracking-[-0.03em]">{title}</h2>
+      </div>
+      <div className="mt-5">{children}</div>
     </section>
+  );
+}
+
+function sectionIcon(title: string) {
+  const name = title.toLowerCase();
+  if (name.includes("action")) return <IconSword className="size-5" />;
+  if (name.includes("spell") || name.includes("cast"))
+    return <IconWand className="size-5" />;
+  if (name.includes("trait") || name.includes("feature"))
+    return <IconSparkles className="size-5" />;
+  if (name.includes("hit") || name.includes("damage"))
+    return <IconHeart className="size-5" />;
+  if (name.includes("abilit")) return <IconCards className="size-5" />;
+  if (name.includes("material") || name.includes("item"))
+    return <IconListDetails className="size-5" />;
+  return <IconBook2 className="size-5" />;
+}
+
+function RuleCard({
+  title,
+  badge,
+  icon = <IconSparkles className="size-4" />,
+  children,
+}: {
+  title: string;
+  badge?: ReactNode;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border bg-card p-4 shadow-xs sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-tk-ember">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold text-lg">{title}</h3>
+            {badge}
+          </div>
+          <div className="mt-3">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Intro({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <div className="rounded-2xl border border-primary/15 bg-primary/5 p-5 sm:p-6">
+      <div className="flex gap-3">
+        <IconBook2 className="mt-1 size-5 shrink-0 text-primary" />
+        <WikiProse text={text} />
+      </div>
+    </div>
   );
 }
 
@@ -68,7 +139,8 @@ function FactGrid({ facts }: { facts: Fact[] }) {
         )
         .map((fact) => (
           <div key={fact.label}>
-            <dt className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
+            <dt className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground uppercase tracking-[0.14em] [&_svg]:size-3.5 [&_svg]:text-tk-ember">
+              {fact.icon}
               {fact.label}
             </dt>
             <dd className="mt-1 font-medium text-sm">{fact.value}</dd>
@@ -82,7 +154,8 @@ function Source({ detail }: { detail: WikiDetail }) {
   const label =
     "source" in detail ? detail.source.displayName : detail.sourceKey;
   return (
-    <footer className="border-t pt-5 text-muted-foreground text-xs">
+    <footer className="flex items-center gap-2 rounded-xl border bg-muted/30 px-4 py-3 text-muted-foreground text-xs">
+      <IconBook2 className="size-4 text-tk-ember" />
       Rules source: <span className="font-medium text-foreground">{label}</span>
     </footer>
   );
@@ -121,13 +194,14 @@ export function WikiDetailPage({
               {detail.name}
             </h1>
           </header>
-          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start">
-            <div className="min-w-0 space-y-8">
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+            <div className="min-w-0 space-y-5">
               <DetailBody category={category} detail={detail} />
               <Source detail={detail} />
             </div>
-            <aside className="order-first rounded-xl border bg-muted/40 p-5 lg:sticky lg:top-20 lg:order-last">
-              <p className="mb-4 font-mono text-[10px] text-tk-ember uppercase tracking-[0.14em]">
+            <aside className="order-first rounded-2xl border bg-muted/40 p-5 shadow-xs lg:sticky lg:top-20 lg:order-last">
+              <p className="mb-5 flex items-center gap-2 font-mono text-[10px] text-tk-ember uppercase tracking-[0.14em]">
+                <IconListDetails className="size-4" />
                 At a glance
               </p>
               <FactGrid facts={detailFacts(category, detail)} />
@@ -144,9 +218,21 @@ function detailFacts(category: WikiCategory, detail: WikiDetail): Fact[] {
     case "classes": {
       const value = detail as WikiClass;
       return [
-        { label: "Hit die", value: <DiceRoll expression={value.hitDice} /> },
-        { label: "Magic", value: readableValue(value.casterType) },
-        { label: "Saving throws", value: value.savingThrows.join(", ") },
+        {
+          label: "Hit die",
+          value: <DiceRoll expression={value.hitDice} />,
+          icon: <IconHeart />,
+        },
+        {
+          label: "Magic",
+          value: readableValue(value.casterType),
+          icon: <IconWand />,
+        },
+        {
+          label: "Saving throws",
+          value: value.savingThrows.join(", "),
+          icon: <IconShield />,
+        },
       ];
     }
     case "creatures": {
@@ -154,53 +240,69 @@ function detailFacts(category: WikiCategory, detail: WikiDetail): Fact[] {
       return [
         {
           label: "Challenge",
-          value: (
-            <span className="inline-flex items-center gap-1">
-              <IconBolt className="size-4 text-tk-ember" />
-              {value.challengeRating}
-            </span>
-          ),
+          value: value.challengeRating,
+          icon: <IconBolt />,
         },
         {
           label: "Armor class",
-          value: (
-            <span className="inline-flex items-center gap-1">
-              <IconShield className="size-4 text-tk-ember" />
-              {value.armorClass}
-            </span>
-          ),
+          value: value.armorClass,
+          icon: <IconShield />,
         },
         {
           label: "Hit points",
-          value: (
-            <span className="inline-flex items-center gap-1">
-              <IconHeart className="size-4 text-tk-ember" />
-              {value.hitPoints}
-            </span>
-          ),
+          value: value.hitPoints,
+          icon: <IconHeart />,
         },
-        { label: "Hit dice", value: <DiceRoll expression={value.hitDice} /> },
-        { label: "Size", value: value.size.name },
-        { label: "Type", value: value.type.name },
+        {
+          label: "Hit dice",
+          value: <DiceRoll expression={value.hitDice} />,
+          icon: <IconHeart />,
+        },
+        { label: "Size", value: value.size.name, icon: <IconListDetails /> },
+        { label: "Type", value: value.type.name, icon: <IconSparkles /> },
       ];
     }
     case "spells": {
       const value = detail as WikiSpell;
       return [
-        { label: "Level", value: value.level === 0 ? "Cantrip" : value.level },
-        { label: "School", value: value.school.name },
-        { label: "Casting time", value: value.castingTime },
-        { label: "Range", value: value.rangeText },
-        { label: "Duration", value: value.duration },
-        { label: "Components", value: value.components.join(", ") || "None" },
+        {
+          label: "Level",
+          value: value.level === 0 ? "Cantrip" : value.level,
+          icon: <IconSparkles />,
+        },
+        { label: "School", value: value.school.name, icon: <IconWand /> },
+        {
+          label: "Casting time",
+          value: value.castingTime,
+          icon: <IconClock />,
+        },
+        { label: "Range", value: value.rangeText, icon: <IconBolt /> },
+        { label: "Duration", value: value.duration, icon: <IconClock /> },
+        {
+          label: "Components",
+          value: value.components.join(", ") || "None",
+          icon: <IconListDetails />,
+        },
       ];
     }
     case "species": {
       const value = detail as WikiSpecies;
       return [
-        { label: "Kind", value: value.isSubspecies ? "Subspecies" : "Species" },
-        { label: "Parent", value: value.parentSpecies?.name ?? "—" },
-        { label: "Traits", value: value.traits.length },
+        {
+          label: "Kind",
+          value: value.isSubspecies ? "Subspecies" : "Species",
+          icon: <IconSparkles />,
+        },
+        {
+          label: "Parent",
+          value: value.parentSpecies?.name ?? "—",
+          icon: <IconBook2 />,
+        },
+        {
+          label: "Traits",
+          value: value.traits.length,
+          icon: <IconListDetails />,
+        },
       ];
     }
     case "feats": {
@@ -261,7 +363,7 @@ function DetailBody({
     const value = detail as WikiClass;
     return (
       <>
-        <WikiProse text={value.description} />
+        <Intro text={value.description} />
         <DetailSection title="Hit points">
           <div className="rounded-xl border bg-muted/30 p-5">
             <p className="font-medium">
@@ -280,25 +382,24 @@ function DetailBody({
           </div>
         </DetailSection>
         <DetailSection title="Features">
-          <div className="space-y-7">
+          <div className="grid gap-4">
             {value.features.map((feature) => (
-              <section key={feature.key}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-lg">{feature.name}</h3>
-                  {feature.gainedAt.map((level) => (
-                    <Badge
-                      key={`${level.level}-${level.detail}`}
-                      variant="secondary"
-                    >
-                      Level {level.level}
-                      {level.detail ? ` · ${level.detail}` : ""}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-2">
-                  <WikiProse text={feature.description} />
-                </div>
-              </section>
+              <RuleCard
+                key={feature.key}
+                title={feature.name}
+                icon={<IconSparkles className="size-4" />}
+                badge={feature.gainedAt.map((level) => (
+                  <Badge
+                    key={`${level.level}-${level.detail}`}
+                    variant="secondary"
+                  >
+                    Level {level.level}
+                    {level.detail ? ` · ${level.detail}` : ""}
+                  </Badge>
+                ))}
+              >
+                <WikiProse text={feature.description} />
+              </RuleCard>
             ))}
           </div>
         </DetailSection>
@@ -329,34 +430,32 @@ function DetailBody({
         </DetailSection>
         {value.traits.length ? (
           <DetailSection title="Traits">
-            <div className="space-y-6">
+            <div className="grid gap-4">
               {value.traits.map((trait) => (
-                <section key={trait.name}>
-                  <h3 className="font-semibold">{trait.name}</h3>
-                  <div className="mt-2">
-                    <WikiProse text={trait.description} />
-                  </div>
-                </section>
+                <RuleCard key={trait.name} title={trait.name}>
+                  <WikiProse text={trait.description} />
+                </RuleCard>
               ))}
             </div>
           </DetailSection>
         ) : null}
         <DetailSection title="Actions">
-          <div className="space-y-6">
+          <div className="grid gap-4">
             {value.actions.map((action) => (
-              <section key={`${action.name}-${action.type}`}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold">{action.name}</h3>
-                  {action.legendaryActionCost ? (
+              <RuleCard
+                key={`${action.name}-${action.type}`}
+                title={action.name}
+                icon={<IconSword className="size-4" />}
+                badge={
+                  action.legendaryActionCost ? (
                     <Badge variant="secondary">
                       Costs {action.legendaryActionCost}
                     </Badge>
-                  ) : null}
-                </div>
-                <div className="mt-2">
-                  <WikiProse text={action.description} />
-                </div>
-              </section>
+                  ) : null
+                }
+              >
+                <WikiProse text={action.description} />
+              </RuleCard>
             ))}
           </div>
         </DetailSection>
@@ -385,7 +484,7 @@ function DetailBody({
     const value = detail as WikiSpell;
     return (
       <>
-        <WikiProse text={value.description} />
+        <Intro text={value.description} />
         {value.damageRoll ? (
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
             <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
@@ -441,18 +540,34 @@ function DetailBody({
     const value = detail as WikiSpecies;
     return (
       <>
-        <WikiProse text={value.description} />
+        <Intro text={value.description} />
         <DetailSection title="Traits">
-          <div className="space-y-7">
+          <div className="grid gap-4">
             {[...value.traits]
               .sort((a, b) => a.order - b.order)
               .map((trait) => (
-                <section key={`${trait.order}-${trait.name}`}>
-                  <h3 className="font-semibold text-lg">{trait.name}</h3>
-                  <div className="mt-2">
-                    <WikiProse text={trait.description} />
-                  </div>
-                </section>
+                <RuleCard
+                  key={`${trait.order}-${trait.name}`}
+                  title={trait.name}
+                  icon={
+                    trait.name.toLowerCase().includes("breath") ? (
+                      <IconFlame className="size-4" />
+                    ) : trait.description.includes("|---") ? (
+                      <IconTable className="size-4" />
+                    ) : (
+                      <IconSparkles className="size-4" />
+                    )
+                  }
+                  badge={
+                    trait.type ? (
+                      <Badge variant="secondary">
+                        {readableValue(trait.type)}
+                      </Badge>
+                    ) : undefined
+                  }
+                >
+                  <WikiProse text={trait.description} />
+                </RuleCard>
               ))}
           </div>
         </DetailSection>
@@ -463,20 +578,16 @@ function DetailBody({
     const value = detail as WikiBackground;
     return (
       <>
-        <WikiProse text={value.description} />
+        <Intro text={value.description} />
         <DetailSection title="Benefits">
-          <div className="space-y-7">
+          <div className="grid gap-4">
             {value.benefits.map((benefit, index) => (
-              <section
+              <RuleCard
                 key={`${benefit.name ?? benefit.type ?? "benefit"}-${benefit.description}`}
+                title={benefit.name ?? benefit.type ?? `Benefit ${index + 1}`}
               >
-                <h3 className="font-semibold text-lg">
-                  {benefit.name ?? benefit.type ?? `Benefit ${index + 1}`}
-                </h3>
-                <div className="mt-2">
-                  <WikiProse text={benefit.description} />
-                </div>
-              </section>
+                <WikiProse text={benefit.description} />
+              </RuleCard>
             ))}
           </div>
         </DetailSection>
@@ -487,7 +598,7 @@ function DetailBody({
     const value = detail as WikiFeat;
     return (
       <>
-        <WikiProse text={value.description} />
+        <Intro text={value.description} />
         {value.hasPrerequisite ? (
           <div className="rounded-xl border bg-muted/30 p-4">
             <strong>Prerequisite:</strong> {value.prerequisite}
@@ -512,7 +623,7 @@ function DetailBody({
     const value = detail as WikiItem | WikiMagicItem;
     return (
       <>
-        <WikiProse text={value.description} />
+        <Intro text={value.description} />
         {"attunementDetail" in value && value.attunementDetail ? (
           <DetailSection title="Attunement">
             <WikiProse text={value.attunementDetail} />
@@ -536,5 +647,5 @@ function DetailBody({
     );
   }
   const value = detail as WikiRule;
-  return <WikiProse text={value.description} />;
+  return <Intro text={value.description} />;
 }
