@@ -1,17 +1,17 @@
 # Tablekeep product roadmap
 
-> **Status:** Active implementation. M2 private campaigns is implemented; the M1 closed-beta gate and M3–M7 remain planned.
+> **Status:** Active implementation. M2 private campaigns and M3 player essentials are implemented; the M1 closed-beta gate and M4–M7 remain planned.
 >
 > **Launch target:** Closed beta.
 >
-> **Last updated:** July 29, 2026.
+> **Last updated:** August 5, 2026.
 
 Tablekeep's first release should prove one complete in-person play loop:
 
 1. A Dungeon Master creates a private campaign.
 2. Players join through an invitation link, code, or email.
 3. Players maintain essential character and spell information.
-4. The DM sees and, when necessary, overrides campaign-specific character state.
+4. The DM sees and co-manages character state belonging to that campaign.
 5. Everyone in the campaign sees the same active encounter and initiative state.
 
 The product should reduce bookkeeping at the table without becoming a virtual tabletop or replacing physical play.
@@ -23,8 +23,10 @@ The following decisions are part of the roadmap:
 - Spells are required for the MVP.
 - Campaigns support both shareable invite links/codes and email invitations.
 - DMs can remove players from their campaigns.
-- Players own and manage their character sheets.
-- A DM can edit a character for their campaign. DM changes are stored as campaign-scoped overrides and must not alter that character outside the campaign.
+- Players own their global character identities.
+- Each playable `character_sheets` record belongs to one campaign and is co-managed by its player and that campaign's DMs. There is no base-sheet/override merge.
+- Ancestry, class/subclass levels, backgrounds, maximum HP, conditions, inventory, currencies, and future spells are campaign-sheet state; editing one campaign never changes another.
+- Current HP belongs to M6 encounter state, not the global character or M3 campaign sheet.
 - Active encounter state is shared and consistent for the DM and every campaign player.
 - The first launch is an invitation-only closed beta.
 - Site-administrator access and campaign-level DM authority remain separate concepts.
@@ -116,35 +118,42 @@ The MVP is complete when a DM and at least one player can use Tablekeep to prepa
 
 ### Work
 
-- Let a player create and attach a character to a campaign.
-- Capture essential identity and system-neutral notes.
-- Capture current and maximum hit points.
+- Let a player create a global, owner-controlled character identity and attach it to a campaign by creating a campaign-scoped `character_sheets` record.
+- Keep the global `characters` record limited to identity fields and soft deletion through `deleted_at`; it is not the playable sheet.
+- Capture sheet-scoped ancestry, one or more classes with optional subclasses and levels, one or more backgrounds, maximum HP, and system-neutral notes.
+- Support multiclassing with one `sheet_classes` row per class and derive total level rather than storing a competing total.
 - Track conditions as flexible labels rather than encoding a full rules engine.
 - Track inventory entries with a name, quantity, equipped state, and notes.
-- Track currency without assuming that every campaign uses the same denominations.
-- Provide quick, validated HP, condition, inventory, and currency updates.
-- Make ownership and campaign attachment explicit in the data model.
-- Define behavior for retired characters and players with more than one character.
+- Track multiple freely named currency balances without fixed denomination columns or enums.
+- Provide quick, validated maximum-HP, class/background, condition, inventory, and currency updates.
+- Let the player and campaign DMs edit the same campaign-owned sheet rows, recording the acting user and update time.
+- Make global ownership and campaign attachment explicit in the data model; all mechanics resolve through `character_sheets.campaign_id`.
+- Use `retired_at` only for a campaign sheet and `deleted_at` for the global character identity; define behavior for players with more than one character.
 - Provide clear saved, saving, validation-error, and retry feedback.
 
-### Campaign-specific DM overrides
+### Campaign sheet ownership
 
-- The player-owned character record remains the base sheet.
-- A DM edit creates or updates an override scoped to that character and campaign.
-- The effective campaign sheet is the base value merged with active campaign overrides.
-- Overrides must record which DM changed the value and when.
-- The UI must identify overridden fields to both the character owner and campaign DMs.
-- A DM must be able to remove an override and return the field to the player's base value.
-- Editing one campaign's override must never change the base character or another campaign's effective sheet.
-- Player edits to a base value must not silently erase an active DM override.
+- The global character is an owner-controlled identity, not a base sheet of mechanical values.
+- `character_sheets` and their child rows are the single source of truth for one campaign incarnation.
+- The character owner and campaign DMs can add, change, remove, and restore permitted campaign-sheet data.
+- Writes derive actor identity from the session and retain concise attribution fields such as `updated_by` and timestamps.
+- Another campaign receives a separate sheet; there is no copied base state or override layer to merge.
+- Current HP is explicitly excluded from M3 and will be stored on M6 encounter participants/combatants.
+
+### Implemented schema vocabulary
+
+- Use `characters` for global identity and `character_sheets` for campaign-specific playable state.
+- Use the child tables `sheet_classes`, `sheet_backgrounds`, `sheet_conditions`, `sheet_items`, and `sheet_currencies`.
+- Prefer concise, contextual columns such as `char_id`, `sheet_id`, `max_hp`, `qty`, `equipped`, `ref`, `sort`, and `updated_by`; retain clear keys such as `campaign_id` and `owner_id`.
+- M4 spell rows and resources attach through `sheet_id`, never directly through the global character ID.
 
 ### Acceptance criteria
 
 - A player can prepare and update a minimal character during play in a few taps.
 - Another player cannot edit or access private character data they are not allowed to see.
-- A DM can override an allowed field for their campaign.
-- The same character viewed outside that campaign remains unchanged.
-- Override creation, replacement, and removal are covered by authorization and merge-behavior tests.
+- A campaign DM can edit or remove allowed data on a member's campaign sheet.
+- The same global character's sheet in another campaign remains unchanged.
+- Player/DM co-management, attribution, retirement, deletion, and cross-campaign isolation are covered by authorization and lifecycle tests.
 
 ## 1.5 Maintain a usable spellbook
 
@@ -163,7 +172,7 @@ For the MVP:
 - Keep the adapter replaceable with another appropriately licensed source.
 - Record the upstream source, version, and source-qualified spell key with imported records.
 - Cache catalog responses conservatively and handle upstream timeouts or unavailability.
-- Store enough approved spell detail with a character's saved spellbook that an upstream outage does not make prepared spells unusable at the table.
+- Store enough approved spell detail with a campaign sheet's saved spellbook that an upstream outage does not make prepared spells unusable at the table.
 - Review and satisfy the source data's attribution and license requirements before closed beta distribution.
 - Do not imply that the API contains every officially published spell.
 
@@ -178,7 +187,7 @@ The API and source documentation is available at:
 - Browse the SRD spell catalog and search locally by name.
 - Filter spells using supported catalog fields such as level and school.
 - View the details needed during play, including casting time, range, components, duration, description, level, and school when the source provides them.
-- Add and remove spells from a character's spellbook.
+- Add and remove spells from a campaign sheet's spellbook.
 - Mark spells as prepared or unprepared.
 - Track current and maximum spell resources by level or as flexible named resources where the character requires a different model.
 - Allow a user to create a custom, user-authored spell when the desired spell is not in the SRD catalog.
@@ -190,7 +199,7 @@ The API and source documentation is available at:
 - A player can find an SRD spell, add it to their character, and mark it prepared.
 - A player can create a private custom spell reference.
 - Prepared spell details remain available during a temporary upstream API outage.
-- Resource changes persist and are visible in the effective campaign sheet.
+- Resource changes persist on the campaign sheet.
 - API errors do not block the rest of the character sheet.
 - Attribution and required license notices are present before the beta launches.
 
@@ -201,8 +210,8 @@ The API and source documentation is available at:
 ### Work
 
 - Show campaign members and their attached characters in a DM-oriented party overview.
-- Surface effective current/max HP, active conditions, and key spell-resource state.
-- Identify when displayed values include campaign-specific DM overrides.
+- Surface maximum HP, active conditions, and key spell-resource state from each campaign sheet; surface current HP from the active encounter when applicable.
+- Show who last changed relevant co-managed sheet state when that context is useful.
 - Link directly to character and spellbook details.
 - Keep player-safe campaign context separate from DM-only controls.
 - Define empty, incomplete-character, removed-member, and retired-character states.
@@ -211,7 +220,7 @@ The API and source documentation is available at:
 ### Acceptance criteria
 
 - A DM can understand the party's current table state from one screen.
-- The overview displays the same effective values as each campaign character sheet.
+- The overview displays the same values as each campaign character sheet and the authoritative active encounter.
 - Player and DM interfaces reveal only the information authorized for that role.
 
 ## 1.7 Run one shared initiative encounter
@@ -258,7 +267,7 @@ The API and source documentation is available at:
 ### Work
 
 - Generate and review Drizzle migrations for each shared domain change.
-- Add automated coverage for authorization, ownership, campaign overrides, invitations, and encounter transitions.
+- Add automated coverage for authorization, global character ownership, campaign-sheet co-management, invitations, and encounter transitions.
 - Add clear mutation feedback, validation messages, safe retries, and destructive confirmations.
 - Define production deployment, environment configuration, and rollback procedures.
 - Define database backup and restore procedures and test a restore.
@@ -285,8 +294,8 @@ Milestones describe dependency order and user outcomes. Calendar estimates shoul
 | M0: Product shell | In progress | Branding, sign-in, onboarding, responsive authenticated navigation | Existing auth foundation | A signed-in user reaches a stable application home |
 | M1: Closed-beta gate | Planned | Admission controls and beta administration | M0 | Only approved testers can enter the app |
 | M2: Private campaigns | Implemented | Campaigns, roles, link/code invites, email invites, removal, authorization helpers, archival, recurring sessions | M0–M1 | A DM and players complete a secure membership lifecycle |
-| M3: Player essentials | Planned | Base character, campaign attachment, DM overrides, HP, conditions, inventory, currency | M2 | A player prepares a character and a DM applies a reversible campaign override |
-| M4: Spellbooks | Planned | SRD adapter, cached spell details, custom spells, preparation and resource tracking | M3 | A player prepares spells that remain usable during an upstream outage |
+| M3: Player essentials | Implemented | Global character identity; campaign sheets with ancestry, multiclass levels, backgrounds, max HP, conditions, inventory, and multiple currencies; player/DM co-management | M2 | A player prepares a campaign character and its DM can safely co-manage the same sheet |
+| M4: Spellbooks | Planned | Sheet-scoped SRD adapter, cached spell details, custom spells, preparation and resource tracking | M3 | A player prepares campaign-scoped spells that remain usable during an upstream outage |
 | M5: DM table view | Planned | Party overview and role-safe campaign navigation | M3–M4 | A DM scans effective party state from one screen |
 | M6: Shared encounters | Planned | Initiative, encounter revisions, player view, consistency and recovery | M2–M3 | DM and players complete an encounter while seeing the same state |
 | M7: Beta hardening | Planned | Tests, migrations, monitoring, backup/restore, privacy and usability | M0–M6 | The closed-beta release checklist passes |
@@ -311,11 +320,11 @@ These items should be prioritized using closed-beta feedback rather than assumed
 
 ## 2.1 Deeper character management
 
-- Abilities, skills, defenses, level progression, and richer resource tracking.
+- Abilities, skills, defenses, automated progression rules, and richer resource tracking beyond M3's class/subclass level rows.
 - Equipment categories, containers, attunement, item attachments, and history.
 - Reusable character templates that do not force every campaign into one system.
 - Character transfer, export, and import.
-- A clearer comparison between base character values and campaign overrides.
+- Richer audit history for player and DM changes to a campaign sheet.
 
 ## 2.2 Richer spell workflows
 
@@ -373,7 +382,7 @@ Roadmap work lands in `apps/web`, the product application. `apps/docs` is the se
 
 - `apps/web/src/app/` — public entry, auth, beta gate, campaign, character, spellbook, party, and encounter routes.
 - `apps/web/src/components/` — application shell and domain-specific components.
-- `apps/web/src/server/db/schema/` — beta access, campaign, invitation, membership, character, override, inventory, spellbook, and encounter tables.
+- `apps/web/src/server/db/schema/` — beta access, campaign, invitation, membership, global character identity, campaign sheet and child, spellbook, and encounter tables.
 - `apps/web/src/server/api/routers/` — routers for each domain, composed into the application router.
 - `apps/web/src/server/api/` — reusable campaign-membership, role, ownership, and beta-access authorization.
 - `apps/web/src/server/integrations/` — the external spell-catalog adapter and email provider integration.
@@ -401,7 +410,7 @@ Additional rules:
 - Campaign-owned records must carry or resolve to a campaign ID.
 - Server responses must omit unauthorized fields entirely.
 - A client-provided user ID, campaign ID, role, or encounter revision is input to verify, never proof of authority.
-- Campaign overrides need provenance and must be reversible.
+- Campaign-sheet writes need actor attribution; destructive sheet actions should be reversible where practical.
 - Invitation tokens and codes must not be stored in retrievable plaintext where a hash can be used.
 - Destructive actions should prefer archival or another recoverable state when practical.
 
@@ -424,7 +433,7 @@ Additional rules:
 - Run `pnpm build`.
 - Test invitation creation, acceptance, expiry, revocation, wrong-recipient handling, and member removal.
 - Test authorization as a site administrator, campaign DM, character owner, other player, removed member, approved non-member, unapproved account, and signed-out user.
-- Test campaign override creation, replacement, merge behavior, provenance, removal, and cross-campaign isolation.
+- Test global character ownership, campaign-sheet creation and retirement, player/DM co-management, attribution, child-row removal/restoration, and cross-campaign isolation.
 - Test spell adapter parsing, cache behavior, custom spells, and upstream failure handling.
 - Test encounter ordering, ties, advancement, reverse movement, round changes, stale revisions, and conflicting mutations.
 
@@ -434,7 +443,7 @@ Additional rules:
 - Accept one invite by link/code and another by email.
 - Remove a player and verify access is lost immediately.
 - Prepare a character and spellbook from a phone-sized viewport.
-- Apply and remove a DM override and verify the base character remains unchanged.
+- Have a DM change and remove campaign-sheet data, then verify another campaign sheet for the same global character remains unchanged.
 - Disconnect the spell API and verify saved prepared spells remain usable.
 - Run an encounter with one DM and multiple player views.
 - Verify every participant converges on the same encounter revision.
@@ -451,5 +460,5 @@ Exact targets can be set when the beta group size is known. At minimum, measure:
 - Time and failure rate for invitation acceptance.
 - Frequency of failed or conflicting encounter updates.
 - Upstream spell API failures and cache effectiveness.
-- Support requests involving permissions, missing data, or unclear overrides.
+- Support requests involving permissions, missing data, or unclear co-managed changes.
 - Qualitative feedback on whether Tablekeep reduced bookkeeping without distracting from play.

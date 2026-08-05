@@ -2,7 +2,7 @@
 
 Tablekeep is a tabletop companion for in-person Dungeons & Dragons campaigns. It is designed to keep the information a group reaches for at the table—characters, spells, inventory, encounters, and rolls—in one shared, practical place without replacing the physical game.
 
-> **Project status:** Tablekeep now includes private campaigns: persisted campaign settings, DM/player membership, link/code and email invitations, member management, archival, and recurring session scheduling. The closed-beta admission gate, characters, spellbooks, party tools, and encounters remain planned work.
+> **Project status:** Tablekeep now includes private campaigns and player essentials: global character identities, campaign-scoped sheets, player/DM co-management, multiclass levels, backgrounds, maximum HP, conditions, inventory, and multiple currencies. The closed-beta admission gate, spellbooks, party tools, and encounters remain planned work.
 
 ## The two applications
 
@@ -19,9 +19,10 @@ Tablekeep ships as two separate Next.js applications:
 
 ### For players
 
-- Character sheets, including current and maximum hit points.
-- Spell books and prepared-spell tracking.
-- Inventory, equipment, currency, and item notes.
+- A global, player-owned character identity with a separate playable sheet for each campaign. **Implemented (M3).**
+- Campaign sheets with ancestry, multiclass class/subclass levels, backgrounds, maximum hit points, conditions, inventory, equipment, multiple currencies, and notes. **Implemented (M3).**
+- Campaign-scoped spell books and prepared-spell tracking. **Planned (M4).**
+- Current hit points as part of shared encounter state rather than the persistent character sheet. **Planned (M6).**
 - A place to make campaign-relevant rolls when the table wants a digital roll.
 
 ### For Dungeon Masters

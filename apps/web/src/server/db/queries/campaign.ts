@@ -771,6 +771,18 @@ async function deleteMembershipWithEvent(
         ${input.action}::campaign_member_event_action,
         ${input.actorId}
       from deleted_member
+    ), retired_sheets as (
+      update character_sheets sheet
+      set
+        retired_at = now(),
+        retired_by = ${input.actorId},
+        updated_by = ${input.actorId},
+        updated_at = now()
+      from deleted_member
+      where sheet.campaign_id = deleted_member.campaign_id
+        and sheet.owner_id = deleted_member.user_id
+        and sheet.retired_at is null
+      returning sheet.id
     )
     select
       id,

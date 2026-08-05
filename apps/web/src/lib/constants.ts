@@ -36,3 +36,15 @@ export const CAMPAIGN_SCHEDULE_HORIZON_DAYS = 90;
 
 /** A second safety bound in addition to the date horizon. */
 export const MAX_CAMPAIGN_SCHEDULE_OCCURRENCES = 256;
+
+/** M3 character and campaign-sheet guardrails. */
+export const MAX_CHARACTERS_PER_USER = 20;
+export const MAX_SHEET_CLASSES = 8;
+export const MAX_SHEET_BACKGROUNDS = 4;
+export const MAX_SHEET_CONDITIONS = 50;
+export const MAX_SHEET_ITEMS = 250;
+export const MAX_SHEET_CURRENCIES = 25;
+export const MAX_CLASS_LEVEL = 100;
+export const MAX_CHARACTER_HP = 1_000_000;
+export const MAX_ITEM_QTY = 1_000_000;
+export const MAX_CURRENCY_AMOUNT = 1_000_000_000;
