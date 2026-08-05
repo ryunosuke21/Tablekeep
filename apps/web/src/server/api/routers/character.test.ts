@@ -416,6 +416,54 @@ describe("character router", () => {
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
+  it("resolves sheet access with the requested sheet id for the owner, the DM, and nested writes", async () => {
+    // Regression: the access middleware once ran before `sheetIdSchema` was
+    // parsed, so it looked up `undefined` and denied every real sheet.
+    characterQueries.getCharacterSheet.mockResolvedValue({ id: sheetId });
+
+    await expect(
+      caller().sheet.get({ campaignId, sheetId }),
+    ).resolves.toMatchObject({ id: sheetId });
+    expect(characterQueries.getSheetAccess).toHaveBeenLastCalledWith(
+      expect.anything(),
+      campaignId,
+      sheetId,
+    );
+    expect(characterQueries.getCharacterSheet).toHaveBeenLastCalledWith(
+      expect.anything(),
+      campaignId,
+      sheetId,
+    );
+
+    campaignQueries.getCampaignForMemberById.mockResolvedValue(
+      membership("dm"),
+    );
+    await expect(
+      caller("dm-1").sheet.get({ campaignId, sheetId }),
+    ).resolves.toMatchObject({ id: sheetId });
+    expect(characterQueries.getSheetAccess).toHaveBeenLastCalledWith(
+      expect.anything(),
+      campaignId,
+      sheetId,
+    );
+
+    characterQueries.createSheetItem.mockResolvedValue({ id: rowId });
+    await caller("dm-1").sheet.item.create({
+      campaignId,
+      sheetId,
+      name: "Rope",
+    });
+    expect(characterQueries.getSheetAccess).toHaveBeenLastCalledWith(
+      expect.anything(),
+      campaignId,
+      sheetId,
+    );
+    expect(characterQueries.createSheetItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sheetId, name: "Rope", actorId: "dm-1" }),
+    );
+  });
+
   it("rejects current HP because it is not persistent sheet state", async () => {
     await expect(
       caller().sheet.update({

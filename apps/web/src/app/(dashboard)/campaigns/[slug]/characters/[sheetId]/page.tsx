@@ -12,6 +12,8 @@ import { getCampaign } from "../../_lib/get-campaign";
 /**
  * `character.sheet.get` answers NOT_FOUND unless the caller owns the sheet or
  * runs the campaign, so a private sheet and a missing one look the same here.
+ * The sibling `not-found.tsx` catches this so a sheet-level miss never reports
+ * the campaign itself as unavailable.
  */
 const getSheet = cache(async (campaignId: string, sheetId: string) => {
   try {

@@ -93,13 +93,22 @@ function requireCreated<Result>(result: Result | null | undefined): Result {
 /**
  * A sheet is private to its owner and the campaign's DMs. Returning NOT_FOUND
  * for every denial prevents players from probing another player's sheet IDs.
+ *
+ * The sheet scope is declared on this builder, not left to each procedure: a
+ * middleware only sees the input parsed by the `.input()` calls before it, so
+ * reading `sheetId` from an input declared later would read `undefined`. The
+ * scope stays non-strict so each procedure's own strict schema still decides
+ * which extra keys it accepts.
  */
-const sheetProcedure = campaignMemberProcedure.use(
-  async ({ ctx, input, next, type }) => {
-    const { campaignId, sheetId } = input as {
-      campaignId: string;
-      sheetId: string;
-    };
+const sheetScopeSchema = z.object({
+  campaignId: z.uuid(),
+  sheetId: z.uuid(),
+});
+
+const sheetProcedure = campaignMemberProcedure
+  .input(sheetScopeSchema)
+  .use(async ({ ctx, input, next, type }) => {
+    const { campaignId, sheetId } = input;
     const access = await getSheetAccess(ctx.db, campaignId, sheetId);
     if (
       !access ||
@@ -112,8 +121,7 @@ const sheetProcedure = campaignMemberProcedure.use(
     }
 
     return next({ ctx: { sheetAccess: access } });
-  },
-);
+  });
 
 const activeSheetProcedure = sheetProcedure.use(({ ctx, next }) => {
   if (ctx.sheetAccess.retiredAt != null || ctx.sheetAccess.deletedAt != null) {
