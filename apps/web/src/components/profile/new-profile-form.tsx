@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
+import { APP_NAME } from "@tablekeep/shared";
 import {
   Avatar,
   AvatarFallback,
@@ -275,7 +276,7 @@ export function NewProfileForm({
               >
                 <LoadingSwap isLoading={isPending}>
                   <span className="flex items-center gap-2">
-                    Enter Tablekeep
+                    Enter {APP_NAME}
                     <IconArrowRight className="size-4" aria-hidden="true" />
                   </span>
                 </LoadingSwap>
@@ -308,12 +309,12 @@ function ProfileStoryPanel() {
       <a
         href={docsHomeUrl}
         className="relative flex w-fit items-center gap-2.5 rounded-lg font-semibold tracking-tight outline-none transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-4 focus-visible:ring-offset-transparent"
-        aria-label="Visit Tablekeep documentation"
+        aria-label={`Visit ${APP_NAME} documentation`}
       >
         <span className="flex size-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
           <TablekeepIcon className="h-5 w-auto" />
         </span>
-        Tablekeep
+        {APP_NAME}
       </a>
 
       <div className="relative mt-auto max-w-sm">

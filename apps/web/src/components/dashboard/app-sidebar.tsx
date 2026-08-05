@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { APP_NAME } from "@tablekeep/shared";
 import {
   Sidebar,
   SidebarContent,
@@ -110,7 +111,7 @@ export function AppSidebar() {
               size="lg"
               asChild
               isActive={pathname === "/"}
-              tooltip="Tablekeep dashboard"
+              tooltip={`${APP_NAME} dashboard`}
             >
               <Link href="/">
                 <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
@@ -118,7 +119,7 @@ export function AppSidebar() {
                 </span>
                 <span className="grid flex-1 text-left leading-none">
                   <span className="font-semibold tracking-[-0.02em]">
-                    Tablekeep
+                    {APP_NAME}
                   </span>
                   <span className="mt-1 text-[10px] text-sidebar-foreground/55 uppercase tracking-[0.14em]">
                     Campaign companion

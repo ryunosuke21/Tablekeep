@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import { APP_NAME } from "@tablekeep/shared";
+
 import { CampaignNav } from "@/components/campaigns/campaign-nav";
 import { CampaignProfileHeader } from "@/components/campaigns/campaign-profile-header";
 
@@ -16,8 +18,8 @@ export async function generateMetadata({
   const { campaign } = await getCampaign(slug);
 
   return {
-    title: `${campaign.name} | Tablekeep`,
-    description: campaign.description ?? "A campaign in Tablekeep.",
+    title: campaign.name,
+    description: campaign.description ?? `A campaign in ${APP_NAME}.`,
   };
 }
 

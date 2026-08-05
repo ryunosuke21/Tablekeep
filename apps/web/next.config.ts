@@ -12,6 +12,7 @@ const config: NextConfig = {
   transpilePackages: [
     "@tablekeep/campaign-auth",
     "@tablekeep/emails",
+    "@tablekeep/shared",
     "@tablekeep/ui",
   ],
   experimental: {

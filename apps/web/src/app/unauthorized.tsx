@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IconLock } from "@tabler/icons-react";
 import Link from "next/link";
 
+import { APP_NAME } from "@tablekeep/shared";
 import { Button } from "@tablekeep/ui/components/button";
 import {
   Empty,
@@ -15,8 +16,8 @@ import {
 import { BackButton } from "@/components/ui/back-button";
 
 export const metadata: Metadata = {
-  title: "Unauthorized | Tablekeep",
-  description: "Sign in to view this Tablekeep page.",
+  title: "Unauthorized",
+  description: `Sign in to view this ${APP_NAME} page.`,
 };
 
 export default function UnauthorizedPage() {

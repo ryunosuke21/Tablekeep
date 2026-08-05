@@ -3,12 +3,17 @@ import "@/styles/globals.css";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 
+import { APP_DESCRIPTION, APP_NAME } from "@tablekeep/shared";
+
 import { Providers } from "@/components/providers";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Tablekeep",
-  description: "Your companion for in-person tabletop RPG campaigns.",
+  title: {
+    default: APP_NAME,
+    template: `%s | ${APP_NAME}`,
+  },
+  description: APP_DESCRIPTION,
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

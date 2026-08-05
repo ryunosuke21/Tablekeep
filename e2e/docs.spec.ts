@@ -1,13 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+import { APP_NAME, APP_SLOGAN } from "../packages/shared/src";
+
 test("the public site communicates status and links to the two surfaces", async ({
   page,
 }) => {
   await page.goto("http://localhost:3001");
 
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Keep the table",
-  );
+  await expect(
+    page.getByRole("heading", { level: 1, name: APP_SLOGAN }),
+  ).toBeVisible();
   await expect(
     page.getByRole("link", { name: /enter the keep/i }).first(),
   ).toHaveAttribute("href", "http://localhost:3000");
@@ -21,6 +23,7 @@ test("the public site communicates status and links to the two surfaces", async 
     docsLink.click(),
   ]);
   await expect(
-    page.getByRole("heading", { name: "Tablekeep documentation" }),
+    page.getByRole("heading", { name: "Documentation" }),
   ).toBeVisible();
+  await expect(page).toHaveTitle(`Documentation — ${APP_NAME}`);
 });

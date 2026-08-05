@@ -19,8 +19,14 @@ apps/docs                  The public site (marketing, landing page, documentati
 packages/ui
   src/components/          Reusable UI primitives
   src/styles/              Shared CSS and design tokens
+packages/shared            Shared product copy and text-focused utilities
 packages/config            Shared TypeScript configuration
 ```
+
+Product-wide text constants such as the application name, slogan, metadata
+description, and email tagline live in `packages/shared/src/index.ts`. Keep this
+package limited to text-focused constants and small, environment-independent
+helpers that are useful in more than one workspace.
 
 ### apps/web — the product
 

@@ -3,6 +3,8 @@ import "./global.css";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 
+import { APP_DESCRIPTION, APP_NAME } from "@tablekeep/shared";
+
 import { siteUrl } from "@/lib/site-url";
 
 const inter = Inter({
@@ -18,10 +20,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Tablekeep",
-    template: "%s — Tablekeep",
+    default: APP_NAME,
+    template: `%s — ${APP_NAME}`,
   },
-  description: "Your companion for in-person tabletop RPG campaigns.",
+  description: APP_DESCRIPTION,
   icons: [{ rel: "icon", url: "/towerkeep.ico" }],
 };
 

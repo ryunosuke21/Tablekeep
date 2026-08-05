@@ -6,7 +6,7 @@ const withMDX = createMDX();
 const config = {
   allowedDevOrigins: ["127.0.0.1"],
   reactStrictMode: true,
-  transpilePackages: ["@tablekeep/ui"],
+  transpilePackages: ["@tablekeep/shared", "@tablekeep/ui"],
 };
 
 export default withMDX(config);

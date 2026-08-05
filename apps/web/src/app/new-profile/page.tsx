@@ -6,7 +6,7 @@ import { readDestination, withDestination } from "@/lib/redirect-destination";
 import { getSession } from "@/server/better-auth/server";
 
 export const metadata: Metadata = {
-  title: "Build your profile | Tablekeep",
+  title: "Build your profile",
   description: "Choose how the people at your table will recognize you.",
 };
 

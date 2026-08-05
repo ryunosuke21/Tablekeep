@@ -3,6 +3,7 @@ import { IconArrowUpRight } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { APP_NAME } from "@tablekeep/shared";
 import { cn } from "@tablekeep/ui/lib/utils";
 
 import { docsRoute } from "@/lib/shared";
@@ -52,7 +53,7 @@ export function Bento() {
     <section className="px-6 pb-24 sm:pb-32">
       <div className="mx-auto w-full max-w-6xl">
         <div className="text-center">
-          <Eyebrow>What Tablekeep holds</Eyebrow>
+          <Eyebrow>What {APP_NAME} holds</Eyebrow>
           <h2 className="mx-auto mt-4 max-w-xl font-semibold text-[clamp(2rem,4vw,3rem)] leading-[1.05] tracking-tight">
             The bookkeeping, not the game.
           </h2>

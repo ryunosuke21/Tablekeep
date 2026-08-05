@@ -2,11 +2,16 @@ import { IconArrowRight, IconBook } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { APP_NAME, APP_SLOGAN } from "@tablekeep/shared";
 import { Button } from "@tablekeep/ui/components/button";
 
 import { appUrl, docsRoute } from "@/lib/shared";
 
 export function Hero() {
+  const finalSpace = APP_SLOGAN.lastIndexOf(" ");
+  const sloganLead = APP_SLOGAN.slice(0, finalSpace);
+  const sloganEmphasis = APP_SLOGAN.slice(finalSpace + 1);
+
   // `overflow-hidden`: the diamond's glow is meant to bleed off-canvas, and
   // without clipping it widens the page on desktop.
   return (
@@ -15,10 +20,10 @@ export function Hero() {
         <div>
           <div className="tk-rise" style={{ "--tk-step": 0 } as never}>
             <h1 className="font-semibold text-[clamp(3rem,6.4vw,5.25rem)] leading-[0.95] tracking-[-0.035em]">
-              Keep the table
+              {sloganLead}
               <br />
               {/* Inter carries emphasis through weight, not a second face. */}
-              <em className="text-tk-ember not-italic">moving</em>.
+              <em className="text-tk-ember not-italic">{sloganEmphasis}</em>
             </h1>
           </div>
 
@@ -26,7 +31,7 @@ export function Hero() {
             className="tk-rise mt-7 max-w-lg text-base text-muted-foreground leading-relaxed sm:text-lg"
             style={{ "--tk-step": 1 } as never}
           >
-            Tablekeep holds the parts of a session that change — hit points,
+            {APP_NAME} holds the parts of a session that change — hit points,
             spell slots, initiative, loot — so your group keeps its own dice,
             books, and pace.
           </p>

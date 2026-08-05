@@ -3,6 +3,8 @@ title: Campaigns and invitations
 description: Create a private campaign, invite your group, manage access, and schedule sessions.
 ---
 
+import { APP_NAME } from "@tablekeep/shared";
+
 ## Create a campaign
 
 From **Campaigns**, choose **New campaign**. Enter a name and optional description, select a color, and save. The creator becomes the first DM. Renaming a campaign does not change its existing URL.
@@ -17,17 +19,17 @@ Open the campaign's **Members** page. A DM can:
 
 Replacing a code immediately invalidates every copy of the old one. Invitations expire, and archived campaigns cannot accept new members. Email invitations can only be accepted by the addressed account; use the account-switch action if the invitation was opened while signed in as someone else.
 
-If sign-in or first-time profile setup is required, Tablekeep preserves the invitation destination and returns to it afterward.
+If sign-in or first-time profile setup is required, {APP_NAME} preserves the invitation destination and returns to it afterward.
 
 ## Manage members
 
-The roster shows active DMs and players. A DM can promote a player, demote another DM, or remove a member. A player can leave from campaign settings. Tablekeep prevents removing, demoting, or leaving as the campaign's last DM; promote another member first or archive the campaign.
+The roster shows active DMs and players. A DM can promote a player, demote another DM, or remove a member. A player can leave from campaign settings. {APP_NAME} prevents removing, demoting, or leaving as the campaign's last DM; promote another member first or archive the campaign.
 
 Removed members lose access immediately. Their membership events remain in campaign history, and a later invitation can let them join again.
 
 ## Schedule sessions
 
-DMs can set a daily, weekly, or monthly schedule with a start time. Tablekeep reads the time zone from the DM's device and supports custom repeat rules. Individual sessions can be cancelled, moved, or added without rewriting the recurring schedule. The campaign overview and dashboard show the next resolved session.
+DMs can set a daily, weekly, or monthly schedule with a start time. {APP_NAME} reads the time zone from the DM's device and supports custom repeat rules. Individual sessions can be cancelled, moved, or added without rewriting the recurring schedule. The campaign overview and dashboard show the next resolved session.
 
 ## Archive and restore
 
