@@ -12,19 +12,23 @@ This document describes the product itself, which is delivered by `apps/web`. Ta
 
 | Role | Primary responsibilities | Typical tools |
 | --- | --- | --- |
-| Player | Maintain their own character information and take part in a campaign. | Character sheet, hit points, spells, inventory, rolls. |
+| Player | Maintain their character identity and co-manage its campaign-specific sheet with that campaign's DMs. | Character sheet, maximum hit points, spells, inventory, rolls. |
 | Dungeon Master | Prepare and run a campaign. | Campaign setup, party overview, initiative, creatures, shops, encounter notes. |
 | Campaign member | A player or DM with access to a particular campaign. | Shared campaign context, subject to campaign visibility rules. |
 | Site administrator | Operate the application, not individual campaigns. | Account administration and operational tools. |
 
-## Planned feature areas
+## Feature areas
 
 ### Character management
 
-- Character identity, abilities, skills, defenses, hit points, and conditions.
-- Level-relevant information and freeform notes.
-- Spell books, prepared spells, and resource tracking.
-- Inventory, equipment, currency, and item quantities.
+- A global, owner-controlled character identity, separate from playable campaign state.
+- A campaign-scoped sheet co-managed by the character owner and that campaign's DMs.
+- Sheet-scoped ancestry, multiclass class/subclass levels, one or more backgrounds, maximum hit points, conditions, and freeform notes.
+- Sheet-scoped inventory, equipment, item quantities, and multiple freely named currencies rather than fixed denominations.
+- Campaign-scoped spell books, prepared spells, and resource tracking attached to the sheet.
+- Current hit points stored later as encounter state, not as global identity or persistent campaign-sheet state.
+
+The M3 identity, campaign-sheet, class/background, condition, inventory, and currency capabilities are implemented. Campaign-scoped spells remain planned for M4, and current hit points remain encounter state planned for M6.
 
 ### Campaign play
 
@@ -58,7 +62,7 @@ This document describes the product itself, which is delivered by `apps/web`. Ta
 ## Suggested delivery order
 
 1. Campaigns, membership, and authorization.
-2. Character sheets with hit-point and inventory updates.
+2. Global character identities and campaign sheets with maximum-HP, class/background, condition, inventory, and currency updates.
 3. Spellbooks, preparation, and resource tracking using safe content sources.
 4. DM party overview and shared initiative tracking.
 5. Creature references, shops, richer encounter preparation, and optional roll utilities.

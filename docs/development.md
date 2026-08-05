@@ -36,6 +36,20 @@ Do not blur the boundary. Public, unauthenticated content belongs in `apps/docs`
 
 The web app uses Next.js 16 Server Components by default. Client-side data access uses tRPC with TanStack Query. PostgreSQL is accessed through Drizzle ORM 0.45. Better Auth 1.6 owns authentication tables and session handling. The workspace uses TypeScript 6.0.3, pinned exactly in the pnpm catalog; do not broaden or upgrade that version without an explicit decision.
 
+### M3 character architecture
+
+M3 Player essentials is implemented. Its persistence boundary separates a global, owner-controlled character identity from the playable state of each campaign:
+
+- `characters` holds only global identity fields, ownership, and `deleted_at`. It has no campaign mechanics and no `retired_at`.
+- `character_sheets` belongs to one campaign and references the global identity through `char_id`. The player and that campaign's DMs co-manage this single campaign-owned source of truth; do not build a base-sheet/DM-override merge.
+- Ancestry, maximum HP, and campaign notes live on the sheet. Multiclass class/subclass levels, plural backgrounds, conditions, inventory, and multiple freely named currencies live in `sheet_classes`, `sheet_backgrounds`, `sheet_conditions`, `sheet_items`, and `sheet_currencies` through `sheet_id`.
+- Total level is derived from class rows. Currency is one row per freeform type, not fixed denomination columns or an enum.
+- `retired_at` applies to a campaign sheet. Global character removal uses `deleted_at` and must not be described as retirement.
+- Current HP is deliberately absent from M3 persistence. M6 owns it as encounter participant/combatant state and may initialize or constrain it using `character_sheets.max_hp`.
+- M4 spellbooks and spell resources attach to `sheet_id`, so the same global character can have independent spell state in different campaigns.
+
+Use short, contextual Drizzle/SQL names for this domain: `charId`/`char_id`, `sheetId`/`sheet_id`, `maxHp`/`max_hp`, `qty`, `equipped`, `ref`, `sort`, and `updatedBy`/`updated_by`. Keep already-clear foreign keys such as `campaignId`/`campaign_id` and `ownerId`/`owner_id`; do not shorten them to ambiguous initials.
+
 ## Local environment
 
 Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to `apps/docs/.env`. The product server validates its environment through `apps/web/src/env/server.ts`; the site validates its public environment through `apps/docs/src/env/client.ts`. `apps/docs` runs on port 3001, and `pnpm dev:docs` starts it on its own.

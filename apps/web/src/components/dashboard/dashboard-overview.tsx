@@ -13,15 +13,17 @@ import {
   EmptyTitle,
 } from "@tablekeep/ui/components/empty";
 
-import type { CharacterSummary } from "@/server/api/mocks/dashboard";
+import {
+  CharacterCard,
+  type CharacterListItem,
+} from "@/components/characters/character-card";
 
 import { CampaignCard, type CampaignListItem } from "./campaign-card";
-import { CharacterCard } from "./character-card";
 import { ExpandableCardCollection } from "./expandable-card-collection";
 
 type DashboardOverviewProps = {
   campaigns: CampaignListItem[];
-  characters: CharacterSummary[];
+  characters: CharacterListItem[];
 };
 
 export function DashboardOverview({
@@ -74,26 +76,45 @@ export function DashboardOverview({
           }
         />
 
-        <ExpandableCardCollection
-          title="Characters"
-          description="The people you bring to each adventure."
-          items={characters}
-          getKey={(character) => character.id}
-          renderItem={(character) => <CharacterCard character={character} />}
-          emptyState={
-            <Empty className="border">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <IconUsersGroup />
-                </EmptyMedia>
-                <EmptyTitle>No characters yet</EmptyTitle>
-                <EmptyDescription>
-                  Your character sheets will be ready here when you make one.
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
-          }
-        />
+        <div>
+          <ExpandableCardCollection
+            title="Characters"
+            description="The people you bring to each adventure."
+            items={characters}
+            getKey={(character) => character.id}
+            renderItem={(character) => <CharacterCard character={character} />}
+            emptyState={
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <IconUsersGroup />
+                  </EmptyMedia>
+                  <EmptyTitle>No characters yet</EmptyTitle>
+                  <EmptyDescription>
+                    Name a character first, then attach them to any campaign you
+                    have joined.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button asChild>
+                    <Link href="/characters/new">Create a character</Link>
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            }
+          />
+
+          {characters.length > 0 ? (
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Button asChild>
+                <Link href="/characters/new">Create a character</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/characters">Manage characters</Link>
+              </Button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </main>
   );
