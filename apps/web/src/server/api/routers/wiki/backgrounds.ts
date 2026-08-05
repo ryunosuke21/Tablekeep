@@ -7,6 +7,7 @@ import {
   mapBackground,
   mapCatalogListItem,
 } from "@/server/reference-data/open5e/resources";
+import { wikiCatalogListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -29,7 +30,13 @@ export const wikiBackgroundsRouter = createTRPCRouter({
           fields: "key,name,document",
         },
       );
-      return mapWikiPage(result, page, limit, mapCatalogListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapCatalogListItem,
+        wikiCatalogListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)

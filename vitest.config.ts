@@ -18,6 +18,7 @@ export default defineConfig({
         "apps/web/src/server/api/routers/index.ts",
         "apps/web/src/server/api/routers/wiki/*.ts",
         "apps/web/src/server/reference-data/open5e/*.ts",
+        "apps/web/src/types/wiki/*.ts",
         "apps/web/src/server/api/routers/campaign/*.ts",
         "apps/web/src/server/domain/campaign/*.ts",
         "apps/web/src/lib/redirect-destination.ts",

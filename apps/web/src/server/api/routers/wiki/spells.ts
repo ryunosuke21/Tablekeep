@@ -7,6 +7,7 @@ import {
   spellListItemSchema,
   spellSchema,
 } from "@/server/reference-data/open5e/resources";
+import { wikiSpellListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -32,7 +33,13 @@ export const wikiSpellsRouter = createTRPCRouter({
         fields:
           "key,name,document,level,school,classes,casting_time,concentration,ritual,verbal,somatic,material",
       });
-      return mapWikiPage(result, parsed.page, parsed.limit, mapSpellListItem);
+      return mapWikiPage(
+        result,
+        parsed.page,
+        parsed.limit,
+        mapSpellListItem,
+        wikiSpellListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)

@@ -7,6 +7,7 @@ import {
   mapClass,
   mapClassListItem,
 } from "@/server/reference-data/open5e/resources";
+import { wikiClassListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -27,7 +28,13 @@ export const wikiClassesRouter = createTRPCRouter({
         is_subclass: kind === "all" ? undefined : kind === "subclass",
         fields: "key,name,document,hit_dice,caster_type,subclass_of",
       });
-      return mapWikiPage(result, page, limit, mapClassListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapClassListItem,
+        wikiClassListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)

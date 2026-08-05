@@ -7,6 +7,7 @@ import {
   mapCreature,
   mapCreatureListItem,
 } from "@/server/reference-data/open5e/resources";
+import { wikiCreatureListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -47,6 +48,7 @@ export const wikiCreaturesRouter = createTRPCRouter({
         parsed.page,
         parsed.limit,
         mapCreatureListItem,
+        wikiCreatureListItemSchema,
       );
     }),
   get: publicProcedure

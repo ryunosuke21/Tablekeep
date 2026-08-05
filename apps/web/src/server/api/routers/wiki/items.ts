@@ -11,6 +11,10 @@ import {
   mapMagicItem,
   mapMagicItemListItem,
 } from "@/server/reference-data/open5e/resources";
+import {
+  wikiItemListItemSchema,
+  wikiMagicItemListItemSchema,
+} from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -33,7 +37,13 @@ export const wikiItemsRouter = createTRPCRouter({
         category,
         fields: "key,name,document,category",
       });
-      return mapWikiPage(result, page, limit, mapItemListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapItemListItem,
+        wikiItemListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)
@@ -60,7 +70,13 @@ export const wikiMagicItemsRouter = createTRPCRouter({
           fields: "key,name,document,category,rarity,requires_attunement",
         },
       );
-      return mapWikiPage(result, page, limit, mapMagicItemListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapMagicItemListItem,
+        wikiMagicItemListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)

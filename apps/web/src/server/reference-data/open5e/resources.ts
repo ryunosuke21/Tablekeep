@@ -1,26 +1,45 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import type {
-  WikiBackground,
-  WikiCatalogListItem,
-  WikiClass,
-  WikiClassListItem,
-  WikiCreature,
-  WikiCreatureListItem,
-  WikiFeat,
-  WikiFeatListItem,
-  WikiItem,
-  WikiItemListItem,
-  WikiMagicItem,
-  WikiMagicItemListItem,
-  WikiRule,
-  WikiRuleListItem,
-  WikiSource,
-  WikiSpecies,
-  WikiSpeciesListItem,
-  WikiSpell,
-  WikiSpellListItem,
+import {
+  type WikiBackground,
+  type WikiCatalogListItem,
+  type WikiClass,
+  type WikiClassListItem,
+  type WikiCreature,
+  type WikiCreatureListItem,
+  type WikiFeat,
+  type WikiFeatListItem,
+  type WikiItem,
+  type WikiItemListItem,
+  type WikiMagicItem,
+  type WikiMagicItemListItem,
+  type WikiRule,
+  type WikiRuleListItem,
+  type WikiSource,
+  type WikiSpecies,
+  type WikiSpeciesListItem,
+  type WikiSpell,
+  type WikiSpellListItem,
+  wikiBackgroundSchema,
+  wikiCatalogListItemSchema,
+  wikiClassListItemSchema,
+  wikiClassSchema,
+  wikiCreatureListItemSchema,
+  wikiCreatureSchema,
+  wikiFeatListItemSchema,
+  wikiFeatSchema,
+  wikiItemListItemSchema,
+  wikiItemSchema,
+  wikiMagicItemListItemSchema,
+  wikiMagicItemSchema,
+  wikiRuleListItemSchema,
+  wikiRuleSchema,
+  wikiSourceSchema,
+  wikiSpeciesListItemSchema,
+  wikiSpeciesSchema,
+  wikiSpellListItemSchema,
+  wikiSpellSchema,
 } from "@/types/wiki";
 
 import { OPEN5E_SOURCE_KEY } from "./client";
@@ -50,14 +69,14 @@ function assertSource(sourceKey: string, entity: string) {
 
 function mapSource(document: z.infer<typeof documentSchema>): WikiSource {
   assertSource(document.key, "content");
-  return {
+  return wikiSourceSchema.parse({
     key: document.key,
     name: document.name,
     displayName: document.display_name,
     gameSystem: document.gamesystem,
     permalink: document.permalink,
     publisher: document.publisher,
-  };
+  });
 }
 
 export const catalogListItemSchema = z.object({
@@ -69,11 +88,11 @@ export const catalogListItemSchema = z.object({
 export function mapCatalogListItem(
   value: z.infer<typeof catalogListItemSchema>,
 ): WikiCatalogListItem {
-  return {
+  return wikiCatalogListItemSchema.parse({
     key: value.key,
     name: value.name,
     source: mapSource(value.document),
-  };
+  });
 }
 
 export const classListItemSchema = catalogListItemSchema.extend({
@@ -85,13 +104,13 @@ export const classListItemSchema = catalogListItemSchema.extend({
 export function mapClassListItem(
   value: z.infer<typeof classListItemSchema>,
 ): WikiClassListItem {
-  return {
+  return wikiClassListItemSchema.parse({
     ...mapCatalogListItem(value),
     hitDice: value.hit_dice,
     casterType: value.caster_type,
     isSubclass: value.subclass_of !== null,
     parentClass: value.subclass_of,
-  };
+  });
 }
 
 export const creatureListItemSchema = catalogListItemSchema.extend({
@@ -106,7 +125,7 @@ export const creatureListItemSchema = catalogListItemSchema.extend({
 export function mapCreatureListItem(
   value: z.infer<typeof creatureListItemSchema>,
 ): WikiCreatureListItem {
-  return {
+  return wikiCreatureListItemSchema.parse({
     ...mapCatalogListItem(value),
     type: value.type,
     size: value.size,
@@ -114,7 +133,7 @@ export function mapCreatureListItem(
     category: value.category,
     armorClass: value.armor_class,
     hitPoints: value.hit_points,
-  };
+  });
 }
 
 export const featListItemSchema = catalogListItemSchema.extend({
@@ -125,11 +144,11 @@ export const featListItemSchema = catalogListItemSchema.extend({
 export function mapFeatListItem(
   value: z.infer<typeof featListItemSchema>,
 ): WikiFeatListItem {
-  return {
+  return wikiFeatListItemSchema.parse({
     ...mapCatalogListItem(value),
     type: value.type,
     hasPrerequisite: value.has_prerequisite,
-  };
+  });
 }
 
 export const speciesListItemSchema = catalogListItemSchema.extend({
@@ -140,11 +159,11 @@ export const speciesListItemSchema = catalogListItemSchema.extend({
 export function mapSpeciesListItem(
   value: z.infer<typeof speciesListItemSchema>,
 ): WikiSpeciesListItem {
-  return {
+  return wikiSpeciesListItemSchema.parse({
     ...mapCatalogListItem(value),
     isSubspecies: value.is_subspecies,
     parentSpecies: value.subspecies_of,
-  };
+  });
 }
 
 export const itemListItemSchema = catalogListItemSchema.extend({
@@ -154,10 +173,10 @@ export const itemListItemSchema = catalogListItemSchema.extend({
 export function mapItemListItem(
   value: z.infer<typeof itemListItemSchema>,
 ): WikiItemListItem {
-  return {
+  return wikiItemListItemSchema.parse({
     ...mapCatalogListItem(value),
     category: value.category,
-  };
+  });
 }
 
 export const magicItemListItemSchema = itemListItemSchema.extend({
@@ -168,11 +187,11 @@ export const magicItemListItemSchema = itemListItemSchema.extend({
 export function mapMagicItemListItem(
   value: z.infer<typeof magicItemListItemSchema>,
 ): WikiMagicItemListItem {
-  return {
+  return wikiMagicItemListItemSchema.parse({
     ...mapItemListItem(value),
     rarity: value.rarity,
     requiresAttunement: value.requires_attunement,
-  };
+  });
 }
 
 export const ruleListItemSchema = z.object({
@@ -185,7 +204,11 @@ export function mapRuleListItem(
   value: z.infer<typeof ruleListItemSchema>,
 ): WikiRuleListItem {
   assertSource(value.document, "rule");
-  return { key: value.key, name: value.name, sourceKey: value.document };
+  return wikiRuleListItemSchema.parse({
+    key: value.key,
+    name: value.name,
+    sourceKey: value.document,
+  });
 }
 
 export const spellListItemSchema = catalogListItemSchema.extend({
@@ -207,7 +230,7 @@ export function mapSpellListItem(
   if (value.verbal) components.push("V");
   if (value.somatic) components.push("S");
   if (value.material) components.push("M");
-  return {
+  return wikiSpellListItemSchema.parse({
     ...mapCatalogListItem(value),
     level: value.level,
     school: value.school,
@@ -216,7 +239,7 @@ export function mapSpellListItem(
     concentration: value.concentration,
     ritual: value.ritual,
     components,
-  };
+  });
 }
 
 export const backgroundSchema = z.object({
@@ -236,7 +259,7 @@ export const backgroundSchema = z.object({
 export function mapBackground(
   value: z.infer<typeof backgroundSchema>,
 ): WikiBackground {
-  return {
+  return wikiBackgroundSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -246,7 +269,7 @@ export function mapBackground(
       type: benefit.type ?? null,
     })),
     source: mapSource(value.document),
-  };
+  });
 }
 
 export const featSchema = z.object({
@@ -261,7 +284,7 @@ export const featSchema = z.object({
 });
 
 export function mapFeat(value: z.infer<typeof featSchema>): WikiFeat {
-  return {
+  return wikiFeatSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -272,7 +295,7 @@ export function mapFeat(value: z.infer<typeof featSchema>): WikiFeat {
       description: benefit.desc,
     })),
     source: mapSource(value.document),
-  };
+  });
 }
 
 export const speciesSchema = z.object({
@@ -293,7 +316,7 @@ export const speciesSchema = z.object({
 });
 
 export function mapSpecies(value: z.infer<typeof speciesSchema>): WikiSpecies {
-  return {
+  return wikiSpeciesSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -306,7 +329,7 @@ export function mapSpecies(value: z.infer<typeof speciesSchema>): WikiSpecies {
       order: trait.order,
     })),
     source: mapSource(value.document),
-  };
+  });
 }
 
 export const ruleSchema = z.object({
@@ -321,7 +344,7 @@ export const ruleSchema = z.object({
 
 export function mapRule(value: z.infer<typeof ruleSchema>): WikiRule {
   assertSource(value.document, "rule");
-  return {
+  return wikiRuleSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -329,7 +352,7 @@ export function mapRule(value: z.infer<typeof ruleSchema>): WikiRule {
     initialHeaderLevel: value.initialHeaderLevel,
     ruleset: value.ruleset,
     sourceKey: value.document,
-  };
+  });
 }
 
 const classFeatureSchema = z.object({
@@ -370,7 +393,7 @@ export const classSchema = z.object({
 });
 
 export function mapClass(value: z.infer<typeof classSchema>): WikiClass {
-  return {
+  return wikiClassSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -397,7 +420,7 @@ export function mapClass(value: z.infer<typeof classSchema>): WikiClass {
       })),
     })),
     source: mapSource(value.document),
-  };
+  });
 }
 
 const itemBaseShape = {
@@ -426,7 +449,7 @@ export const magicItemSchema = z.object({
 });
 
 function mapItemBase(value: z.infer<typeof itemSchema>): WikiItem {
-  return {
+  return wikiItemSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -446,7 +469,7 @@ function mapItemBase(value: z.infer<typeof itemSchema>): WikiItem {
         }
       : null,
     source: mapSource(value.document),
-  };
+  });
 }
 
 export const mapItem = mapItemBase;
@@ -454,12 +477,12 @@ export const mapItem = mapItemBase;
 export function mapMagicItem(
   value: z.infer<typeof magicItemSchema>,
 ): WikiMagicItem {
-  return {
+  return wikiMagicItemSchema.parse({
     ...mapItemBase(value),
     rarity: value.rarity,
     requiresAttunement: value.requires_attunement,
     attunementDetail: value.attunement_detail,
-  };
+  });
 }
 
 const numericRecordSchema = z.record(z.string(), z.number());
@@ -503,7 +526,7 @@ export const creatureSchema = z.object({
 export function mapCreature(
   value: z.infer<typeof creatureSchema>,
 ): WikiCreature {
-  return {
+  return wikiCreatureSchema.parse({
     key: value.key,
     name: value.name,
     type: value.type,
@@ -534,7 +557,7 @@ export function mapCreature(
       description: trait.desc,
     })),
     source: mapSource(value.document),
-  };
+  });
 }
 
 const castingOptionSchema = z.object({
@@ -589,7 +612,7 @@ export function mapSpell(value: z.infer<typeof spellSchema>): WikiSpell {
   if (value.somatic) components.push("S");
   if (value.material) components.push("M");
 
-  return {
+  return wikiSpellSchema.parse({
     key: value.key,
     name: value.name,
     description: value.desc,
@@ -630,5 +653,5 @@ export function mapSpell(value: z.infer<typeof spellSchema>): WikiSpell {
       description: option.desc,
     })),
     source: mapSource(value.document),
-  };
+  });
 }

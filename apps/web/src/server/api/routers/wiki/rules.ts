@@ -7,6 +7,7 @@ import {
   ruleListItemSchema,
   ruleSchema,
 } from "@/server/reference-data/open5e/resources";
+import { wikiRuleListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -25,7 +26,13 @@ export const wikiRulesRouter = createTRPCRouter({
         name__icontains: name,
         fields: "key,name,document",
       });
-      return mapWikiPage(result, page, limit, mapRuleListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapRuleListItem,
+        wikiRuleListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)

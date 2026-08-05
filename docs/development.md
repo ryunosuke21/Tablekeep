@@ -89,9 +89,11 @@ byte limit and server-side UploadThing string limit both derive from
 
 Public rules-reference procedures live under the `wiki` tRPC namespace. The
 server fetches them through a single Open5e V2 adapter and maps upstream
-snake-case payloads into Tablekeep-owned camel-case types before returning
-them. Callers use source-qualified `key` values, not the indexes from the former
-2014 data source.
+snake-case payloads into Tablekeep-owned camel-case Zod schemas before returning
+them. Public TypeScript types are inferred from those schemas, and both mapped
+entities and page envelopes are parsed so defaults are applied and normalized
+schema drift fails at the server boundary. Callers use source-qualified `key`
+values, not the indexes from the former 2014 data source.
 
 Every list request is restricted to Open5e's `srd-2024` document, and every
 mapped entity verifies its source again before it leaves the server. List

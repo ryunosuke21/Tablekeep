@@ -1,230 +1,299 @@
-import type { WikiReference, WikiSource } from "./common";
+import { z } from "zod";
+
+import { wikiReferenceSchema, wikiSourceSchema } from "./common";
 
 export * from "./common";
 
-export interface WikiCatalogListItem {
-  key: string;
-  name: string;
-  source: WikiSource;
-}
+const nullableReferenceSchema = wikiReferenceSchema.nullable().default(null);
+const rankedReferenceSchema = wikiReferenceSchema.extend({
+  rank: z.number().int(),
+});
+const spellComponentSchema = z.enum(["V", "S", "M"]);
 
-export interface WikiClassListItem extends WikiCatalogListItem {
-  casterType: string;
-  hitDice: string;
-  isSubclass: boolean;
-  parentClass: WikiReference | null;
-}
+export const wikiCatalogListItemSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  source: wikiSourceSchema,
+});
+export type WikiCatalogListItem = z.infer<typeof wikiCatalogListItemSchema>;
 
-export interface WikiCreatureListItem extends WikiCatalogListItem {
-  armorClass: number;
-  category: string;
-  challengeRating: number;
-  hitPoints: number;
-  size: WikiReference;
-  type: WikiReference;
-}
+export const wikiClassListItemSchema = wikiCatalogListItemSchema.extend({
+  casterType: z.string(),
+  hitDice: z.string(),
+  isSubclass: z.boolean().default(false),
+  parentClass: nullableReferenceSchema,
+});
+export type WikiClassListItem = z.infer<typeof wikiClassListItemSchema>;
 
-export interface WikiFeatListItem extends WikiCatalogListItem {
-  hasPrerequisite: boolean;
-  type: string;
-}
+export const wikiCreatureListItemSchema = wikiCatalogListItemSchema.extend({
+  armorClass: z.number(),
+  category: z.string(),
+  challengeRating: z.number().nonnegative(),
+  hitPoints: z.number().int().nonnegative(),
+  size: wikiReferenceSchema,
+  type: wikiReferenceSchema,
+});
+export type WikiCreatureListItem = z.infer<typeof wikiCreatureListItemSchema>;
 
-export interface WikiItemListItem extends WikiCatalogListItem {
-  category: WikiReference;
-}
+export const wikiFeatListItemSchema = wikiCatalogListItemSchema.extend({
+  hasPrerequisite: z.boolean().default(false),
+  type: z.string(),
+});
+export type WikiFeatListItem = z.infer<typeof wikiFeatListItemSchema>;
 
-export interface WikiMagicItemListItem extends WikiItemListItem {
-  rarity: (WikiReference & { rank: number }) | null;
-  requiresAttunement: boolean;
-}
+export const wikiItemListItemSchema = wikiCatalogListItemSchema.extend({
+  category: wikiReferenceSchema,
+});
+export type WikiItemListItem = z.infer<typeof wikiItemListItemSchema>;
 
-export interface WikiRuleListItem {
-  key: string;
-  name: string;
-  sourceKey: string;
-}
+export const wikiMagicItemListItemSchema = wikiItemListItemSchema.extend({
+  rarity: rankedReferenceSchema.nullable().default(null),
+  requiresAttunement: z.boolean().default(false),
+});
+export type WikiMagicItemListItem = z.infer<typeof wikiMagicItemListItemSchema>;
 
-export interface WikiSpeciesListItem extends WikiCatalogListItem {
-  isSubspecies: boolean;
-  parentSpecies: WikiReference | null;
-}
+export const wikiRuleListItemSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  sourceKey: z.string().min(1),
+});
+export type WikiRuleListItem = z.infer<typeof wikiRuleListItemSchema>;
 
-export interface WikiSpellListItem extends WikiCatalogListItem {
-  castingTime: string;
-  classes: WikiReference[];
-  components: Array<"V" | "S" | "M">;
-  concentration: boolean;
-  level: number;
-  ritual: boolean;
-  school: WikiReference;
-}
+export const wikiSpeciesListItemSchema = wikiCatalogListItemSchema.extend({
+  isSubspecies: z.boolean().default(false),
+  parentSpecies: nullableReferenceSchema,
+});
+export type WikiSpeciesListItem = z.infer<typeof wikiSpeciesListItemSchema>;
 
-export interface WikiBackground {
-  key: string;
-  name: string;
-  description: string;
-  benefits: Array<{
-    name: string | null;
-    description: string;
-    type: string | null;
-  }>;
-  source: WikiSource;
-}
+export const wikiSpellListItemSchema = wikiCatalogListItemSchema.extend({
+  castingTime: z.string(),
+  classes: z.array(wikiReferenceSchema).default([]),
+  components: z.array(spellComponentSchema).default([]),
+  concentration: z.boolean().default(false),
+  level: z.number().int().min(0).max(9),
+  ritual: z.boolean().default(false),
+  school: wikiReferenceSchema,
+});
+export type WikiSpellListItem = z.infer<typeof wikiSpellListItemSchema>;
 
-export interface WikiFeat {
-  key: string;
-  name: string;
-  description: string;
-  type: string;
-  hasPrerequisite: boolean;
-  prerequisite: string;
-  benefits: Array<{ description: string }>;
-  source: WikiSource;
-}
+const wikiBackgroundBenefitSchema = z.object({
+  name: z.string().nullable().default(null),
+  description: z.string().default(""),
+  type: z.string().nullable().default(null),
+});
 
-export interface WikiSpecies {
-  key: string;
-  name: string;
-  description: string;
-  isSubspecies: boolean;
-  parentSpecies: WikiReference | null;
-  traits: Array<{
-    name: string;
-    description: string;
-    type: string | null;
-    order: number;
-  }>;
-  source: WikiSource;
-}
+export const wikiBackgroundSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  benefits: z.array(wikiBackgroundBenefitSchema).default([]),
+  source: wikiSourceSchema,
+});
+export type WikiBackground = z.infer<typeof wikiBackgroundSchema>;
 
-export interface WikiRule {
-  key: string;
-  name: string;
-  description: string;
-  index: number;
-  initialHeaderLevel: number;
-  ruleset: string;
-  sourceKey: string;
-}
+const wikiFeatBenefitSchema = z.object({
+  description: z.string().default(""),
+});
 
-export interface WikiClassFeature {
-  key: string;
-  name: string;
-  description: string;
-  type: string;
-  gainedAt: Array<{ level: number; detail: string | null }>;
-  tableData: Array<{ level: number; value: string }>;
-}
+export const wikiFeatSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  type: z.string(),
+  hasPrerequisite: z.boolean().default(false),
+  prerequisite: z.string().default(""),
+  benefits: z.array(wikiFeatBenefitSchema).default([]),
+  source: wikiSourceSchema,
+});
+export type WikiFeat = z.infer<typeof wikiFeatSchema>;
 
-export interface WikiClass {
-  key: string;
-  name: string;
-  description: string;
-  hitDice: string;
-  casterType: string;
-  isSubclass: boolean;
-  parentClass: WikiReference | null;
-  savingThrows: string[];
-  hitPoints: {
-    hitDice: string;
-    name: string;
-    atFirstLevel: string;
-    atHigherLevels: string;
-  };
-  features: WikiClassFeature[];
-  source: WikiSource;
-}
+const wikiSpeciesTraitSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().default(""),
+  type: z.string().nullable().default(null),
+  order: z.number().int(),
+});
 
-export interface WikiItem {
-  key: string;
-  name: string;
-  description: string;
-  category: WikiReference;
-  size: WikiReference | null;
-  weight: string | null;
-  weightUnit: string | null;
-  cost: string | null;
-  weapon: WikiReference | null;
-  armor: (WikiReference & { armorClass: string | null }) | null;
-  source: WikiSource;
-}
+export const wikiSpeciesSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  isSubspecies: z.boolean().default(false),
+  parentSpecies: nullableReferenceSchema,
+  traits: z.array(wikiSpeciesTraitSchema).default([]),
+  source: wikiSourceSchema,
+});
+export type WikiSpecies = z.infer<typeof wikiSpeciesSchema>;
 
-export interface WikiMagicItem extends WikiItem {
-  rarity: (WikiReference & { rank: number }) | null;
-  requiresAttunement: boolean;
-  attunementDetail: string | null;
-}
+export const wikiRuleSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  index: z.number().int(),
+  initialHeaderLevel: z.number().int().nonnegative(),
+  ruleset: z.string(),
+  sourceKey: z.string().min(1),
+});
+export type WikiRule = z.infer<typeof wikiRuleSchema>;
 
-export interface WikiCreature {
-  key: string;
-  name: string;
-  type: WikiReference;
-  size: WikiReference;
-  category: string;
-  subcategory: string | null;
-  alignment: string;
-  challengeRating: number;
-  armorClass: number;
-  armorDetail: string;
-  hitPoints: number;
-  hitDice: string;
-  experiencePoints: number;
-  speed: Record<string, number | string | boolean>;
-  abilityScores: Record<string, number>;
-  savingThrows: Record<string, number>;
-  skillBonuses: Record<string, number>;
-  passivePerception: number;
-  languages: string;
-  actions: Array<{
-    name: string;
-    description: string;
-    type: string;
-    legendaryActionCost: number;
-  }>;
-  traits: Array<{ name: string; description: string }>;
-  source: WikiSource;
-}
+export const wikiClassFeatureSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  type: z.string(),
+  gainedAt: z
+    .array(
+      z.object({
+        level: z.number().int().min(1),
+        detail: z.string().nullable().default(null),
+      }),
+    )
+    .default([]),
+  tableData: z
+    .array(
+      z.object({
+        level: z.number().int().min(1),
+        value: z.string(),
+      }),
+    )
+    .default([]),
+});
+export type WikiClassFeature = z.infer<typeof wikiClassFeatureSchema>;
 
-export interface WikiSpellCastingOption {
-  type: string;
-  damageRoll: string | null;
-  targetCount: number | null;
-  duration: string | null;
-  range: number | null;
-  concentration: boolean | null;
-  shapeSize: number | null;
-  description: string | null;
-}
+const wikiClassHitPointsSchema = z.object({
+  hitDice: z.string(),
+  name: z.string(),
+  atFirstLevel: z.string(),
+  atHigherLevels: z.string(),
+});
 
-export interface WikiSpell {
-  key: string;
-  name: string;
-  description: string;
-  higherLevel: string;
-  level: number;
-  school: WikiReference;
-  classes: WikiReference[];
-  castingTime: string;
-  reactionCondition: string | null;
-  range: number | null;
-  rangeText: string;
-  rangeUnit: string | null;
-  duration: string;
-  concentration: boolean;
-  ritual: boolean;
-  components: Array<"V" | "S" | "M">;
-  material: string | null;
-  materialCost: string | null;
-  materialConsumed: boolean;
-  targetType: string;
-  targetCount: number | null;
-  savingThrowAbility: string;
-  attackRoll: boolean;
-  damageRoll: string;
-  damageTypes: string[];
-  shapeType: string | null;
-  shapeSize: number | null;
-  shapeSizeUnit: string | null;
-  castingOptions: WikiSpellCastingOption[];
-  source: WikiSource;
-}
+export const wikiClassSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  hitDice: z.string(),
+  casterType: z.string(),
+  isSubclass: z.boolean().default(false),
+  parentClass: nullableReferenceSchema,
+  savingThrows: z.array(z.string()).default([]),
+  hitPoints: wikiClassHitPointsSchema,
+  features: z.array(wikiClassFeatureSchema).default([]),
+  source: wikiSourceSchema,
+});
+export type WikiClass = z.infer<typeof wikiClassSchema>;
+
+const wikiArmorReferenceSchema = wikiReferenceSchema.extend({
+  armorClass: z.string().nullable().default(null),
+});
+
+export const wikiItemSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  category: wikiReferenceSchema,
+  size: nullableReferenceSchema,
+  weight: z.string().nullable().default(null),
+  weightUnit: z.string().nullable().default(null),
+  cost: z.string().nullable().default(null),
+  weapon: nullableReferenceSchema,
+  armor: wikiArmorReferenceSchema.nullable().default(null),
+  source: wikiSourceSchema,
+});
+export type WikiItem = z.infer<typeof wikiItemSchema>;
+
+export const wikiMagicItemSchema = wikiItemSchema.extend({
+  rarity: rankedReferenceSchema.nullable().default(null),
+  requiresAttunement: z.boolean().default(false),
+  attunementDetail: z.string().nullable().default(null),
+});
+export type WikiMagicItem = z.infer<typeof wikiMagicItemSchema>;
+
+const creatureStatRecordSchema = z.record(z.string(), z.number());
+const creatureSpeedSchema = z.record(
+  z.string(),
+  z.union([z.number(), z.string(), z.boolean()]),
+);
+const wikiCreatureActionSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().default(""),
+  type: z.string(),
+  legendaryActionCost: z.number().int().nonnegative().default(0),
+});
+const wikiCreatureTraitSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().default(""),
+});
+
+export const wikiCreatureSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  type: wikiReferenceSchema,
+  size: wikiReferenceSchema,
+  category: z.string(),
+  subcategory: z.string().nullable().default(null),
+  alignment: z.string(),
+  challengeRating: z.number().nonnegative(),
+  armorClass: z.number(),
+  armorDetail: z.string().default(""),
+  hitPoints: z.number().int().nonnegative(),
+  hitDice: z.string(),
+  experiencePoints: z.number().int().nonnegative(),
+  speed: creatureSpeedSchema.default({}),
+  abilityScores: creatureStatRecordSchema.default({}),
+  savingThrows: creatureStatRecordSchema.default({}),
+  skillBonuses: creatureStatRecordSchema.default({}),
+  passivePerception: z.number().int().nonnegative(),
+  languages: z.string().default(""),
+  actions: z.array(wikiCreatureActionSchema).default([]),
+  traits: z.array(wikiCreatureTraitSchema).default([]),
+  source: wikiSourceSchema,
+});
+export type WikiCreature = z.infer<typeof wikiCreatureSchema>;
+
+export const wikiSpellCastingOptionSchema = z.object({
+  type: z.string(),
+  damageRoll: z.string().nullable().default(null),
+  targetCount: z.number().int().nullable().default(null),
+  duration: z.string().nullable().default(null),
+  range: z.number().nullable().default(null),
+  concentration: z.boolean().nullable().default(null),
+  shapeSize: z.number().nullable().default(null),
+  description: z.string().nullable().default(null),
+});
+export type WikiSpellCastingOption = z.infer<
+  typeof wikiSpellCastingOptionSchema
+>;
+
+export const wikiSpellSchema = z.object({
+  key: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().default(""),
+  higherLevel: z.string().default(""),
+  level: z.number().int().min(0).max(9),
+  school: wikiReferenceSchema,
+  classes: z.array(wikiReferenceSchema).default([]),
+  castingTime: z.string(),
+  reactionCondition: z.string().nullable().default(null),
+  range: z.number().nullable().default(null),
+  rangeText: z.string(),
+  rangeUnit: z.string().nullable().default(null),
+  duration: z.string(),
+  concentration: z.boolean().default(false),
+  ritual: z.boolean().default(false),
+  components: z.array(spellComponentSchema).default([]),
+  material: z.string().nullable().default(null),
+  materialCost: z.string().nullable().default(null),
+  materialConsumed: z.boolean().default(false),
+  targetType: z.string(),
+  targetCount: z.number().int().nullable().default(null),
+  savingThrowAbility: z.string().default(""),
+  attackRoll: z.boolean().default(false),
+  damageRoll: z.string().default(""),
+  damageTypes: z.array(z.string()).default([]),
+  shapeType: z.string().nullable().default(null),
+  shapeSize: z.number().nullable().default(null),
+  shapeSizeUnit: z.string().nullable().default(null),
+  castingOptions: z.array(wikiSpellCastingOptionSchema).default([]),
+  source: wikiSourceSchema,
+});
+export type WikiSpell = z.infer<typeof wikiSpellSchema>;

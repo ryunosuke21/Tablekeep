@@ -7,6 +7,7 @@ import {
   speciesListItemSchema,
   speciesSchema,
 } from "@/server/reference-data/open5e/resources";
+import { wikiSpeciesListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -27,7 +28,13 @@ export const wikiSpeciesRouter = createTRPCRouter({
         subspecies_of__isnull: kind === "all" ? undefined : kind === "species",
         fields: "key,name,document,is_subspecies,subspecies_of",
       });
-      return mapWikiPage(result, page, limit, mapSpeciesListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapSpeciesListItem,
+        wikiSpeciesListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)

@@ -7,6 +7,7 @@ import {
   mapFeat,
   mapFeatListItem,
 } from "@/server/reference-data/open5e/resources";
+import { wikiFeatListItemSchema } from "@/types/wiki";
 
 import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
 
@@ -25,7 +26,13 @@ export const wikiFeatsRouter = createTRPCRouter({
         name__icontains: name,
         fields: "key,name,document,type,has_prerequisite",
       });
-      return mapWikiPage(result, page, limit, mapFeatListItem);
+      return mapWikiPage(
+        result,
+        page,
+        limit,
+        mapFeatListItem,
+        wikiFeatListItemSchema,
+      );
     }),
   get: publicProcedure
     .input(wikiKeyInputSchema)
