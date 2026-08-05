@@ -109,12 +109,12 @@ initial coverage baseline for the high-value modules listed in
 `vitest.config.ts`.
 
 Playwright provides a thin Chromium smoke suite for both Next.js applications.
-It starts a deterministic local GraphQL service instead of contacting the
-public reference-data API. The complete browser suite expects the disposable
-database URL from `playwright.config.ts` to be available and initialized; CI
-creates and prepares that PostgreSQL database automatically. For local runs,
-start a matching disposable database and run `pnpm --filter web db:push` before
-`pnpm test:e2e`.
+It starts a deterministic local Open5e-compatible REST service instead of
+contacting the public reference-data API. The complete browser suite expects the
+disposable database URL from `playwright.config.ts` to be available and
+initialized; CI creates and prepares that PostgreSQL database automatically.
+For local runs, start a matching disposable database and run
+`pnpm --filter web db:push` before `pnpm test:e2e`.
 
 ## Repository layout
 

@@ -47,7 +47,7 @@ Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to 
 | `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret. |
 | `BETTER_AUTH_SECRET` | Production | Secret used by Better Auth; set it locally as well when testing auth. |
 | `NEXT_PUBLIC_DOCS_URL` | No | Public documentation URL used by the product Help link; defaults to `http://localhost:3001/docs`. |
-| `DATA_SOURCE` | No | Reference-data API base URL; defaults to `https://www.dnd5eapi.co`. |
+| `DATA_SOURCE` | No | Versioned Open5e reference-data API base URL; defaults to `https://api.open5e.com/v2`. |
 | `LOG_LEVEL` | No | `debug`, `info`, `warn`, or `error`; defaults to `info`. |
 
 The product’s public URL comes from Vercel’s `VERCEL_URL` system variable in deployed environments (via the T3 Env Vercel preset), and falls back to `http://localhost:3000` locally. You do not need to set an app URL in `.env`.
@@ -84,6 +84,30 @@ uploaded only when the React Hook Form profile form is submitted. The custom
 uploader uses UploadThing's function API against `/api/files`; its client-side
 byte limit and server-side UploadThing string limit both derive from
 `MAX_FILE_SIZE` in `apps/web/src/lib/constants.ts`.
+
+### Wiki reference data
+
+Public rules-reference procedures live under the `wiki` tRPC namespace. The
+server fetches them through a single Open5e V2 adapter and maps upstream
+snake-case payloads into Tablekeep-owned camel-case Zod schemas before returning
+them. Public TypeScript types are inferred from those schemas, and both mapped
+entities and page envelopes are parsed so defaults are applied and normalized
+schema drift fails at the server boundary. Callers use source-qualified `key`
+values, not the indexes from the former 2014 data source.
+
+Every list request is restricted to Open5e's `srd-2024` document, and every
+mapped entity verifies its source again before it leaves the server. List
+procedures return `items` plus page metadata and accept page numbers rather than
+offset cursors. The current resources are backgrounds, classes/subclasses,
+creatures, feats, mundane items, magic items, rules, species/subspecies, and
+spells. Standalone skills and conditions are intentionally absent because
+Open5e does not currently expose `srd-2024` records for those collections.
+
+Keep raw Open5e schemas and mappers under
+`apps/web/src/server/reference-data/open5e/`. Do not call Open5e directly from a
+router, component, or browser client. Tests must inject the adapter and use
+sanitized fixtures; only optional manual diagnostics may contact the public
+service.
 
 ## Campaign data and authorization
 
@@ -161,11 +185,12 @@ must stub network boundaries; they must never contact OAuth, PostgreSQL, or the
 public reference-data API.
 
 The Playwright suite under `e2e/` starts both Next.js applications and a local
-GraphQL fixture service. It uses Chromium to verify only the essential startup
-and navigation paths. Before running `pnpm test:e2e` locally, provide the
-disposable PostgreSQL database configured in `playwright.config.ts` and apply
-the schema with `pnpm --filter web db:push`. Traces, screenshots, videos, and the
-HTML report are written to ignored test-output directories when failures occur.
+Open5e-compatible REST fixture service. It uses Chromium to verify only the
+essential startup and navigation paths. Before running `pnpm test:e2e` locally,
+provide the disposable PostgreSQL database configured in `playwright.config.ts`
+and apply the schema with `pnpm --filter web db:push`. Traces, screenshots,
+videos, and the HTML report are written to ignored test-output directories when
+failures occur.
 
 GitHub Actions runs two checks for every pull request and push to `main`:
 

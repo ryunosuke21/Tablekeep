@@ -21,10 +21,26 @@ test("the product app protects the dashboard and keeps public APIs available", a
   expect(health.ok()).toBe(true);
   expect(await health.text()).toContain('"status":"ok"');
 
+  const cacheBuster = crypto.randomUUID();
+  const spellList = await request.get(
+    "http://localhost:3000/api/trpc/wiki.spells.list",
+    {
+      params: {
+        input: JSON.stringify({ json: { limit: 1, name: cacheBuster } }),
+      },
+    },
+  );
+  expect(spellList.ok()).toBe(true);
+  expect(await spellList.text()).toContain('"key":"srd-2024_test-spark"');
+
   const mockResponse = await request.get("http://127.0.0.1:4100/requests");
   expect(mockResponse.ok()).toBe(true);
   const result = (await mockResponse.json()) as { operations: string[] };
-  expect(result.operations).toEqual([]);
+  expect(result.operations).toHaveLength(1);
+  expect(result.operations[0]).toContain(
+    `GET /v2/spells/?page=1&limit=1&name__icontains=${cacheBuster}`,
+  );
+  expect(result.operations[0]).toContain("document__key__in=srd-2024");
 });
 
 test("campaign routes are protected and keep the requested destination", async ({

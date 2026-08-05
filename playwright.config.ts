@@ -48,7 +48,7 @@ export default defineConfig({
         FROM_EMAIL: "noreply@tablekeep.test",
         UPLOADTHING_TOKEN: "tablekeep-browser-uploadthing-token",
         DATABASE_URL: databaseUrl,
-        DATA_SOURCE: "http://127.0.0.1:4100",
+        DATA_SOURCE: "http://127.0.0.1:4100/v2",
         LOG_LEVEL: "warn",
       },
     },
