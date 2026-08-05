@@ -123,6 +123,14 @@ creatures, feats, mundane items, magic items, rules, species/subspecies, and
 spells. Standalone skills and conditions are intentionally absent because
 Open5e does not currently expose `srd-2024` records for those collections.
 
+The authenticated product exposes this data under `/wiki`. Category indexes use
+the same server procedures in two ways: card view sends an internal `cursor`
+that resolves to the adapter's page number for infinite loading, while table view
+uses URL-backed `page` and `limit` values. Search and resource filters also live
+in the URL. Keep filter work server-backed; filtering only the records already
+loaded in the browser would return incomplete results. Wiki artwork is local and
+decorative because the mapped Open5e schemas do not provide record images.
+
 Keep raw Open5e schemas and mappers under
 `apps/web/src/server/reference-data/open5e/`. Do not call Open5e directly from a
 router, component, or browser client. Tests must inject the adapter and use

@@ -80,6 +80,19 @@ describe("Wiki routers", () => {
     });
   });
 
+  it("uses the infinite-list cursor as the requested page", async () => {
+    request.mockResolvedValue(pageFixture(classFixture()));
+    const caller = wikiClassesRouter.createCaller(testContext(request));
+
+    await caller.list({ cursor: 3, limit: 10 });
+
+    expect(request).toHaveBeenCalledWith(
+      "classes",
+      expect.anything(),
+      expect.objectContaining({ page: 3, limit: 10 }),
+    );
+  });
+
   it("translates only supported spell filters", async () => {
     request.mockResolvedValue(pageFixture(spellFixture()));
     const caller = wikiSpellsRouter.createCaller(testContext(request));

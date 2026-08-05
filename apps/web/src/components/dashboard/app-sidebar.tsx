@@ -2,8 +2,7 @@
 
 import {
   IconBackpack,
-  IconBandage,
-  type IconBook2,
+  IconBook2,
   IconCards,
   IconFlag3,
   IconHelpCircle,
@@ -45,14 +44,15 @@ const personalNavigation = [
 ] as const;
 
 const wikiNavigation = [
-  { title: "Races", href: "/wiki/races", icon: IconMasksTheater },
+  { title: "Wiki home", href: "/wiki", icon: IconBook2 },
+  { title: "Species", href: "/wiki/species", icon: IconMasksTheater },
   { title: "Backgrounds", href: "/wiki/backgrounds", icon: IconWallpaper },
   { title: "Classes", href: "/wiki/classes", icon: IconSword },
   { title: "Spells", href: "/wiki/spells", icon: IconSparkles },
-  { title: "Monsters", href: "/wiki/monsters", icon: IconPaw },
+  { title: "Creatures", href: "/wiki/creatures", icon: IconPaw },
   { title: "Feats", href: "/wiki/feats", icon: IconCards },
   { title: "Items", href: "/wiki/items", icon: IconBackpack },
-  { title: "Conditions", href: "/wiki/conditions", icon: IconBandage },
+  { title: "Rules", href: "/wiki/rules", icon: IconBook2 },
 ] as const;
 
 function NavigationGroup({
@@ -76,7 +76,8 @@ function NavigationGroup({
           {items.map((item) => {
             const Icon = item.icon;
             const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+              pathname === item.href ||
+              (item.href !== "/wiki" && pathname.startsWith(`${item.href}/`));
 
             return (
               <SidebarMenuItem key={item.href}>

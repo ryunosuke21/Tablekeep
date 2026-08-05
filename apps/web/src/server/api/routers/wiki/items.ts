@@ -16,7 +16,12 @@ import {
   wikiMagicItemListItemSchema,
 } from "@/types/wiki";
 
-import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
+import {
+  mapWikiPage,
+  resolveWikiPage,
+  wikiKeyInputSchema,
+  wikiPageInputSchema,
+} from "./common";
 
 const listInputSchema = wikiPageInputSchema.extend({
   name: z.string().min(1).optional(),
@@ -27,9 +32,9 @@ export const wikiItemsRouter = createTRPCRouter({
   list: publicProcedure
     .input(listInputSchema.optional())
     .query(async ({ ctx, input }) => {
-      const { page, limit, name, category } = listInputSchema.parse(
-        input ?? {},
-      );
+      const parsed = listInputSchema.parse(input ?? {});
+      const page = resolveWikiPage(parsed);
+      const { limit, name, category } = parsed;
       const result = await ctx.open5e.list("items", itemListItemSchema, {
         page,
         limit,
@@ -56,9 +61,9 @@ export const wikiMagicItemsRouter = createTRPCRouter({
   list: publicProcedure
     .input(listInputSchema.optional())
     .query(async ({ ctx, input }) => {
-      const { page, limit, name, category } = listInputSchema.parse(
-        input ?? {},
-      );
+      const parsed = listInputSchema.parse(input ?? {});
+      const page = resolveWikiPage(parsed);
+      const { limit, name, category } = parsed;
       const result = await ctx.open5e.list(
         "magicitems",
         magicItemListItemSchema,

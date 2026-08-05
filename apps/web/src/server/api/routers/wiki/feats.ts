@@ -9,7 +9,12 @@ import {
 } from "@/server/reference-data/open5e/resources";
 import { wikiFeatListItemSchema } from "@/types/wiki";
 
-import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
+import {
+  mapWikiPage,
+  resolveWikiPage,
+  wikiKeyInputSchema,
+  wikiPageInputSchema,
+} from "./common";
 
 const listInputSchema = wikiPageInputSchema.extend({
   name: z.string().min(1).optional(),
@@ -19,7 +24,9 @@ export const wikiFeatsRouter = createTRPCRouter({
   list: publicProcedure
     .input(listInputSchema.optional())
     .query(async ({ ctx, input }) => {
-      const { page, limit, name } = listInputSchema.parse(input ?? {});
+      const parsed = listInputSchema.parse(input ?? {});
+      const page = resolveWikiPage(parsed);
+      const { limit, name } = parsed;
       const result = await ctx.open5e.list("feats", featListItemSchema, {
         page,
         limit,

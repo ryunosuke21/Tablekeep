@@ -9,7 +9,12 @@ import {
 } from "@/server/reference-data/open5e/resources";
 import { wikiSpellListItemSchema } from "@/types/wiki";
 
-import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
+import {
+  mapWikiPage,
+  resolveWikiPage,
+  wikiKeyInputSchema,
+  wikiPageInputSchema,
+} from "./common";
 
 const listInputSchema = wikiPageInputSchema.extend({
   name: z.string().min(1).optional(),
@@ -23,8 +28,9 @@ export const wikiSpellsRouter = createTRPCRouter({
     .input(listInputSchema.optional())
     .query(async ({ ctx, input }) => {
       const parsed = listInputSchema.parse(input ?? {});
+      const page = resolveWikiPage(parsed);
       const result = await ctx.open5e.list("spells", spellListItemSchema, {
-        page: parsed.page,
+        page,
         limit: parsed.limit,
         name__icontains: parsed.name,
         level: parsed.level,
@@ -35,7 +41,7 @@ export const wikiSpellsRouter = createTRPCRouter({
       });
       return mapWikiPage(
         result,
-        parsed.page,
+        page,
         parsed.limit,
         mapSpellListItem,
         wikiSpellListItemSchema,

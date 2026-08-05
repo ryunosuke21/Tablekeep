@@ -47,6 +47,57 @@ const spell = {
   },
 };
 
+const classNames = [
+  "Barbarian",
+  "Bard",
+  "Cleric",
+  "Druid",
+  "Fighter",
+  "Monk",
+  "Paladin",
+  "Ranger",
+  "Rogue",
+  "Sorcerer",
+  "Warlock",
+  "Wizard",
+];
+
+const classes = classNames.map((name, index) => ({
+  key: `srd-2024_${name.toLowerCase()}`,
+  name,
+  desc: `${name} features and training for an adventurer.`,
+  hit_dice: index % 3 === 0 ? "D12" : index % 2 === 0 ? "D10" : "D8",
+  caster_type: [
+    "Bard",
+    "Cleric",
+    "Druid",
+    "Sorcerer",
+    "Warlock",
+    "Wizard",
+  ].includes(name)
+    ? "FULL"
+    : "NONE",
+  subclass_of: null,
+  saving_throws: [{ name: "Strength" }, { name: "Constitution" }],
+  hit_points: {
+    hit_dice: index % 3 === 0 ? "D12" : index % 2 === 0 ? "D10" : "D8",
+    hit_dice_name: `1D10 per ${name} level`,
+    hit_points_at_1st_level: "10 + Constitution modifier",
+    hit_points_at_higher_levels: "1D10 + Constitution modifier",
+  },
+  features: [
+    {
+      key: `srd-2024_${name.toLowerCase()}_feature`,
+      name: "Signature feature",
+      desc: "Use this feature to recover 1d4 + 2 hit points.",
+      feature_type: "CLASS_LEVEL_FEATURE",
+      gained_at: [{ level: 1, detail: null }],
+      data_for_class_table: [{ level: 1, column_value: "2" }],
+    },
+  ],
+  document: spell.document,
+}));
+
 function json(response, status, body) {
   response.writeHead(status, { "Content-Type": "application/json" });
   response.end(JSON.stringify(body));
@@ -70,6 +121,41 @@ const server = createServer((request, response) => {
       previous: null,
       results: [spell],
     });
+  }
+
+  if (request.method === "GET" && url.pathname === "/v2/classes/") {
+    operations.push(`${request.method} ${url.pathname}${url.search}`);
+    const page = Number(url.searchParams.get("page") ?? 1);
+    const limit = Number(url.searchParams.get("limit") ?? 20);
+    const query = (url.searchParams.get("name__contains") ?? "").toLowerCase();
+    const filtered = classes.filter((item) =>
+      item.name.toLowerCase().includes(query),
+    );
+    const start = (page - 1) * limit;
+    return json(response, 200, {
+      count: filtered.length,
+      next:
+        start + limit < filtered.length
+          ? `http://${hostname}:${port}/v2/classes/?page=${page + 1}`
+          : null,
+      previous:
+        page > 1
+          ? `http://${hostname}:${port}/v2/classes/?page=${page - 1}`
+          : null,
+      results: filtered.slice(start, start + limit),
+    });
+  }
+
+  if (
+    request.method === "GET" &&
+    url.pathname.startsWith("/v2/classes/srd-2024_")
+  ) {
+    operations.push(`${request.method} ${url.pathname}`);
+    const key = url.pathname.split("/").filter(Boolean).at(-1);
+    const result = classes.find((item) => item.key === key);
+    return result
+      ? json(response, 200, result)
+      : json(response, 404, { error: "Not found" });
   }
 
   if (

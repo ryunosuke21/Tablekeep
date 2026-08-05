@@ -2,7 +2,7 @@
 
 Tablekeep is a tabletop companion for in-person Dungeons & Dragons campaigns. It is designed to keep the information a group reaches for at the table—characters, spells, inventory, encounters, and rolls—in one shared, practical place without replacing the physical game.
 
-> **Project status:** Tablekeep now includes private campaigns and player essentials: global character identities, campaign-scoped sheets, player/DM co-management, multiclass levels, backgrounds, maximum HP, conditions, inventory, and multiple currencies. The closed-beta admission gate, spellbooks, party tools, and encounters remain planned work.
+> **Project status:** Tablekeep now includes private campaigns, player essentials, and a searchable 2024 SRD wiki with card and table views. Global character identities, campaign-scoped sheets, player/DM co-management, multiclass levels, backgrounds, maximum HP, conditions, inventory, and multiple currencies are implemented. The closed-beta admission gate, spellbooks, party tools, and encounters remain planned work.
 
 ## The two applications
 
@@ -32,6 +32,13 @@ Tablekeep ships as two separate Next.js applications:
 - Encounter tools, including initiative tracking and hit-point management.
 - Monster reference and encounter preparation.
 - Shop creation and inventory management for in-world vendors.
+
+### Rules reference
+
+- A phone-first 2024 SRD wiki for species, backgrounds, classes, spells,
+  creatures, feats, items, and rules. **Implemented.**
+- Search and resource-specific filters, infinite card browsing, paginated table
+  comparison, and detailed record pages with visual dice notation.
 
 See [the product scope](docs/product-scope.md) for the principles, roles, and planned feature areas.
 The implementation sequence and closed-beta release boundary are defined in

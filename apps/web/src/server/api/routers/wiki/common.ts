@@ -6,11 +6,16 @@ import { type WikiPage, wikiPageSchema } from "@/types/wiki";
 export const wikiPageInputSchema = z.object({
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(50).default(20),
+  cursor: z.number().int().min(1).optional(),
 });
 
 export const wikiKeyInputSchema = z.object({
   key: z.string().min(1),
 });
+
+export function resolveWikiPage(input: { page: number; cursor?: number }) {
+  return input.cursor ?? input.page;
+}
 
 export function mapWikiPage<TInput, TOutputSchema extends z.ZodType>(
   upstream: Open5ePage<TInput>,
