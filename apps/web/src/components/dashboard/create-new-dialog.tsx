@@ -94,16 +94,17 @@ export function CreateNewDialog() {
       <SidebarGroup className="pb-0">
         <SidebarMenu>
           <SidebarMenuItem>
-            <DialogTrigger asChild>
-              <SidebarMenuButton
-                size="lg"
-                tooltip="Create new"
-                className="h-10 bg-sidebar-primary font-medium text-sidebar-primary-foreground shadow-sm hover:bg-sidebar-primary/90 hover:text-sidebar-primary-foreground active:bg-sidebar-primary/85 active:text-sidebar-primary-foreground"
-              >
+            <SidebarMenuButton
+              asChild
+              size="lg"
+              tooltip="Create new"
+              className="h-10 bg-sidebar-primary font-medium text-sidebar-primary-foreground shadow-sm hover:bg-sidebar-primary/90 hover:text-sidebar-primary-foreground active:bg-sidebar-primary/85 active:text-sidebar-primary-foreground group-data-[collapsible=icon]:p-2!"
+            >
+              <DialogTrigger>
                 <IconPlus />
                 <span>Create new</span>
-              </SidebarMenuButton>
-            </DialogTrigger>
+              </DialogTrigger>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroup>
