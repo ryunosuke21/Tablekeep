@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: `%s | ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/towerkeep.ico" }],
 };
 
 const inter = Inter({
