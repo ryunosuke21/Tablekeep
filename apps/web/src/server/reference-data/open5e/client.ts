@@ -4,7 +4,11 @@ import { z } from "zod";
 
 import { env } from "@/env/server";
 
-export const OPEN5E_SOURCE_KEY = "srd-2024";
+/** Upstream page size for whole-catalog reads. Keeps each cached response well under Next's data-cache entry limit. */
+const CATALOG_PAGE_SIZE = 1000;
+
+/** Safety stop so an upstream paging bug cannot loop forever. */
+const CATALOG_PAGE_LIMIT = 12;
 
 type QueryValue = boolean | number | string | undefined;
 export type Open5eQuery = Record<string, QueryValue>;
@@ -17,11 +21,12 @@ export interface Open5ePage<T> {
 }
 
 export interface Open5eClient {
-  list<TSchema extends ZodType>(
+  /** Reads every entry of a resource. Filtering happens in the browser, so the wiki never scopes this read. */
+  listAll<TSchema extends ZodType>(
     resource: string,
     schema: TSchema,
     query?: Open5eQuery,
-  ): Promise<Open5ePage<output<TSchema>>>;
+  ): Promise<output<TSchema>[]>;
   get<TSchema extends ZodType>(
     resource: string,
     key: string,
@@ -67,15 +72,24 @@ export class Open5eHttpClient implements Open5eClient {
     this.#fetch = fetchImplementation;
   }
 
-  async list<TSchema extends ZodType>(
+  async listAll<TSchema extends ZodType>(
     resource: string,
     schema: TSchema,
     query: Open5eQuery = {},
-  ): Promise<Open5ePage<output<TSchema>>> {
-    return this.#request(resource, pageSchema(schema), {
-      ...query,
-      document__key__in: OPEN5E_SOURCE_KEY,
-    });
+  ): Promise<output<TSchema>[]> {
+    const results: output<TSchema>[] = [];
+
+    for (let page = 1; page <= CATALOG_PAGE_LIMIT; page += 1) {
+      const response = await this.#request(resource, pageSchema(schema), {
+        ...query,
+        page,
+        limit: CATALOG_PAGE_SIZE,
+      });
+      results.push(...response.results);
+      if (response.next === null) break;
+    }
+
+    return results;
   }
 
   async get<TSchema extends ZodType>(

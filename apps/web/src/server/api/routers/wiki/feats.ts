@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import {
   featListItemSchema,
@@ -9,38 +7,18 @@ import {
 } from "@/server/reference-data/open5e/resources";
 import { wikiFeatListItemSchema } from "@/types/wiki";
 
-import {
-  mapWikiPage,
-  resolveWikiPage,
-  wikiKeyInputSchema,
-  wikiPageInputSchema,
-} from "./common";
-
-const listInputSchema = wikiPageInputSchema.extend({
-  name: z.string().min(1).optional(),
-});
+import { readWikiCatalog, wikiKeyInputSchema } from "./common";
 
 export const wikiFeatsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(listInputSchema.optional())
-    .query(async ({ ctx, input }) => {
-      const parsed = listInputSchema.parse(input ?? {});
-      const page = resolveWikiPage(parsed);
-      const { limit, name } = parsed;
-      const result = await ctx.open5e.list("feats", featListItemSchema, {
-        page,
-        limit,
-        name__icontains: name,
-        fields: "key,name,document,type,has_prerequisite",
-      });
-      return mapWikiPage(
-        result,
-        page,
-        limit,
-        mapFeatListItem,
-        wikiFeatListItemSchema,
-      );
+  catalog: publicProcedure.query(({ ctx }) =>
+    readWikiCatalog(ctx.open5e, {
+      resource: "feats",
+      fields: "key,name,document,type,has_prerequisite",
+      upstreamSchema: featListItemSchema,
+      itemSchema: wikiFeatListItemSchema,
+      map: mapFeatListItem,
     }),
+  ),
   get: publicProcedure
     .input(wikiKeyInputSchema)
     .query(async ({ ctx, input }) =>

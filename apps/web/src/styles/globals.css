@@ -15,6 +15,16 @@
 }
 
 @theme inline {
+  --font-display:
+    var(--font-fraunces), ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --color-wiki-species: var(--wiki-species);
+  --color-wiki-backgrounds: var(--wiki-backgrounds);
+  --color-wiki-classes: var(--wiki-classes);
+  --color-wiki-spells: var(--wiki-spells);
+  --color-wiki-creatures: var(--wiki-creatures);
+  --color-wiki-feats: var(--wiki-feats);
+  --color-wiki-items: var(--wiki-items);
+  --color-wiki-rules: var(--wiki-rules);
   --font-heading:
     var(--font-inter), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -69,6 +79,15 @@
 }
 
 :root {
+  /* One accent per wiki section, used for the eyebrow, marks, and hover tint. */
+  --wiki-species: oklch(0.52 0.11 195);
+  --wiki-backgrounds: oklch(0.55 0.12 55);
+  --wiki-classes: oklch(0.5 0.19 292);
+  --wiki-spells: oklch(0.52 0.19 320);
+  --wiki-creatures: oklch(0.48 0.12 150);
+  --wiki-feats: oklch(0.54 0.17 25);
+  --wiki-items: oklch(0.5 0.14 250);
+  --wiki-rules: oklch(0.46 0.05 250);
   --campaign-lilac: oklch(0.965 0.022 305);
   --campaign-rose: oklch(0.965 0.018 18);
   --campaign-sage: oklch(0.96 0.018 145);
@@ -108,6 +127,14 @@
 }
 
 .dark {
+  --wiki-species: oklch(0.78 0.12 195);
+  --wiki-backgrounds: oklch(0.8 0.12 60);
+  --wiki-classes: oklch(0.75 0.16 292);
+  --wiki-spells: oklch(0.76 0.16 322);
+  --wiki-creatures: oklch(0.76 0.13 152);
+  --wiki-feats: oklch(0.76 0.14 28);
+  --wiki-items: oklch(0.76 0.12 250);
+  --wiki-rules: oklch(0.75 0.04 250);
   --campaign-lilac: oklch(0.235 0.028 305);
   --campaign-rose: oklch(0.235 0.024 18);
   --campaign-sage: oklch(0.23 0.022 145);
@@ -161,6 +188,25 @@
     @apply font-sans;
     scrollbar-gutter: stable;
   }
+}
+
+/* Catalogs render thousands of entries at once; skip the offscreen ones. */
+.wiki-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.5rem;
+}
+
+.wiki-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 20rem;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 .tk-dashboard-canvas {

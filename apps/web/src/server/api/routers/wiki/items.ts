@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import {
   itemListItemSchema,
@@ -16,40 +14,18 @@ import {
   wikiMagicItemListItemSchema,
 } from "@/types/wiki";
 
-import {
-  mapWikiPage,
-  resolveWikiPage,
-  wikiKeyInputSchema,
-  wikiPageInputSchema,
-} from "./common";
-
-const listInputSchema = wikiPageInputSchema.extend({
-  name: z.string().min(1).optional(),
-  category: z.string().min(1).optional(),
-});
+import { readWikiCatalog, wikiKeyInputSchema } from "./common";
 
 export const wikiItemsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(listInputSchema.optional())
-    .query(async ({ ctx, input }) => {
-      const parsed = listInputSchema.parse(input ?? {});
-      const page = resolveWikiPage(parsed);
-      const { limit, name, category } = parsed;
-      const result = await ctx.open5e.list("items", itemListItemSchema, {
-        page,
-        limit,
-        name__icontains: name,
-        category,
-        fields: "key,name,document,category",
-      });
-      return mapWikiPage(
-        result,
-        page,
-        limit,
-        mapItemListItem,
-        wikiItemListItemSchema,
-      );
+  catalog: publicProcedure.query(({ ctx }) =>
+    readWikiCatalog(ctx.open5e, {
+      resource: "items",
+      fields: "key,name,document,category",
+      upstreamSchema: itemListItemSchema,
+      itemSchema: wikiItemListItemSchema,
+      map: mapItemListItem,
     }),
+  ),
   get: publicProcedure
     .input(wikiKeyInputSchema)
     .query(async ({ ctx, input }) =>
@@ -58,31 +34,15 @@ export const wikiItemsRouter = createTRPCRouter({
 });
 
 export const wikiMagicItemsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(listInputSchema.optional())
-    .query(async ({ ctx, input }) => {
-      const parsed = listInputSchema.parse(input ?? {});
-      const page = resolveWikiPage(parsed);
-      const { limit, name, category } = parsed;
-      const result = await ctx.open5e.list(
-        "magicitems",
-        magicItemListItemSchema,
-        {
-          page,
-          limit,
-          name__icontains: name,
-          category,
-          fields: "key,name,document,category,rarity,requires_attunement",
-        },
-      );
-      return mapWikiPage(
-        result,
-        page,
-        limit,
-        mapMagicItemListItem,
-        wikiMagicItemListItemSchema,
-      );
+  catalog: publicProcedure.query(({ ctx }) =>
+    readWikiCatalog(ctx.open5e, {
+      resource: "magicitems",
+      fields: "key,name,document,category,rarity,requires_attunement",
+      upstreamSchema: magicItemListItemSchema,
+      itemSchema: wikiMagicItemListItemSchema,
+      map: mapMagicItemListItem,
     }),
+  ),
   get: publicProcedure
     .input(wikiKeyInputSchema)
     .query(async ({ ctx, input }) =>

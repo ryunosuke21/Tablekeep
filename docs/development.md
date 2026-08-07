@@ -111,25 +111,47 @@ Public rules-reference procedures live under the `wiki` tRPC namespace. The
 server fetches them through a single Open5e V2 adapter and maps upstream
 snake-case payloads into Tablekeep-owned camel-case Zod schemas before returning
 them. Public TypeScript types are inferred from those schemas, and both mapped
-entities and page envelopes are parsed so defaults are applied and normalized
+entities and catalog envelopes are parsed so defaults are applied and normalized
 schema drift fails at the server boundary. Callers use source-qualified `key`
 values, not the indexes from the former 2014 data source.
 
-Every list request is restricted to Open5e's `srd-2024` document, and every
-mapped entity verifies its source again before it leaves the server. List
-procedures return `items` plus page metadata and accept page numbers rather than
-offset cursors. The current resources are backgrounds, classes/subclasses,
-creatures, feats, mundane items, magic items, rules, species/subspecies, and
-spells. Standalone skills and conditions are intentionally absent because
-Open5e does not currently expose `srd-2024` records for those collections.
+Each resource exposes two procedures: `catalog`, which takes no input and reads
+the whole collection, and `get`, which reads one record by key. Nothing is
+scoped upstream — the adapter pages through every entry of a resource and the
+catalog envelope carries `items` plus the `sources` those entries came from, so
+one entry only needs a `sourceKey`. Entries therefore span every document Open5e
+publishes, not just the 2024 SRD, and mappers must tolerate the shape drift
+between documents: parent references arrive as objects or bare keys, and fields
+like class hit dice or creature speeds can be missing. The current resources are
+backgrounds, classes/subclasses, creatures, feats, mundane items, magic items,
+rules, species/subspecies, and spells. Standalone skills and conditions are
+intentionally absent because Open5e does not expose them as collections.
 
-The authenticated product exposes this data under `/wiki`. Category indexes use
-the same server procedures in two ways: card view sends an internal `cursor`
-that resolves to the adapter's page number for infinite loading, while table view
-uses URL-backed `page` and `limit` values. Search and resource filters also live
-in the URL. Keep filter work server-backed; filtering only the records already
-loaded in the browser would return incomplete results. Wiki artwork is local and
-decorative because the mapped Open5e schemas do not provide record images.
+The authenticated product exposes this data under `/wiki`. A category page
+fetches its catalog once and does every filter, search, sort, and grouping in
+the browser, so no control costs a round trip and nothing is filtered by
+default. Keep it that way: new filters belong in
+`apps/web/src/lib/wiki/facets.ts` as facet definitions, and the filter state is
+mirrored into the URL with `history.replaceState` so links stay shareable
+without re-rendering the route.
+
+Entry artwork is hand-added and optional, because the mapped Open5e schemas do
+not carry record images. A file at
+`apps/web/public/images/wiki/<category>/<slug>.png` is picked up by the entry
+whose name slugifies to `<slug>`; there is no manifest or build step to update.
+The slug comes from the entry name rather than its source-qualified key, so one
+file serves that entry across every source book. Entries without a file fall
+back to a dimmed category plate, so upstream additions never leave a gap. See
+`apps/web/public/images/wiki/README.md` for the naming rules and
+`apps/web/src/lib/wiki/images.ts` for the resolver.
+
+A record page is laid out as an article beside an infobox. Keep the split the
+page is built on: identity belongs in the chips under the title, reference
+numbers belong in the infobox, and a fact never appears in both. Anything the
+infobox shows is dropped from the body for the same reason — a species lists its
+size and speed in the infobox, so those traits are filtered out of its trait
+list. Sections come from `sectionsFor`, which also feeds the contents list, so a
+new section is added in one place.
 
 Keep raw Open5e schemas and mappers under
 `apps/web/src/server/reference-data/open5e/`. Do not call Open5e directly from a

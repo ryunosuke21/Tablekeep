@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { mapWikiPage } from "@/server/api/routers/wiki/common";
 import {
   type WikiSource,
   wikiCatalogListItemSchema,
-  wikiPageSchema,
+  wikiCatalogSchema,
   wikiSpellSchema,
 } from "@/types/wiki";
 
@@ -43,20 +42,10 @@ describe("Wiki response schemas", () => {
     });
   });
 
-  it("applies page defaults and validates page metadata", () => {
-    const page = wikiPageSchema(wikiCatalogListItemSchema).parse({
-      pageInfo: { count: 0, page: 1, limit: 20 },
-    });
-
-    expect(page).toEqual({
+  it("defaults an empty catalog to no entries and no sources", () => {
+    expect(wikiCatalogSchema(wikiCatalogListItemSchema).parse({})).toEqual({
       items: [],
-      pageInfo: {
-        count: 0,
-        page: 1,
-        limit: 20,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      },
+      sources: [],
     });
   });
 
@@ -65,7 +54,7 @@ describe("Wiki response schemas", () => {
       wikiCatalogListItemSchema.parse({
         key: "",
         name: "Broken",
-        source,
+        sourceKey: "srd-2024",
       }),
     ).toThrow(z.ZodError);
 
@@ -77,22 +66,12 @@ describe("Wiki response schemas", () => {
         source,
       }),
     ).toThrow(z.ZodError);
-  });
 
-  it("parses mapped list responses before returning them", () => {
     expect(() =>
-      mapWikiPage(
-        { count: 1, next: null, previous: null, results: [{}] },
-        1,
-        20,
-        () =>
-          ({
-            key: "",
-            name: "Broken",
-            source,
-          }) as never,
-        wikiCatalogListItemSchema,
-      ),
+      wikiCatalogSchema(wikiCatalogListItemSchema).parse({
+        items: [{ key: "srd-2024_sage", name: "Sage" }],
+        sources: [source],
+      }),
     ).toThrow(z.ZodError);
   });
 });

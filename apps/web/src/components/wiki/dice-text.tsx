@@ -1,6 +1,8 @@
 import { Fragment, type ReactNode } from "react";
 import { IconTable } from "@tabler/icons-react";
 
+import { cn } from "@tablekeep/ui/lib/utils";
+
 import { DiceRoll, parseDiceExpression } from "./dice-roll";
 
 const DICE_IN_TEXT = /\b(?:\d{1,2})?d(?:4|6|8|10|12|20)(?:\s*[+-]\s*\d+)?\b/gi;
@@ -75,29 +77,50 @@ function MarkdownTable({ block }: { block: string }) {
         .split("|")
         .map((cell) => cell.trim()),
     );
-  const [headers = [], ...body] = rows;
+  const [headers = [], ...rest] = rows;
+  // Some tables are label-and-value pairs published with a blank header row.
+  // Those read better as a plain table, with the first column as the label.
+  const labelled = headers.every((header) => header === "");
+  const body = labelled ? rows : rest;
+  const columns = Math.max(...rows.map((row) => row.length), 1);
 
   return (
     <div className="my-5 overflow-hidden rounded-xl border bg-background shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
-          <thead className="bg-muted/65">
-            <tr>
-              {headers.map((header) => (
-                <th key={header} className="border-b px-4 py-3 font-semibold">
-                  <InlineText text={header} />
-                </th>
-              ))}
-            </tr>
-          </thead>
+          {labelled ? null : (
+            <thead className="bg-muted/65">
+              <tr>
+                {headers.map((header, index) => (
+                  <th
+                    // biome-ignore lint/suspicious/noArrayIndexKey: parsed from immutable text; cells never reorder and can repeat.
+                    key={`${index}-${header}`}
+                    className="border-b px-4 py-3 font-semibold"
+                  >
+                    <InlineText text={header} />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+          )}
           <tbody className="divide-y">
-            {body.map((row) => (
+            {body.map((row, rowIndex) => (
               <tr
-                key={row.join("-")}
+                // biome-ignore lint/suspicious/noArrayIndexKey: parsed from immutable text; rows never reorder and can repeat.
+                key={`${rowIndex}-${row.join("-")}`}
                 className="odd:bg-card/40 hover:bg-muted/35"
               >
-                {headers.map((header, cellIndex) => (
-                  <td key={header} className="px-4 py-3 text-foreground/85">
+                {Array.from({ length: columns }, (_, cellIndex) => (
+                  <td
+                    // biome-ignore lint/suspicious/noArrayIndexKey: parsed from immutable text; cells never reorder and can repeat.
+                    key={`${cellIndex}-${row[cellIndex] ?? ""}`}
+                    className={cn(
+                      "px-4 py-3 text-foreground/85",
+                      labelled &&
+                        cellIndex === 0 &&
+                        "w-1/3 font-medium text-foreground",
+                    )}
+                  >
                     <InlineText text={row[cellIndex] ?? "—"} />
                   </td>
                 ))}

@@ -24,31 +24,24 @@ type Catalog = {
   subclassesByClass: Record<string, string[]>;
 };
 
-/** The wiki caps a page at 50 entries, which covers the reference classes. */
-const CATALOG_LIMIT = 50;
-const catalogQueryOptions = {
-  retry: false,
-  staleTime: 60 * 60 * 1000,
-} as const;
+function uniqueSorted(names: string[]) {
+  return [...new Set(names)].sort((left, right) => left.localeCompare(right));
+}
 
 /**
- * Reference classes are a convenience. The queries never retry and their
- * failure is silent, because every field here also accepts a homebrew name.
- * Classes and subclasses are separate wiki pages, so subclasses are grouped
- * back under their parent class for the subclass suggestions.
+ * Reference classes are a convenience. The query never retries and its failure
+ * is silent, because every field here also accepts a homebrew name. The wiki
+ * sends the whole class catalog at once, so subclasses are grouped back under
+ * their parent class for the subclass suggestions.
  */
 function useClassCatalog(): Catalog {
-  const classes = api.wiki.classes.list.useQuery(
-    { limit: CATALOG_LIMIT, kind: "class" },
-    catalogQueryOptions,
-  );
-  const subclasses = api.wiki.classes.list.useQuery(
-    { limit: CATALOG_LIMIT, kind: "subclass" },
-    catalogQueryOptions,
-  );
+  const catalog = api.wiki.classes.catalog.useQuery(undefined, {
+    retry: false,
+    staleTime: 60 * 60 * 1000,
+  });
 
   const subclassesByClass: Record<string, string[]> = {};
-  for (const entry of subclasses.data?.items ?? []) {
+  for (const entry of catalog.data?.items ?? []) {
     const parent = entry.parentClass?.name.trim().toLowerCase();
     if (!entry.isSubclass || !parent) continue;
     const group = subclassesByClass[parent] ?? [];
@@ -57,10 +50,17 @@ function useClassCatalog(): Catalog {
   }
 
   return {
-    names: (classes.data?.items ?? [])
-      .filter((entry) => !entry.isSubclass)
-      .map((entry) => entry.name),
-    subclassesByClass,
+    names: uniqueSorted(
+      (catalog.data?.items ?? [])
+        .filter((entry) => !entry.isSubclass)
+        .map((entry) => entry.name),
+    ),
+    subclassesByClass: Object.fromEntries(
+      Object.entries(subclassesByClass).map(([parent, names]) => [
+        parent,
+        uniqueSorted(names),
+      ]),
+    ),
   };
 }
 

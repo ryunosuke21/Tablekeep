@@ -21,26 +21,29 @@ test("the product app protects the dashboard and keeps public APIs available", a
   expect(health.ok()).toBe(true);
   expect(await health.text()).toContain('"status":"ok"');
 
-  const cacheBuster = crypto.randomUUID();
-  const spellList = await request.get(
-    "http://localhost:3000/api/trpc/wiki.spells.list",
-    {
-      params: {
-        input: JSON.stringify({ json: { limit: 1, name: cacheBuster } }),
-      },
-    },
+  const spellCatalog = await request.get(
+    "http://localhost:3000/api/trpc/wiki.spells.catalog",
   );
-  expect(spellList.ok()).toBe(true);
-  expect(await spellList.text()).toContain('"key":"srd-2024_test-spark"');
+  expect(spellCatalog.ok()).toBe(true);
+  expect(await spellCatalog.text()).toContain('"key":"srd-2024_test-spark"');
 
   const mockResponse = await request.get("http://127.0.0.1:4100/requests");
   expect(mockResponse.ok()).toBe(true);
   const result = (await mockResponse.json()) as { operations: string[] };
-  expect(result.operations).toHaveLength(1);
-  expect(result.operations[0]).toContain(
-    `GET /v2/spells/?page=1&limit=1&name__icontains=${cacheBuster}`,
+  const spellReads = result.operations.filter((operation) =>
+    operation.startsWith("GET /v2/spells/?"),
   );
-  expect(result.operations[0]).toContain("document__key__in=srd-2024");
+  expect(spellReads.length).toBeGreaterThan(0);
+  // The catalog is read whole and filtered in the browser, never scoped upstream.
+  for (const read of spellReads) {
+    expect(read).toContain("page=1&limit=1000");
+    expect(read).not.toContain("document__key__in");
+  }
+  expect(
+    result.operations.some((operation) =>
+      operation.startsWith("GET /v2/documents/"),
+    ),
+  ).toBe(true);
 });
 
 test("campaign routes are protected and keep the requested destination", async ({

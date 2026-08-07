@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 
 import { APP_DESCRIPTION, APP_NAME } from "@tablekeep/shared";
 
@@ -27,13 +27,25 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
 });
 
+/** Display face for the wiki: a book voice for reference material. */
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  axes: ["SOFT", "WONK", "opsz"],
+});
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
-      className={cn(inter.variable, jetbrainsMono.variable, "font-sans")}
+      className={cn(
+        inter.variable,
+        jetbrainsMono.variable,
+        fraunces.variable,
+        "font-sans",
+      )}
       suppressHydrationWarning
     >
       <body>

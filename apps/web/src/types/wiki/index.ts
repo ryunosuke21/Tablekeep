@@ -13,7 +13,7 @@ const spellComponentSchema = z.enum(["V", "S", "M"]);
 export const wikiCatalogListItemSchema = z.object({
   key: z.string().min(1),
   name: z.string().min(1),
-  source: wikiSourceSchema,
+  sourceKey: z.string().min(1),
 });
 export type WikiCatalogListItem = z.infer<typeof wikiCatalogListItemSchema>;
 
@@ -43,19 +43,20 @@ export type WikiFeatListItem = z.infer<typeof wikiFeatListItemSchema>;
 
 export const wikiItemListItemSchema = wikiCatalogListItemSchema.extend({
   category: wikiReferenceSchema,
+  kind: z.literal("mundane").default("mundane"),
 });
 export type WikiItemListItem = z.infer<typeof wikiItemListItemSchema>;
 
 export const wikiMagicItemListItemSchema = wikiItemListItemSchema.extend({
+  kind: z.literal("magic").default("magic"),
   rarity: rankedReferenceSchema.nullable().default(null),
   requiresAttunement: z.boolean().default(false),
 });
 export type WikiMagicItemListItem = z.infer<typeof wikiMagicItemListItemSchema>;
 
-export const wikiRuleListItemSchema = z.object({
-  key: z.string().min(1),
-  name: z.string().min(1),
-  sourceKey: z.string().min(1),
+export const wikiRuleListItemSchema = wikiCatalogListItemSchema.extend({
+  ruleset: z.string().default(""),
+  index: z.number().int().default(0),
 });
 export type WikiRuleListItem = z.infer<typeof wikiRuleListItemSchema>;
 
@@ -132,7 +133,7 @@ export const wikiRuleSchema = z.object({
   index: z.number().int(),
   initialHeaderLevel: z.number().int().nonnegative(),
   ruleset: z.string(),
-  sourceKey: z.string().min(1),
+  source: wikiSourceSchema,
 });
 export type WikiRule = z.infer<typeof wikiRuleSchema>;
 
@@ -176,7 +177,7 @@ export const wikiClassSchema = z.object({
   isSubclass: z.boolean().default(false),
   parentClass: nullableReferenceSchema,
   savingThrows: z.array(z.string()).default([]),
-  hitPoints: wikiClassHitPointsSchema,
+  hitPoints: wikiClassHitPointsSchema.nullable().default(null),
   features: z.array(wikiClassFeatureSchema).default([]),
   source: wikiSourceSchema,
 });

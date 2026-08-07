@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import {
   mapRule,
@@ -10,40 +8,29 @@ import {
 import { wikiRuleListItemSchema } from "@/types/wiki";
 
 import {
-  mapWikiPage,
-  resolveWikiPage,
+  readSources,
+  readWikiCatalog,
+  sourceFor,
   wikiKeyInputSchema,
-  wikiPageInputSchema,
 } from "./common";
 
-const listInputSchema = wikiPageInputSchema.extend({
-  name: z.string().min(1).optional(),
-});
-
 export const wikiRulesRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(listInputSchema.optional())
-    .query(async ({ ctx, input }) => {
-      const parsed = listInputSchema.parse(input ?? {});
-      const page = resolveWikiPage(parsed);
-      const { limit, name } = parsed;
-      const result = await ctx.open5e.list("rules", ruleListItemSchema, {
-        page,
-        limit,
-        name__icontains: name,
-        fields: "key,name,document",
-      });
-      return mapWikiPage(
-        result,
-        page,
-        limit,
-        mapRuleListItem,
-        wikiRuleListItemSchema,
-      );
+  catalog: publicProcedure.query(({ ctx }) =>
+    readWikiCatalog(ctx.open5e, {
+      resource: "rules",
+      fields: "key,name,document,index,ruleset",
+      upstreamSchema: ruleListItemSchema,
+      itemSchema: wikiRuleListItemSchema,
+      map: mapRuleListItem,
     }),
+  ),
   get: publicProcedure
     .input(wikiKeyInputSchema)
-    .query(async ({ ctx, input }) =>
-      mapRule(await ctx.open5e.get("rules", input.key, ruleSchema)),
-    ),
+    .query(async ({ ctx, input }) => {
+      const [rule, sources] = await Promise.all([
+        ctx.open5e.get("rules", input.key, ruleSchema),
+        readSources(ctx.open5e),
+      ]);
+      return mapRule(rule, sourceFor(sources, rule.document));
+    }),
 });

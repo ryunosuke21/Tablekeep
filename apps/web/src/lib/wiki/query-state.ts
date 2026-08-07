@@ -1,81 +1,67 @@
-import type { WikiCategory, WikiView } from "@/lib/wiki/catalog";
+import type { WikiView } from "@/lib/wiki/catalog";
 
-export type WikiSearchParams = Record<string, string | string[] | undefined>;
+/** Selected facet values, keyed by facet. Everything is off by default. */
+export type WikiFilterState = Record<string, string[]>;
 
 export type WikiQueryState = {
-  view: WikiView;
   q: string;
-  page: number;
-  limit: 10 | 20 | 50;
-  kind?: string;
-  level?: number;
-  crMin?: number;
-  crMax?: number;
-  acMin?: number;
-  acMax?: number;
+  view: WikiView;
+  sort: string;
+  filters: WikiFilterState;
 };
 
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
+const FILTER_PREFIX = "f.";
 
-function positiveInteger(value: string | undefined, fallback: number) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-}
+export const EMPTY_WIKI_QUERY: WikiQueryState = {
+  q: "",
+  view: "index",
+  sort: "name",
+  filters: {},
+};
 
-function optionalNumber(value: string | undefined) {
-  if (value === undefined || value.trim() === "") return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
-}
+export function parseWikiQuery(params: URLSearchParams): WikiQueryState {
+  const filters: WikiFilterState = {};
+  for (const [key, value] of params.entries()) {
+    if (!key.startsWith(FILTER_PREFIX)) continue;
+    const selected = value.split(",").filter(Boolean);
+    if (selected.length) filters[key.slice(FILTER_PREFIX.length)] = selected;
+  }
 
-export function parseWikiQuery(
-  category: WikiCategory,
-  params: WikiSearchParams,
-): WikiQueryState {
-  const rawLimit = positiveInteger(first(params.limit), 20);
-  const limit = rawLimit === 10 || rawLimit === 50 ? rawLimit : 20;
-  const view = first(params.view) === "table" ? "table" : "cards";
-  const q = first(params.q)?.trim().slice(0, 100) ?? "";
-  const state: WikiQueryState = {
-    view,
-    q,
-    page: view === "table" ? positiveInteger(first(params.page), 1) : 1,
-    limit,
+  return {
+    q: params.get("q")?.slice(0, 100) ?? "",
+    view: params.get("view") === "cards" ? "cards" : "index",
+    sort: params.get("sort") || "name",
+    filters,
   };
-
-  const rawKind = first(params.kind);
-  if (
-    category === "classes" &&
-    ["class", "subclass", "all"].includes(rawKind ?? "")
-  ) {
-    state.kind = rawKind;
-  }
-  if (
-    category === "species" &&
-    ["species", "subspecies", "all"].includes(rawKind ?? "")
-  ) {
-    state.kind = rawKind;
-  }
-  if (category === "items") {
-    state.kind = rawKind === "magic" ? "magic" : "mundane";
-  }
-  if (category === "spells") {
-    const level = optionalNumber(first(params.level));
-    if (level !== undefined && Number.isInteger(level) && level <= 9)
-      state.level = level;
-  }
-  if (category === "creatures") {
-    state.crMin = optionalNumber(first(params.crMin));
-    state.crMax = optionalNumber(first(params.crMax));
-    state.acMin = optionalNumber(first(params.acMin));
-    state.acMax = optionalNumber(first(params.acMax));
-  }
-
-  return state;
 }
 
-export function wikiQueryKey(query: WikiQueryState) {
-  return JSON.stringify(query);
+export function serializeWikiQuery(query: WikiQueryState) {
+  const params = new URLSearchParams();
+  if (query.q.trim()) params.set("q", query.q.trim());
+  if (query.view !== EMPTY_WIKI_QUERY.view) params.set("view", query.view);
+  if (query.sort !== EMPTY_WIKI_QUERY.sort) params.set("sort", query.sort);
+  for (const [facet, values] of Object.entries(query.filters)) {
+    if (values.length) params.set(`${FILTER_PREFIX}${facet}`, values.join(","));
+  }
+  return params.toString();
+}
+
+export function toggleFilterValue(
+  filters: WikiFilterState,
+  facet: string,
+  value: string,
+): WikiFilterState {
+  const current = filters[facet] ?? [];
+  const next = current.includes(value)
+    ? current.filter((entry) => entry !== value)
+    : [...current, value];
+  const { [facet]: _removed, ...rest } = filters;
+  return next.length ? { ...rest, [facet]: next } : rest;
+}
+
+export function countActiveFilters(filters: WikiFilterState) {
+  return Object.values(filters).reduce(
+    (total, values) => total + values.length,
+    0,
+  );
 }

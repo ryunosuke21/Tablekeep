@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
@@ -42,12 +41,32 @@ import {
   wikiSpellSchema,
 } from "@/types/wiki";
 
-import { OPEN5E_SOURCE_KEY } from "./client";
-
 const referenceSchema = z.object({
   key: z.string(),
   name: z.string(),
 });
+
+/** "srd_high-elf" reads as "High Elf" once the document prefix is dropped. */
+function nameFromKey(key: string) {
+  return key
+    .replace(/^[^_]+_/, "")
+    .replaceAll("-", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+/**
+ * Parent links come back as a whole object in some documents and as a bare key
+ * in others, so both shapes are read into a reference.
+ */
+const parentReferenceSchema = z
+  .union([referenceSchema, z.string()])
+  .nullish()
+  .transform((value) => {
+    if (value == null) return null;
+    return typeof value === "string"
+      ? { key: value, name: nameFromKey(value) }
+      : value;
+  });
 
 export const documentSchema = z.object({
   key: z.string(),
@@ -58,17 +77,9 @@ export const documentSchema = z.object({
   permalink: z.string(),
 });
 
-function assertSource(sourceKey: string, entity: string) {
-  if (sourceKey !== OPEN5E_SOURCE_KEY) {
-    throw new TRPCError({
-      code: "BAD_GATEWAY",
-      message: `The reference-data service returned ${entity} from an unexpected source`,
-    });
-  }
-}
-
-function mapSource(document: z.infer<typeof documentSchema>): WikiSource {
-  assertSource(document.key, "content");
+export function mapSource(
+  document: z.infer<typeof documentSchema>,
+): WikiSource {
   return wikiSourceSchema.parse({
     key: document.key,
     name: document.name,
@@ -91,14 +102,14 @@ export function mapCatalogListItem(
   return wikiCatalogListItemSchema.parse({
     key: value.key,
     name: value.name,
-    source: mapSource(value.document),
+    sourceKey: value.document.key,
   });
 }
 
 export const classListItemSchema = catalogListItemSchema.extend({
-  hit_dice: z.string(),
-  caster_type: z.string(),
-  subclass_of: referenceSchema.nullable(),
+  hit_dice: z.string().nullish(),
+  caster_type: z.string().nullish(),
+  subclass_of: parentReferenceSchema,
 });
 
 export function mapClassListItem(
@@ -106,8 +117,8 @@ export function mapClassListItem(
 ): WikiClassListItem {
   return wikiClassListItemSchema.parse({
     ...mapCatalogListItem(value),
-    hitDice: value.hit_dice,
-    casterType: value.caster_type,
+    hitDice: value.hit_dice ?? "",
+    casterType: value.caster_type ?? "",
     isSubclass: value.subclass_of !== null,
     parentClass: value.subclass_of,
   });
@@ -153,7 +164,7 @@ export function mapFeatListItem(
 
 export const speciesListItemSchema = catalogListItemSchema.extend({
   is_subspecies: z.boolean(),
-  subspecies_of: referenceSchema.nullable(),
+  subspecies_of: parentReferenceSchema,
 });
 
 export function mapSpeciesListItem(
@@ -176,6 +187,7 @@ export function mapItemListItem(
   return wikiItemListItemSchema.parse({
     ...mapCatalogListItem(value),
     category: value.category,
+    kind: "mundane",
   });
 }
 
@@ -189,6 +201,7 @@ export function mapMagicItemListItem(
 ): WikiMagicItemListItem {
   return wikiMagicItemListItemSchema.parse({
     ...mapItemListItem(value),
+    kind: "magic",
     rarity: value.rarity,
     requiresAttunement: value.requires_attunement,
   });
@@ -198,16 +211,19 @@ export const ruleListItemSchema = z.object({
   key: z.string(),
   name: z.string(),
   document: z.string(),
+  index: z.number().int(),
+  ruleset: z.string(),
 });
 
 export function mapRuleListItem(
   value: z.infer<typeof ruleListItemSchema>,
 ): WikiRuleListItem {
-  assertSource(value.document, "rule");
   return wikiRuleListItemSchema.parse({
     key: value.key,
     name: value.name,
     sourceKey: value.document,
+    index: value.index,
+    ruleset: value.ruleset,
   });
 }
 
@@ -303,13 +319,13 @@ export const speciesSchema = z.object({
   name: z.string(),
   desc: z.string(),
   is_subspecies: z.boolean(),
-  subspecies_of: referenceSchema.nullable(),
+  subspecies_of: parentReferenceSchema,
   traits: z.array(
     z.object({
       name: z.string(),
       desc: z.string(),
-      type: z.string().nullable(),
-      order: z.number().int(),
+      type: z.string().nullish(),
+      order: z.number().int().nullish(),
     }),
   ),
   document: documentSchema,
@@ -322,11 +338,11 @@ export function mapSpecies(value: z.infer<typeof speciesSchema>): WikiSpecies {
     description: value.desc,
     isSubspecies: value.is_subspecies,
     parentSpecies: value.subspecies_of,
-    traits: value.traits.map((trait) => ({
+    traits: value.traits.map((trait, index) => ({
       name: trait.name,
       description: trait.desc,
-      type: trait.type,
-      order: trait.order,
+      type: trait.type ?? null,
+      order: trait.order ?? index,
     })),
     source: mapSource(value.document),
   });
@@ -342,8 +358,11 @@ export const ruleSchema = z.object({
   ruleset: z.string(),
 });
 
-export function mapRule(value: z.infer<typeof ruleSchema>): WikiRule {
-  assertSource(value.document, "rule");
+/** Rules only reference their document by key, so the source is joined in by the router. */
+export function mapRule(
+  value: z.infer<typeof ruleSchema>,
+  source: WikiSource,
+): WikiRule {
   return wikiRuleSchema.parse({
     key: value.key,
     name: value.name,
@@ -351,7 +370,7 @@ export function mapRule(value: z.infer<typeof ruleSchema>): WikiRule {
     index: value.index,
     initialHeaderLevel: value.initialHeaderLevel,
     ruleset: value.ruleset,
-    sourceKey: value.document,
+    source,
   });
 }
 
@@ -378,16 +397,18 @@ export const classSchema = z.object({
   key: z.string(),
   name: z.string(),
   desc: z.string(),
-  hit_dice: z.string(),
-  caster_type: z.string(),
-  subclass_of: referenceSchema.nullable(),
-  saving_throws: z.array(z.object({ name: z.string() })),
-  hit_points: z.object({
-    hit_dice: z.string(),
-    hit_dice_name: z.string(),
-    hit_points_at_1st_level: z.string(),
-    hit_points_at_higher_levels: z.string(),
-  }),
+  hit_dice: z.string().nullish(),
+  caster_type: z.string().nullish(),
+  subclass_of: parentReferenceSchema,
+  saving_throws: z.array(z.object({ name: z.string() })).default([]),
+  hit_points: z
+    .object({
+      hit_dice: z.string(),
+      hit_dice_name: z.string(),
+      hit_points_at_1st_level: z.string(),
+      hit_points_at_higher_levels: z.string(),
+    })
+    .nullish(),
   features: z.array(classFeatureSchema),
   document: documentSchema,
 });
@@ -397,17 +418,19 @@ export function mapClass(value: z.infer<typeof classSchema>): WikiClass {
     key: value.key,
     name: value.name,
     description: value.desc,
-    hitDice: value.hit_dice,
-    casterType: value.caster_type,
+    hitDice: value.hit_dice ?? "",
+    casterType: value.caster_type ?? "",
     isSubclass: value.subclass_of !== null,
     parentClass: value.subclass_of,
     savingThrows: value.saving_throws.map(({ name }) => name),
-    hitPoints: {
-      hitDice: value.hit_points.hit_dice,
-      name: value.hit_points.hit_dice_name,
-      atFirstLevel: value.hit_points.hit_points_at_1st_level,
-      atHigherLevels: value.hit_points.hit_points_at_higher_levels,
-    },
+    hitPoints: value.hit_points
+      ? {
+          hitDice: value.hit_points.hit_dice,
+          name: value.hit_points.hit_dice_name,
+          atFirstLevel: value.hit_points.hit_points_at_1st_level,
+          atHigherLevels: value.hit_points.hit_points_at_higher_levels,
+        }
+      : null,
     features: value.features.map((feature) => ({
       key: feature.key,
       name: feature.name,
@@ -488,7 +511,7 @@ export function mapMagicItem(
 const numericRecordSchema = z.record(z.string(), z.number());
 const speedSchema = z.record(
   z.string(),
-  z.union([z.number(), z.string(), z.boolean()]),
+  z.union([z.number(), z.string(), z.boolean()]).nullish(),
 );
 
 export const creatureSchema = z.object({
@@ -502,15 +525,15 @@ export const creatureSchema = z.object({
   subcategory: z.string().nullable(),
   alignment: z.string(),
   armor_class: z.number(),
-  armor_detail: z.string(),
+  armor_detail: z.string().nullish(),
   hit_points: z.number().int(),
-  hit_dice: z.string(),
+  hit_dice: z.string().nullish(),
   experience_points: z.number().int(),
   ability_scores: numericRecordSchema,
   saving_throws: numericRecordSchema,
   skill_bonuses: numericRecordSchema,
-  passive_perception: z.number().int(),
-  languages: z.object({ as_string: z.string() }),
+  passive_perception: z.number().int().nullish(),
+  languages: z.object({ as_string: z.string().nullish() }),
   actions: z.array(
     z.object({
       name: z.string(),
@@ -536,16 +559,20 @@ export function mapCreature(
     alignment: value.alignment,
     challengeRating: value.challenge_rating,
     armorClass: value.armor_class,
-    armorDetail: value.armor_detail,
+    armorDetail: value.armor_detail ?? "",
     hitPoints: value.hit_points,
-    hitDice: value.hit_dice,
+    hitDice: value.hit_dice ?? "",
     experiencePoints: value.experience_points,
-    speed: value.speed_all,
+    speed: Object.fromEntries(
+      Object.entries(value.speed_all).filter(
+        ([, speed]) => speed !== null && speed !== undefined,
+      ),
+    ),
     abilityScores: value.ability_scores,
     savingThrows: value.saving_throws,
     skillBonuses: value.skill_bonuses,
-    passivePerception: value.passive_perception,
-    languages: value.languages.as_string,
+    passivePerception: value.passive_perception ?? 0,
+    languages: value.languages.as_string ?? "",
     actions: value.actions.map((action) => ({
       name: action.name,
       description: action.desc,

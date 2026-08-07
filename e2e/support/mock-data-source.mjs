@@ -132,6 +132,19 @@ const species = Array.from({ length: 63 }, (_, index) => ({
   document: spell.document,
 }));
 
+const documents = [
+  spell.document,
+  {
+    key: "a5e-ag",
+    name: "Adventurer's Guide",
+    display_name: "Adventurer's Guide",
+    type: "SOURCE",
+    publisher: { key: "en-publishing", name: "EN Publishing" },
+    gamesystem: { key: "a5e", name: "Advanced 5th Edition" },
+    permalink: "https://example.test/a5e-ag",
+  },
+];
+
 function json(response, status, body) {
   response.writeHead(status, { "Content-Type": "application/json" });
   response.end(JSON.stringify(body));
@@ -147,6 +160,16 @@ const server = createServer((request, response) => {
   }
 
   const url = new URL(request.url ?? "/", `http://${hostname}:${port}`);
+  if (request.method === "GET" && url.pathname === "/v2/documents/") {
+    operations.push(`${request.method} ${url.pathname}${url.search}`);
+    return json(response, 200, {
+      count: documents.length,
+      next: null,
+      previous: null,
+      results: documents,
+    });
+  }
+
   if (request.method === "GET" && url.pathname === "/v2/spells/") {
     operations.push(`${request.method} ${url.pathname}${url.search}`);
     return json(response, 200, {

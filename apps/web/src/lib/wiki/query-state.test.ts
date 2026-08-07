@@ -1,51 +1,69 @@
 import { describe, expect, it } from "vitest";
 
-import { parseWikiQuery } from "./query-state";
+import {
+  countActiveFilters,
+  parseWikiQuery,
+  serializeWikiQuery,
+  toggleFilterValue,
+} from "./query-state";
 
-describe("parseWikiQuery", () => {
-  it("defaults to cards and keeps table pagination out of card state", () => {
-    expect(parseWikiQuery("classes", { page: "4", limit: "50" })).toMatchObject(
-      {
-        view: "cards",
-        page: 1,
-        limit: 50,
-        q: "",
-      },
-    );
-  });
+function parse(search: string) {
+  return parseWikiQuery(new URLSearchParams(search));
+}
 
-  it("parses valid table pagination and clamps page-size choices", () => {
-    expect(
-      parseWikiQuery("spells", { view: "table", page: "3", limit: "10" }),
-    ).toMatchObject({ view: "table", page: 3, limit: 10 });
-    expect(
-      parseWikiQuery("spells", { view: "table", page: "-2", limit: "999" }),
-    ).toMatchObject({ view: "table", page: 1, limit: 20 });
-  });
-
-  it("keeps only filters supported by each category", () => {
-    const spells = parseWikiQuery("spells", { level: "3", kind: "magic" });
-    expect(spells).toMatchObject({ level: 3 });
-    expect(spells).not.toHaveProperty("kind");
-    const creatures = parseWikiQuery("creatures", {
-      crMin: "0.5",
-      acMax: "18",
-      level: "2",
-    });
-    expect(creatures).toMatchObject({ crMin: 0.5, acMax: 18 });
-    expect(creatures).not.toHaveProperty("level");
-    expect(parseWikiQuery("items", { kind: "something-else" })).toMatchObject({
-      kind: "mundane",
+describe("Wiki query state", () => {
+  it("starts unfiltered when the URL says nothing", () => {
+    expect(parse("")).toEqual({
+      q: "",
+      view: "index",
+      sort: "name",
+      filters: {},
     });
   });
 
-  it("trims search text and rejects invalid numbers", () => {
+  it("reads search, view, sort, and multi-value filters", () => {
     expect(
-      parseWikiQuery("creatures", {
-        q: "  dragon  ",
-        crMin: "nope",
-        acMin: "-1",
+      parse("q=fire&view=cards&sort=level&f.level=1,2&f.school=evocation"),
+    ).toEqual({
+      q: "fire",
+      view: "cards",
+      sort: "level",
+      filters: { level: ["1", "2"], school: ["evocation"] },
+    });
+  });
+
+  it("ignores unknown views and empty filter values", () => {
+    expect(parse("view=table&f.level=&f.school=,")).toMatchObject({
+      view: "index",
+      filters: {},
+    });
+  });
+
+  it("writes only what differs from the default state", () => {
+    expect(
+      serializeWikiQuery({
+        q: "  acid  ",
+        view: "index",
+        sort: "name",
+        filters: { level: ["1"], school: [] },
       }),
-    ).toMatchObject({ q: "dragon", crMin: undefined, acMin: undefined });
+    ).toBe("q=acid&f.level=1");
+  });
+
+  it("round-trips a filtered view", () => {
+    const query = {
+      q: "owl",
+      view: "cards" as const,
+      sort: "challenge",
+      filters: { challenge: ["1-4", "5-10"] },
+    };
+    expect(parse(serializeWikiQuery(query))).toEqual(query);
+  });
+
+  it("toggles a value off and drops the facet when it empties", () => {
+    const added = toggleFilterValue({}, "level", "3");
+    expect(added).toEqual({ level: ["3"] });
+    expect(countActiveFilters(added)).toBe(1);
+    expect(toggleFilterValue(added, "level", "3")).toEqual({});
   });
 });

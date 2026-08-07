@@ -14,23 +14,19 @@ export const wikiSourceSchema = wikiReferenceSchema.extend({
 });
 export type WikiSource = z.infer<typeof wikiSourceSchema>;
 
-export const wikiPageInfoSchema = z.object({
-  count: z.number().int().nonnegative(),
-  hasNextPage: z.boolean().default(false),
-  hasPreviousPage: z.boolean().default(false),
-  limit: z.number().int().min(1).max(50),
-  page: z.number().int().min(1),
-});
-export type WikiPageInfo = z.infer<typeof wikiPageInfoSchema>;
-
-export const wikiPageSchema = <TItemSchema extends z.ZodType>(
+/**
+ * A whole catalog for one wiki category. Entries carry only a `sourceKey`; the
+ * sources they point at are sent once alongside them, because the browser holds
+ * the full catalog and does all the filtering.
+ */
+export const wikiCatalogSchema = <TItemSchema extends z.ZodType>(
   itemSchema: TItemSchema,
 ) =>
   z.object({
     items: z.array(itemSchema).default([]),
-    pageInfo: wikiPageInfoSchema,
+    sources: z.array(wikiSourceSchema).default([]),
   });
 
-export type WikiPage<TItem> = z.output<
-  ReturnType<typeof wikiPageSchema<z.ZodType<TItem>>>
+export type WikiCatalog<TItem> = z.output<
+  ReturnType<typeof wikiCatalogSchema<z.ZodType<TItem>>>
 >;
