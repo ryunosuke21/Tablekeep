@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import {
   mapSpecies,
@@ -9,33 +7,18 @@ import {
 } from "@/server/reference-data/open5e/resources";
 import { wikiSpeciesListItemSchema } from "@/types/wiki";
 
-import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
-
-const listInputSchema = wikiPageInputSchema.extend({
-  name: z.string().min(1).optional(),
-  kind: z.enum(["species", "subspecies", "all"]).default("species"),
-});
+import { readWikiCatalog, wikiKeyInputSchema } from "./common";
 
 export const wikiSpeciesRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(listInputSchema.optional())
-    .query(async ({ ctx, input }) => {
-      const { page, limit, name, kind } = listInputSchema.parse(input ?? {});
-      const result = await ctx.open5e.list("species", speciesListItemSchema, {
-        page,
-        limit,
-        name__icontains: name,
-        subspecies_of__isnull: kind === "all" ? undefined : kind === "species",
-        fields: "key,name,document,is_subspecies,subspecies_of",
-      });
-      return mapWikiPage(
-        result,
-        page,
-        limit,
-        mapSpeciesListItem,
-        wikiSpeciesListItemSchema,
-      );
+  catalog: publicProcedure.query(({ ctx }) =>
+    readWikiCatalog(ctx.open5e, {
+      resource: "species",
+      fields: "key,name,document,is_subspecies,subspecies_of",
+      upstreamSchema: speciesListItemSchema,
+      itemSchema: wikiSpeciesListItemSchema,
+      map: mapSpeciesListItem,
     }),
+  ),
   get: publicProcedure
     .input(wikiKeyInputSchema)
     .query(async ({ ctx, input }) =>

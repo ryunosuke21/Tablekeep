@@ -9,28 +9,46 @@ const entitySchema = z.object({ key: z.string() });
 beforeEach(() => fetchMock.mockReset());
 
 describe("Open5eHttpClient", () => {
-  it("builds source-scoped, encoded list requests", async () => {
-    fetchMock.mockResolvedValue(
-      new Response(
-        JSON.stringify({ count: 0, next: null, previous: null, results: [] }),
-      ),
-    );
+  it("reads every page of a catalog without narrowing the request", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            count: 2,
+            next: "https://api.example.test/v2/spells/?page=2",
+            previous: null,
+            results: [{ key: "a5e-ag_accelerando" }],
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            count: 2,
+            next: null,
+            previous: "https://api.example.test/v2/spells/?page=1",
+            results: [{ key: "srd-2024_fireball" }],
+          }),
+        ),
+      );
     const client = new Open5eHttpClient(
       "https://api.example.test/v2",
       fetchMock,
     );
 
-    await client.list("spells", entitySchema, {
-      page: 2,
-      limit: 10,
-      name__icontains: "acid arrow",
-      document__key__in: "wrong-source",
-    });
+    await expect(
+      client.listAll("spells", entitySchema, { fields: "key,name" }),
+    ).resolves.toEqual([
+      { key: "a5e-ag_accelerando" },
+      { key: "srd-2024_fireball" },
+    ]);
 
-    const [url, init] = fetchMock.mock.calls[0] ?? [];
-    expect(String(url)).toBe(
-      "https://api.example.test/v2/spells/?page=2&limit=10&name__icontains=acid+arrow&document__key__in=srd-2024",
+    const [firstUrl, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(firstUrl)).toBe(
+      "https://api.example.test/v2/spells/?fields=key%2Cname&page=1&limit=1000",
     );
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("page=2");
+    expect(String(firstUrl)).not.toContain("document__key__in");
     expect(init).toMatchObject({ method: "GET", next: { revalidate: 86_400 } });
     expect(new Headers(init?.headers).get("Accept")).toBe("application/json");
   });

@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import {
   backgroundSchema,
@@ -9,35 +7,18 @@ import {
 } from "@/server/reference-data/open5e/resources";
 import { wikiCatalogListItemSchema } from "@/types/wiki";
 
-import { mapWikiPage, wikiKeyInputSchema, wikiPageInputSchema } from "./common";
-
-const listInputSchema = wikiPageInputSchema.extend({
-  name: z.string().min(1).optional(),
-});
+import { readWikiCatalog, wikiKeyInputSchema } from "./common";
 
 export const wikiBackgroundsRouter = createTRPCRouter({
-  list: publicProcedure
-    .input(listInputSchema.optional())
-    .query(async ({ ctx, input }) => {
-      const { page, limit, name } = listInputSchema.parse(input ?? {});
-      const result = await ctx.open5e.list(
-        "backgrounds",
-        catalogListItemSchema,
-        {
-          page,
-          limit,
-          name__icontains: name,
-          fields: "key,name,document",
-        },
-      );
-      return mapWikiPage(
-        result,
-        page,
-        limit,
-        mapCatalogListItem,
-        wikiCatalogListItemSchema,
-      );
+  catalog: publicProcedure.query(({ ctx }) =>
+    readWikiCatalog(ctx.open5e, {
+      resource: "backgrounds",
+      fields: "key,name,document",
+      upstreamSchema: catalogListItemSchema,
+      itemSchema: wikiCatalogListItemSchema,
+      map: mapCatalogListItem,
     }),
+  ),
   get: publicProcedure
     .input(wikiKeyInputSchema)
     .query(async ({ ctx, input }) =>

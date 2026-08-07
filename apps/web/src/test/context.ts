@@ -11,7 +11,7 @@ export function testContext(
     db: {},
     open5e: {
       get: request,
-      list: request,
+      listAll: request,
     },
     session,
   } as unknown as TRPCContext;

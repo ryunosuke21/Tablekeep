@@ -13,25 +13,16 @@ const { SheetClasses } = await import("./sheet-classes");
 
 type SheetClass = RouterOutputs["character"]["sheet"]["get"]["classes"][number];
 
-type WikiClass = RouterOutputs["wiki"]["classes"]["list"]["items"][number];
+type WikiClass = RouterOutputs["wiki"]["classes"]["catalog"]["items"][number];
 
 const campaignId = "33333333-3333-3333-3333-333333333333";
 const sheetId = "22222222-2222-2222-2222-222222222222";
-
-const wikiSource: WikiClass["source"] = {
-  key: "srd-2024",
-  name: "System Reference Document 5.2",
-  displayName: "5e 2024 Rules",
-  gameSystem: { key: "5e-2024", name: "5th Edition 2024" },
-  permalink: "https://example.test/srd-2024",
-  publisher: { key: "wizards-of-the-coast", name: "Wizards of the Coast" },
-};
 
 function wikiClass(
   overrides: Partial<WikiClass> & { key: string; name: string },
 ): WikiClass {
   return {
-    source: wikiSource,
+    sourceKey: "srd-2024",
     casterType: "full",
     hitDice: "1d8",
     isSubclass: false,
@@ -153,7 +144,7 @@ describe("SheetClasses", () => {
   });
 
   it("offers catalog suggestions when the reference data loads", async () => {
-    trpc.setQueryData("wiki.classes.list", {
+    trpc.setQueryData("wiki.classes.catalog", {
       items: [
         wikiClass({ key: "srd-2024_bard", name: "Bard" }),
         wikiClass({
@@ -163,13 +154,7 @@ describe("SheetClasses", () => {
           parentClass: { key: "srd-2024_bard", name: "Bard" },
         }),
       ],
-      pageInfo: {
-        count: 2,
-        page: 1,
-        limit: 50,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      },
+      sources: [],
     });
     renderClasses([]);
 

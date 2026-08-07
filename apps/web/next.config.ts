@@ -27,6 +27,26 @@ const config: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/wiki/races", destination: "/wiki/species", permanent: true },
+      {
+        source: "/wiki/races/:path*",
+        destination: "/wiki/species/:path*",
+        permanent: true,
+      },
+      {
+        source: "/wiki/monsters",
+        destination: "/wiki/creatures",
+        permanent: true,
+      },
+      {
+        source: "/wiki/monsters/:path*",
+        destination: "/wiki/creatures/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default config;

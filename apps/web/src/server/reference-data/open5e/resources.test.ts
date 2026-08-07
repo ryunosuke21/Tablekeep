@@ -27,6 +27,7 @@ import {
   mapItem,
   mapMagicItem,
   mapRule,
+  mapSource,
   mapSpecies,
   mapSpell,
   ruleSchema,
@@ -34,8 +35,10 @@ import {
   spellSchema,
 } from "./resources";
 
+const source = mapSource(open5eDocument());
+
 describe("Open5e resource mappings", () => {
-  it("maps every supported 2024 resource", () => {
+  it("maps every supported resource", () => {
     expect(
       mapBackground(backgroundSchema.parse(backgroundFixture())),
     ).toMatchObject({
@@ -51,9 +54,9 @@ describe("Open5e resource mappings", () => {
       isSubspecies: false,
       traits: [{ type: null }],
     });
-    expect(mapRule(ruleSchema.parse(ruleFixture()))).toMatchObject({
+    expect(mapRule(ruleSchema.parse(ruleFixture()), source)).toMatchObject({
       key: "srd-2024_d20-tests",
-      sourceKey: "srd-2024",
+      source: { displayName: "5e 2024 Rules" },
     });
     expect(mapClass(classSchema.parse(classFixture()))).toMatchObject({
       key: "srd-2024_fighter",
@@ -76,16 +79,14 @@ describe("Open5e resource mappings", () => {
     });
   });
 
-  it("rejects entities from another source", () => {
+  it("keeps entries from every published source", () => {
     const value = backgroundSchema.parse({
       ...backgroundFixture(),
-      document: open5eDocument("a5e"),
+      document: open5eDocument("a5e-ag"),
     });
-    expect(() => mapBackground(value)).toThrowError(
-      expect.objectContaining({ code: "BAD_GATEWAY" }),
-    );
-    expect(() =>
-      mapRule(ruleSchema.parse({ ...ruleFixture(), document: "wotc-srd" })),
-    ).toThrowError(expect.objectContaining({ code: "BAD_GATEWAY" }));
+
+    expect(mapBackground(value)).toMatchObject({
+      source: { key: "a5e-ag" },
+    });
   });
 });
