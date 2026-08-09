@@ -15,6 +15,7 @@ import { api } from "@/trpc/react";
 
 import { CatalogNameField } from "./catalog-name-field";
 import { SaveStatus, saveState } from "./save-status";
+import { EmptyNote, ReadEntry, ReadList } from "./sheet-readouts";
 import { SheetRow } from "./sheet-section";
 
 type SheetClass = RouterOutputs["character"]["sheet"]["get"]["classes"][number];
@@ -369,12 +370,14 @@ export function SheetClasses({
   classes,
   totalLevel,
   disabled,
+  canEdit,
 }: {
   campaignId: string;
   sheetId: string;
   classes: SheetClass[];
   totalLevel: number;
   disabled: boolean;
+  canEdit: boolean;
 }) {
   const utils = api.useUtils();
   const catalog = useClassCatalog();
@@ -400,6 +403,27 @@ export function SheetClasses({
       sort: neighbour.sort === current.sort ? index : current.sort,
     });
     void utils.character.sheet.get.invalidate({ campaignId, sheetId });
+  }
+
+  if (!canEdit) {
+    if (classes.length === 0) {
+      return <EmptyNote>No class recorded on this sheet.</EmptyNote>;
+    }
+    return (
+      <ReadList>
+        {classes.map((entry) => (
+          <ReadEntry
+            key={entry.id}
+            name={entry.subclass?.trim() ? entry.subclass : entry.name}
+            meta={
+              entry.subclass?.trim()
+                ? `${entry.name} · Level ${entry.level}`
+                : `Level ${entry.level}`
+            }
+          />
+        ))}
+      </ReadList>
+    );
   }
 
   const atLimit = classes.length >= MAX_SHEET_CLASSES;

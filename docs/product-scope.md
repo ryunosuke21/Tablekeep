@@ -28,7 +28,9 @@ This document describes the product itself, which is delivered by `apps/web`. Ta
 - Campaign-scoped spell books, prepared spells, and resource tracking attached to the sheet.
 - Current hit points stored later as encounter state, not as global identity or persistent campaign-sheet state.
 
-The M3 identity, campaign-sheet, class/background, condition, inventory, and currency capabilities are implemented. Campaign-scoped spells remain planned for M4, and current hit points remain encounter state planned for M6.
+The M3 identity, campaign-sheet, class/background, condition, inventory, and currency capabilities are implemented, along with ability scores, feats, alignment, appearance, backstory, character connections, campaign-scoped spellbooks, and an append-only record of sheet changes. Current hit points remain encounter state planned for M6.
+
+The campaign sheet page reads as a profile with tabs and is edited only by a DM. A player-facing editing surface for a player's own sheet is planned and not yet built, so players currently read their sheet rather than change it.
 
 ### Campaign play
 

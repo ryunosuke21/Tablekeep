@@ -4,6 +4,8 @@ import { TRPCError } from "@trpc/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { campaignMemberCan } from "@tablekeep/campaign-auth/access";
+
 import { CharacterSheet } from "@/components/characters/character-sheet";
 import { api } from "@/trpc/server";
 
@@ -51,7 +53,7 @@ export default async function CampaignSheetPage({
   params: Promise<{ slug: string; sheetId: string }>;
 }) {
   const { slug, sheetId } = await params;
-  const { campaign } = await getCampaign(slug);
+  const { campaign, role } = await getCampaign(slug);
   const sheet = await getSheet(campaign.id, sheetId);
 
   return (
@@ -72,6 +74,11 @@ export default async function CampaignSheetPage({
         </span>
       </nav>
 
+      {/*
+        The sheet page is a profile first. Only a DM edits from here, even for
+        the player who owns the character; players get their own editing
+        surface separately.
+      */}
       <CharacterSheet
         campaignId={campaign.id}
         campaignSlug={slug}
@@ -79,6 +86,7 @@ export default async function CampaignSheetPage({
         campaignArchived={campaign.status === "archived"}
         sheetId={sheetId}
         initialSheet={sheet}
+        canEdit={campaignMemberCan(role, { organization: ["update"] })}
       />
     </div>
   );

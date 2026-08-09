@@ -40,6 +40,7 @@ function renderInventory(items: SheetItem[], disabled = false) {
       sheetId={sheetId}
       items={items}
       disabled={disabled}
+      canEdit
     />,
   );
 }
@@ -133,6 +134,29 @@ describe("SheetInventory", () => {
       itemId: "item-4",
       equipped: true,
     });
+  });
+
+  it("shows carried gear without any editor when the viewer cannot edit", () => {
+    render(
+      <SheetInventory
+        campaignId={campaignId}
+        sheetId={sheetId}
+        items={[
+          item({ id: "item-6", name: "Lantern", qty: 2, equipped: true }),
+          item({ id: "item-7", name: "Sold sword", removedAt: new Date() }),
+        ]}
+        disabled={false}
+        canEdit={false}
+      />,
+    );
+
+    expect(screen.getByText("Lantern")).toBeInTheDocument();
+    expect(screen.getByText("×2")).toBeInTheDocument();
+    expect(screen.getByText("Equipped")).toBeInTheDocument();
+    // Removed gear is restore bookkeeping, not part of a read-only profile.
+    expect(screen.queryByText("Sold sword")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
   it("locks every control while the sheet cannot be edited", () => {

@@ -41,6 +41,7 @@ function renderCurrencies(currencies: SheetCurrency[]) {
       sheetId={sheetId}
       currencies={currencies}
       disabled={false}
+      canEdit
     />,
   );
 }

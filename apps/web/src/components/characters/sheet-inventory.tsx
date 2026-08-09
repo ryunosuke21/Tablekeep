@@ -16,6 +16,7 @@ import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
 import { SaveStatus, saveState } from "./save-status";
+import { EmptyNote, ReadChip, ReadEntry, ReadList } from "./sheet-readouts";
 import { SheetRow } from "./sheet-section";
 
 type SheetItem = RouterOutputs["character"]["sheet"]["get"]["items"][number];
@@ -218,11 +219,13 @@ export function SheetInventory({
   sheetId,
   items,
   disabled,
+  canEdit,
 }: {
   campaignId: string;
   sheetId: string;
   items: SheetItem[];
   disabled: boolean;
+  canEdit: boolean;
 }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
@@ -240,6 +243,28 @@ export function SheetInventory({
 
   const carried = items.filter((item) => item.removedAt === null);
   const removed = items.filter((item) => item.removedAt !== null);
+
+  if (!canEdit) {
+    if (carried.length === 0) {
+      return <EmptyNote>They are carrying nothing right now.</EmptyNote>;
+    }
+    // Removed gear is bookkeeping for whoever can restore it, so a read-only
+    // profile shows what is carried and nothing else.
+    return (
+      <ReadList>
+        {carried.map((entry) => (
+          <ReadEntry
+            key={entry.id}
+            name={entry.name}
+            meta={entry.qty === 1 ? undefined : `×${entry.qty}`}
+            notes={entry.notes}
+            badges={entry.equipped ? <ReadChip>Equipped</ReadChip> : undefined}
+          />
+        ))}
+      </ReadList>
+    );
+  }
+
   const parsedQty = Number.parseInt(qty, 10);
   const invalid =
     name.trim().length === 0 ||

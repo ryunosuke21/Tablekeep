@@ -9,7 +9,11 @@ const characterQueries = vi.hoisted(() => ({
   createSheetClass: vi.fn(),
   createSheetCondition: vi.fn(),
   createSheetCurrency: vi.fn(),
+  createSheetFeat: vi.fn(),
   createSheetItem: vi.fn(),
+  createSheetNpc: vi.fn(),
+  createSheetSpell: vi.fn(),
+  createSheetStat: vi.fn(),
   deleteCharacter: vi.fn(),
   getCharacterForOwnerBySlug: vi.fn(),
   getCharacterForSheetCreation: vi.fn(),
@@ -17,12 +21,18 @@ const characterQueries = vi.hoisted(() => ({
   getSheetAccess: vi.fn(),
   listCharactersForOwner: vi.fn(),
   listCharacterSheets: vi.fn(),
+  listSheetEvents: vi.fn(),
   reactivateCharacterSheet: vi.fn(),
+  recordSheetEvent: vi.fn(),
   removeSheetBackground: vi.fn(),
   removeSheetClass: vi.fn(),
   removeSheetCondition: vi.fn(),
   removeSheetCurrency: vi.fn(),
+  removeSheetFeat: vi.fn(),
   removeSheetItem: vi.fn(),
+  removeSheetNpc: vi.fn(),
+  removeSheetSpell: vi.fn(),
+  removeSheetStat: vi.fn(),
   restoreCharacter: vi.fn(),
   restoreSheetCurrency: vi.fn(),
   restoreSheetItem: vi.fn(),
@@ -32,7 +42,11 @@ const characterQueries = vi.hoisted(() => ({
   updateSheetBackground: vi.fn(),
   updateSheetClass: vi.fn(),
   updateSheetCurrency: vi.fn(),
+  updateSheetFeat: vi.fn(),
   updateSheetItem: vi.fn(),
+  updateSheetNpc: vi.fn(),
+  updateSheetSpell: vi.fn(),
+  updateSheetStat: vi.fn(),
 }));
 
 const campaignQueries = vi.hoisted(() => ({
@@ -240,6 +254,104 @@ describe("character router", () => {
       { maxHp: 28 },
       "dm-1",
     );
+  });
+
+  it("records who changed what on every successful sheet write", async () => {
+    campaignQueries.getCampaignForMemberById.mockResolvedValue(
+      membership("dm"),
+    );
+    characterQueries.createSheetSpell.mockResolvedValue({
+      id: rowId,
+      name: "Feather Fall",
+    });
+
+    await caller("dm-1").sheet.spell.create({
+      campaignId,
+      sheetId,
+      name: "Feather Fall",
+      level: 1,
+    });
+
+    expect(characterQueries.recordSheetEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        sheetId,
+        actorId: "dm-1",
+        actorRole: "dm",
+        entity: "spell",
+        action: "create",
+        summary: "Spell added: Feather Fall",
+      }),
+    );
+  });
+
+  it("names the sheet itself when the change is not a nested entry", async () => {
+    characterQueries.updateCharacterSheet.mockResolvedValue({
+      id: sheetId,
+      name: "Vela",
+    });
+
+    await caller().sheet.update({ campaignId, sheetId, alignment: "Lawful" });
+
+    expect(characterQueries.recordSheetEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        actorRole: "player",
+        entity: "sheet",
+        action: "update",
+        summary: "Sheet details updated",
+      }),
+    );
+  });
+
+  it("leaves no history behind for a rejected write", async () => {
+    characterQueries.getSheetAccess.mockResolvedValue({
+      ownerId: "someone-else",
+      retiredAt: null,
+      deletedAt: null,
+    });
+
+    await expect(
+      caller().sheet.stat.create({ campaignId, sheetId, name: "Strength" }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(characterQueries.recordSheetEvent).not.toHaveBeenCalled();
+  });
+
+  it("keeps a write that succeeded even when its history row fails", async () => {
+    characterQueries.updateSheetStat.mockResolvedValue({
+      id: rowId,
+      name: "Strength",
+    });
+    // Scoped to this call: a persistent rejection would leak into every later
+    // write, where the middleware swallows it and hides the cause.
+    characterQueries.recordSheetEvent.mockRejectedValueOnce(
+      new Error("history unavailable"),
+    );
+
+    await expect(
+      caller().sheet.stat.update({
+        campaignId,
+        sheetId,
+        statId: rowId,
+        value: 16,
+      }),
+    ).resolves.toMatchObject({ id: rowId });
+  });
+
+  it("reads sheet history through the same private-sheet guard", async () => {
+    characterQueries.listSheetEvents.mockResolvedValue([]);
+    await expect(
+      caller().sheet.events({ campaignId, sheetId }),
+    ).resolves.toEqual([]);
+
+    characterQueries.getSheetAccess.mockResolvedValue({
+      ownerId: "someone-else",
+      retiredAt: null,
+      deletedAt: null,
+    });
+    await expect(
+      caller().sheet.events({ campaignId, sheetId }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("denies every sheet write while the campaign is archived", async () => {

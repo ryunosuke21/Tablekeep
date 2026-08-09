@@ -20,10 +20,23 @@ import {
   sheetCurrencyCreateSchema,
   sheetCurrencyIdSchema,
   sheetCurrencyUpdateSchema,
+  sheetEventListSchema,
+  sheetFeatCreateSchema,
+  sheetFeatIdSchema,
+  sheetFeatUpdateSchema,
   sheetIdSchema,
   sheetItemCreateSchema,
   sheetItemIdSchema,
   sheetItemUpdateSchema,
+  sheetNpcCreateSchema,
+  sheetNpcIdSchema,
+  sheetNpcUpdateSchema,
+  sheetSpellCreateSchema,
+  sheetSpellIdSchema,
+  sheetSpellUpdateSchema,
+  sheetStatCreateSchema,
+  sheetStatIdSchema,
+  sheetStatUpdateSchema,
   sheetUpdateSchema,
 } from "@/lib/validation/character";
 import {
@@ -38,7 +51,11 @@ import {
   createSheetClass,
   createSheetCondition,
   createSheetCurrency,
+  createSheetFeat,
   createSheetItem,
+  createSheetNpc,
+  createSheetSpell,
+  createSheetStat,
   deleteCharacter,
   getCharacterForOwnerBySlug,
   getCharacterForSheetCreation,
@@ -46,12 +63,18 @@ import {
   getSheetAccess,
   listCharacterSheets,
   listCharactersForOwner,
+  listSheetEvents,
   reactivateCharacterSheet,
+  recordSheetEvent,
   removeSheetBackground,
   removeSheetClass,
   removeSheetCondition,
   removeSheetCurrency,
+  removeSheetFeat,
   removeSheetItem,
+  removeSheetNpc,
+  removeSheetSpell,
+  removeSheetStat,
   restoreCharacter,
   restoreSheetCurrency,
   restoreSheetItem,
@@ -61,7 +84,11 @@ import {
   updateSheetBackground,
   updateSheetClass,
   updateSheetCurrency,
+  updateSheetFeat,
   updateSheetItem,
+  updateSheetNpc,
+  updateSheetSpell,
+  updateSheetStat,
 } from "@/server/db/queries/character";
 
 function isDm(role: string) {
@@ -88,6 +115,65 @@ function requireCreated<Result>(result: Result | null | undefined): Result {
     });
   }
   return result;
+}
+
+const HISTORY_ENTITY_LABELS: Record<string, string> = {
+  sheet: "Sheet details",
+  class: "Class",
+  background: "Background",
+  condition: "Condition",
+  item: "Item",
+  currency: "Currency",
+  stat: "Stat",
+  feat: "Feat",
+  npc: "Contact",
+  spell: "Spell",
+};
+
+const HISTORY_ACTION_VERBS: Record<string, string> = {
+  create: "added",
+  update: "updated",
+  remove: "removed",
+  restore: "restored",
+  retire: "retired",
+  reactivate: "returned to play",
+};
+
+/**
+ * Read the change out of the tRPC path rather than asking every mutation to
+ * describe itself: `character.sheet.item.create` is already the entity and the
+ * action, so a new sheet editor is recorded without touching this file.
+ *
+ * The segment before the action names the entity, and `sheet.update` therefore
+ * lands on the sheet itself. Matching by name rather than by depth keeps this
+ * correct whether the path is read from the app router or from a caller
+ * created on this router alone.
+ */
+function describeSheetChange(path: string, data: unknown) {
+  const segments = path.split(".");
+  const action = segments.at(-1) ?? "update";
+  const candidate = segments.at(-2);
+  const entity =
+    candidate && candidate !== "sheet" && candidate in HISTORY_ENTITY_LABELS
+      ? candidate
+      : "sheet";
+  const label = HISTORY_ENTITY_LABELS[entity] ?? entity;
+  const verb = HISTORY_ACTION_VERBS[action] ?? action;
+  const named =
+    entity !== "sheet" &&
+    typeof data === "object" &&
+    data !== null &&
+    "name" in data &&
+    typeof data.name === "string" &&
+    data.name.trim().length > 0
+      ? data.name.trim()
+      : null;
+
+  return {
+    entity,
+    action,
+    summary: named ? `${label} ${verb}: ${named}` : `${label} ${verb}`,
+  };
 }
 
 /**
@@ -121,6 +207,28 @@ const sheetProcedure = campaignMemberProcedure
     }
 
     return next({ ctx: { sheetAccess: access } });
+  })
+  .use(async ({ ctx, input, next, type, path }) => {
+    const result = await next();
+    if (type !== "mutation" || !result.ok) return result;
+
+    // Best effort on purpose: the Neon HTTP driver has no interactive
+    // transactions, so a failed history insert must not report a write that
+    // already landed as a failure. History is a record, not a control.
+    try {
+      await recordSheetEvent(ctx.db, {
+        sheetId: input.sheetId,
+        actorId: ctx.session.user.id,
+        // Stamped rather than joined: the actor reference nulls out when an
+        // account is deleted, but the history still has to name someone.
+        actorName: ctx.session.user.name?.trim() || "A former member",
+        actorRole: isDm(ctx.member.role) ? "dm" : "player",
+        ...describeSheetChange(path, result.data),
+      });
+    } catch {
+      // The mutation stands even when its history row does not.
+    }
+    return result;
   });
 
 const activeSheetProcedure = sheetProcedure.use(({ ctx, next }) => {
@@ -413,6 +521,166 @@ const currenciesRouter = createTRPCRouter({
     ),
 });
 
+const statsRouter = createTRPCRouter({
+  create: activeSheetProcedure
+    .input(sheetStatCreateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, ...values } = input;
+      return requireCreated(
+        await createSheetStat(ctx.db, {
+          ...values,
+          actorId: ctx.session.user.id,
+        }),
+      );
+    }),
+  update: activeSheetProcedure
+    .input(sheetStatUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, sheetId, statId, ...values } = input;
+      return requireResult(
+        await updateSheetStat(
+          ctx.db,
+          sheetId,
+          statId,
+          values,
+          ctx.session.user.id,
+        ),
+      );
+    }),
+  remove: activeSheetProcedure
+    .input(sheetStatIdSchema)
+    .mutation(async ({ ctx, input }) =>
+      requireResult(
+        await removeSheetStat(
+          ctx.db,
+          input.sheetId,
+          input.statId,
+          ctx.session.user.id,
+        ),
+      ),
+    ),
+});
+
+const featsRouter = createTRPCRouter({
+  create: activeSheetProcedure
+    .input(sheetFeatCreateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, ...values } = input;
+      return requireCreated(
+        await createSheetFeat(ctx.db, {
+          ...values,
+          actorId: ctx.session.user.id,
+        }),
+      );
+    }),
+  update: activeSheetProcedure
+    .input(sheetFeatUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, sheetId, featId, ...values } = input;
+      return requireResult(
+        await updateSheetFeat(
+          ctx.db,
+          sheetId,
+          featId,
+          values,
+          ctx.session.user.id,
+        ),
+      );
+    }),
+  remove: activeSheetProcedure
+    .input(sheetFeatIdSchema)
+    .mutation(async ({ ctx, input }) =>
+      requireResult(
+        await removeSheetFeat(
+          ctx.db,
+          input.sheetId,
+          input.featId,
+          ctx.session.user.id,
+        ),
+      ),
+    ),
+});
+
+const npcsRouter = createTRPCRouter({
+  create: activeSheetProcedure
+    .input(sheetNpcCreateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, ...values } = input;
+      return requireCreated(
+        await createSheetNpc(ctx.db, {
+          ...values,
+          actorId: ctx.session.user.id,
+        }),
+      );
+    }),
+  update: activeSheetProcedure
+    .input(sheetNpcUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, sheetId, npcId, ...values } = input;
+      return requireResult(
+        await updateSheetNpc(
+          ctx.db,
+          sheetId,
+          npcId,
+          values,
+          ctx.session.user.id,
+        ),
+      );
+    }),
+  remove: activeSheetProcedure
+    .input(sheetNpcIdSchema)
+    .mutation(async ({ ctx, input }) =>
+      requireResult(
+        await removeSheetNpc(
+          ctx.db,
+          input.sheetId,
+          input.npcId,
+          ctx.session.user.id,
+        ),
+      ),
+    ),
+});
+
+const spellsRouter = createTRPCRouter({
+  create: activeSheetProcedure
+    .input(sheetSpellCreateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, ...values } = input;
+      return requireCreated(
+        await createSheetSpell(ctx.db, {
+          ...values,
+          actorId: ctx.session.user.id,
+        }),
+      );
+    }),
+  update: activeSheetProcedure
+    .input(sheetSpellUpdateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { campaignId: _campaignId, sheetId, spellId, ...values } = input;
+      return requireResult(
+        await updateSheetSpell(
+          ctx.db,
+          sheetId,
+          spellId,
+          values,
+          ctx.session.user.id,
+        ),
+      );
+    }),
+  remove: activeSheetProcedure
+    .input(sheetSpellIdSchema)
+    .mutation(async ({ ctx, input }) =>
+      requireResult(
+        await removeSheetSpell(
+          ctx.db,
+          input.sheetId,
+          input.spellId,
+          ctx.session.user.id,
+        ),
+      ),
+    ),
+});
+
 const sheetRouter = createTRPCRouter({
   list: campaignMemberProcedure
     .input(sheetCreateSchema.pick({ campaignId: true }))
@@ -498,11 +766,22 @@ const sheetRouter = createTRPCRouter({
       ),
     ),
 
+  /** Append-only history, so this is the one sheet read with no editor. */
+  events: sheetProcedure
+    .input(sheetEventListSchema)
+    .query(({ ctx, input }) =>
+      listSheetEvents(ctx.db, input.sheetId, input.limit),
+    ),
+
   class: classesRouter,
   background: backgroundsRouter,
   condition: conditionsRouter,
   item: itemsRouter,
   currency: currenciesRouter,
+  stat: statsRouter,
+  feat: featsRouter,
+  npc: npcsRouter,
+  spell: spellsRouter,
 });
 
 export const characterRouter = createTRPCRouter({

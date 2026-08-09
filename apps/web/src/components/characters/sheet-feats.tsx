@@ -8,7 +8,7 @@ import { LoadingSwap } from "@tablekeep/ui/components/loading-swap";
 import { Textarea } from "@tablekeep/ui/components/textarea";
 
 import { ConfirmActionDialog } from "@/components/campaigns/confirm-action-dialog";
-import { MAX_SHEET_BACKGROUNDS } from "@/lib/constants";
+import { MAX_SHEET_FEATS } from "@/lib/constants";
 import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
@@ -17,12 +17,11 @@ import { SaveStatus, saveState } from "./save-status";
 import { EmptyNote, ReadEntry, ReadList } from "./sheet-readouts";
 import { SheetRow } from "./sheet-section";
 
-type SheetBackground =
-  RouterOutputs["character"]["sheet"]["get"]["backgrounds"][number];
+type SheetFeat = RouterOutputs["character"]["sheet"]["get"]["feats"][number];
 
 /** Suggestions only; a failed catalog leaves the field a plain text input. */
-function useBackgroundNames() {
-  const catalog = api.wiki.backgrounds.catalog.useQuery(undefined, {
+function useFeatNames() {
+  const catalog = api.wiki.feats.catalog.useQuery(undefined, {
     retry: false,
     staleTime: 60 * 60 * 1000,
   });
@@ -31,7 +30,7 @@ function useBackgroundNames() {
   ].sort((left, right) => left.localeCompare(right));
 }
 
-function BackgroundRow({
+function FeatRow({
   campaignId,
   sheetId,
   entry,
@@ -40,7 +39,7 @@ function BackgroundRow({
 }: {
   campaignId: string;
   sheetId: string;
-  entry: SheetBackground;
+  entry: SheetFeat;
   suggestions: string[];
   disabled: boolean;
 }) {
@@ -50,10 +49,10 @@ function BackgroundRow({
 
   const invalidate = () =>
     void utils.character.sheet.get.invalidate({ campaignId, sheetId });
-  const update = api.character.sheet.background.update.useMutation({
+  const update = api.character.sheet.feat.update.useMutation({
     onSuccess: invalidate,
   });
-  const remove = api.character.sheet.background.remove.useMutation({
+  const remove = api.character.sheet.feat.remove.useMutation({
     onSuccess: invalidate,
   });
 
@@ -65,7 +64,7 @@ function BackgroundRow({
     update.mutate({
       campaignId,
       sheetId,
-      backgroundId: entry.id,
+      featId: entry.id,
       name: name.trim(),
       notes: notes.trim() ? notes.trim() : null,
     });
@@ -74,11 +73,9 @@ function BackgroundRow({
   return (
     <SheetRow>
       <Field>
-        <FieldLabel htmlFor={`background-name-${entry.id}`}>
-          Background
-        </FieldLabel>
+        <FieldLabel htmlFor={`feat-name-${entry.id}`}>Feat</FieldLabel>
         <CatalogNameField
-          id={`background-name-${entry.id}`}
+          id={`feat-name-${entry.id}`}
           value={name}
           onChange={setName}
           suggestions={suggestions}
@@ -90,14 +87,14 @@ function BackgroundRow({
       </Field>
 
       <Field className="mt-3">
-        <FieldLabel htmlFor={`background-notes-${entry.id}`}>Notes</FieldLabel>
+        <FieldLabel htmlFor={`feat-notes-${entry.id}`}>Notes</FieldLabel>
         <Textarea
-          id={`background-notes-${entry.id}`}
+          id={`feat-notes-${entry.id}`}
           rows={3}
           maxLength={2000}
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
-          placeholder="What this background gives them at your table."
+          placeholder="What this feat does at your table."
           disabled={disabled || isPending}
         />
       </Field>
@@ -109,9 +106,7 @@ function BackgroundRow({
           disabled={disabled || isPending || nameInvalid}
           onClick={save}
         >
-          <LoadingSwap isLoading={update.isPending}>
-            Save background
-          </LoadingSwap>
+          <LoadingSwap isLoading={update.isPending}>Save feat</LoadingSwap>
         </Button>
 
         <ConfirmActionDialog
@@ -127,11 +122,11 @@ function BackgroundRow({
           }
           title={`Remove ${entry.name}?`}
           consequence={`${entry.name} and its notes come off this sheet. Other campaigns are untouched.`}
-          confirmLabel="Remove background"
-          cancelLabel="Keep background"
+          confirmLabel="Remove feat"
+          cancelLabel="Keep feat"
           isPending={remove.isPending}
           onConfirm={() =>
-            remove.mutate({ campaignId, sheetId, backgroundId: entry.id })
+            remove.mutate({ campaignId, sheetId, featId: entry.id })
           }
         />
 
@@ -145,24 +140,24 @@ function BackgroundRow({
   );
 }
 
-export function SheetBackgrounds({
+export function SheetFeats({
   campaignId,
   sheetId,
-  backgrounds,
+  feats,
   disabled,
   canEdit,
 }: {
   campaignId: string;
   sheetId: string;
-  backgrounds: SheetBackground[];
+  feats: SheetFeat[];
   disabled: boolean;
   canEdit: boolean;
 }) {
   const utils = api.useUtils();
-  const suggestions = useBackgroundNames();
+  const suggestions = useFeatNames();
   const [name, setName] = useState("");
 
-  const create = api.character.sheet.background.create.useMutation({
+  const create = api.character.sheet.feat.create.useMutation({
     onSuccess: () => {
       setName("");
       void utils.character.sheet.get.invalidate({ campaignId, sheetId });
@@ -170,19 +165,19 @@ export function SheetBackgrounds({
   });
 
   if (!canEdit) {
-    if (backgrounds.length === 0) {
-      return <EmptyNote>No background recorded on this sheet.</EmptyNote>;
+    if (feats.length === 0) {
+      return <EmptyNote>No feats recorded on this sheet.</EmptyNote>;
     }
     return (
       <ReadList>
-        {backgrounds.map((entry) => (
+        {feats.map((entry) => (
           <ReadEntry key={entry.id} name={entry.name} notes={entry.notes} />
         ))}
       </ReadList>
     );
   }
 
-  const atLimit = backgrounds.length >= MAX_SHEET_BACKGROUNDS;
+  const atLimit = feats.length >= MAX_SHEET_FEATS;
   const invalid = name.trim().length === 0;
 
   function submit() {
@@ -192,16 +187,16 @@ export function SheetBackgrounds({
       sheetId,
       name: name.trim(),
       source: "custom",
-      sort: backgrounds.length,
+      sort: feats.length,
     });
   }
 
   return (
     <>
-      {backgrounds.length > 0 ? (
+      {feats.length > 0 ? (
         <div className="rounded-xl border px-4 py-4">
-          {backgrounds.map((entry) => (
-            <BackgroundRow
+          {feats.map((entry) => (
+            <FeatRow
               key={entry.id}
               campaignId={campaignId}
               sheetId={sheetId}
@@ -212,14 +207,12 @@ export function SheetBackgrounds({
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground text-sm">
-          No background yet. A character can carry more than one.
-        </p>
+        <EmptyNote>No feats yet.</EmptyNote>
       )}
 
       {atLimit ? (
         <p className="mt-5 text-muted-foreground text-sm">
-          This sheet holds up to {MAX_SHEET_BACKGROUNDS} backgrounds.
+          This sheet holds up to {MAX_SHEET_FEATS} feats.
         </p>
       ) : (
         <form
@@ -230,16 +223,14 @@ export function SheetBackgrounds({
           }}
         >
           <Field>
-            <FieldLabel htmlFor="new-background-name">
-              Add a background
-            </FieldLabel>
+            <FieldLabel htmlFor="new-feat-name">Add a feat</FieldLabel>
             <CatalogNameField
-              id="new-background-name"
+              id="new-feat-name"
               value={name}
               onChange={setName}
               suggestions={suggestions}
               maxLength={100}
-              placeholder="Sailor, guild artisan, or your own"
+              placeholder="Alert, tough, or your own"
               disabled={disabled || create.isPending}
               className="h-11 px-3 text-base"
             />
@@ -251,13 +242,11 @@ export function SheetBackgrounds({
               className="min-h-10"
               disabled={disabled || create.isPending || invalid}
             >
-              <LoadingSwap isLoading={create.isPending}>
-                Add background
-              </LoadingSwap>
+              <LoadingSwap isLoading={create.isPending}>Add feat</LoadingSwap>
             </Button>
             <SaveStatus
               state={saveState(create)}
-              savedLabel="Background added"
+              savedLabel="Feat added"
               onRetry={submit}
             />
           </div>
