@@ -1,0 +1,6 @@
+{
+  "title": "Getting started",
+  "defaultOpen": true,
+  "pagesIndex": "index",
+  "pages": ["sign-in-and-profile", "dashboard"]
+}

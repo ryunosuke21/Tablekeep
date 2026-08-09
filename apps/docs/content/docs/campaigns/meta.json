@@ -1,0 +1,13 @@
+{
+  "title": "Campaigns",
+  "defaultOpen": true,
+  "pagesIndex": "index",
+  "pages": [
+    "create-and-customize",
+    "join-a-campaign",
+    "invitations-and-members",
+    "schedule-sessions",
+    "campaign-characters",
+    "archive-leave-and-restore"
+  ]
+}

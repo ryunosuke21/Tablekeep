@@ -1,0 +1,10 @@
+{
+  "title": "Characters",
+  "defaultOpen": true,
+  "pagesIndex": "index",
+  "pages": [
+    "identity-and-campaigns",
+    "character-sheets",
+    "retire-delete-and-restore"
+  ]
+}
