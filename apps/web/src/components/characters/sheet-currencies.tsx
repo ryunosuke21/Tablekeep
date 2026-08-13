@@ -13,6 +13,7 @@ import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
 import { SaveStatus, saveState } from "./save-status";
+import { EmptyNote, ReadStat } from "./sheet-readouts";
 import { SheetRow } from "./sheet-section";
 
 type SheetCurrency =
@@ -196,11 +197,13 @@ export function SheetCurrencies({
   sheetId,
   currencies,
   disabled,
+  canEdit,
 }: {
   campaignId: string;
   sheetId: string;
   currencies: SheetCurrency[];
   disabled: boolean;
+  canEdit: boolean;
 }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
@@ -216,6 +219,20 @@ export function SheetCurrencies({
 
   const held = currencies.filter((currency) => currency.removedAt === null);
   const removed = currencies.filter((currency) => currency.removedAt !== null);
+
+  if (!canEdit) {
+    if (held.length === 0) {
+      return <EmptyNote>Their purse is empty.</EmptyNote>;
+    }
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {held.map((entry) => (
+          <ReadStat key={entry.id} label={entry.name} value={entry.amount} />
+        ))}
+      </div>
+    );
+  }
+
   const parsedAmount = Number.parseInt(amount, 10);
   const invalid =
     name.trim().length === 0 ||

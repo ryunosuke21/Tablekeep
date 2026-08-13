@@ -59,6 +59,7 @@ function renderClasses(classes: SheetClass[]) {
       classes={classes}
       totalLevel={totalLevel}
       disabled={false}
+      canEdit
     />,
   );
 }

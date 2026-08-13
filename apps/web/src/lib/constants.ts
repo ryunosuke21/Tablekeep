@@ -41,7 +41,16 @@ export const MAX_SHEET_BACKGROUNDS = 4;
 export const MAX_SHEET_CONDITIONS = 50;
 export const MAX_SHEET_ITEMS = 250;
 export const MAX_SHEET_CURRENCIES = 25;
+export const MAX_SHEET_STATS = 20;
+export const MAX_SHEET_FEATS = 50;
+export const MAX_SHEET_NPCS = 100;
+export const MAX_SHEET_SPELLS = 400;
 export const MAX_CLASS_LEVEL = 100;
+export const MAX_STAT_VALUE = 1_000;
+export const MAX_SPELL_LEVEL = 20;
+
+/** How much sheet history the Changes tab reads in one request. */
+export const MAX_SHEET_EVENTS_PAGE = 50;
 export const MAX_CHARACTER_HP = 1_000_000;
 export const MAX_ITEM_QTY = 1_000_000;
 export const MAX_CURRENCY_AMOUNT = 1_000_000_000;

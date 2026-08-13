@@ -13,6 +13,7 @@ import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
 import { SaveStatus, saveState } from "./save-status";
+import { EmptyNote, ReadChip } from "./sheet-readouts";
 
 type SheetCondition =
   RouterOutputs["character"]["sheet"]["get"]["conditions"][number];
@@ -64,11 +65,13 @@ export function SheetConditions({
   sheetId,
   conditions,
   disabled,
+  canEdit,
 }: {
   campaignId: string;
   sheetId: string;
   conditions: SheetCondition[];
   disabled: boolean;
+  canEdit: boolean;
 }) {
   const utils = api.useUtils();
   const [name, setName] = useState("");
@@ -79,6 +82,21 @@ export function SheetConditions({
       void utils.character.sheet.get.invalidate({ campaignId, sheetId });
     },
   });
+
+  if (!canEdit) {
+    if (conditions.length === 0) {
+      return <EmptyNote>Nothing is affecting them right now.</EmptyNote>;
+    }
+    return (
+      <ul className="flex flex-wrap gap-2">
+        {conditions.map((entry) => (
+          <li key={entry.id}>
+            <ReadChip>{entry.name}</ReadChip>
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   const invalid = name.trim().length === 0;
   const atLimit = conditions.length >= MAX_SHEET_CONDITIONS;

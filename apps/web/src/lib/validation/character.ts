@@ -5,6 +5,9 @@ import {
   MAX_CLASS_LEVEL,
   MAX_CURRENCY_AMOUNT,
   MAX_ITEM_QTY,
+  MAX_SHEET_EVENTS_PAGE,
+  MAX_SPELL_LEVEL,
+  MAX_STAT_VALUE,
 } from "@/lib/constants";
 
 const uuidSchema = z.string().uuid();
@@ -26,6 +29,9 @@ const characterBioSchema = optionalText(2_000);
 const sheetNameSchema = optionalText(80);
 const ancestrySchema = optionalText(80);
 const sheetNotesSchema = optionalText(5_000);
+const alignmentSchema = optionalText(80);
+const appearanceSchema = optionalText(2_000);
+const backstorySchema = optionalText(20_000);
 const entryNameSchema = requiredText("a name", 100);
 const sourceSchema = requiredText("a source", 64);
 const refSchema = optionalText(200);
@@ -73,21 +79,33 @@ export const sheetIdSchema = z
   })
   .strict();
 
+/**
+ * A partial update must carry at least one field, or it is a write that means
+ * nothing. Scope keys are excluded so `{ campaignId, sheetId }` alone still
+ * fails, and new optional fields join the check without editing it.
+ */
+const requiresOneOf =
+  (...scopeKeys: string[]) =>
+  (value: Record<string, unknown>) =>
+    Object.entries(value).some(
+      ([key, entry]) => !scopeKeys.includes(key) && entry !== undefined,
+    );
+
+const sheetScopeKeys = ["campaignId", "sheetId"] as const;
+
 export const sheetUpdateSchema = mutable({
   campaignId: uuidSchema,
   sheetId: uuidSchema,
   name: sheetNameSchema.optional(),
   ancestry: ancestrySchema.optional(),
+  alignment: alignmentSchema.optional(),
+  appearance: appearanceSchema.optional(),
+  backstory: backstorySchema.optional(),
   maxHp: z.number().int().min(1).max(MAX_CHARACTER_HP).optional(),
   notes: sheetNotesSchema.optional(),
-}).refine(
-  ({ name, ancestry, maxHp, notes }) =>
-    name !== undefined ||
-    ancestry !== undefined ||
-    maxHp !== undefined ||
-    notes !== undefined,
-  { message: "Provide at least one sheet detail to update." },
-);
+}).refine(requiresOneOf(...sheetScopeKeys), {
+  message: "Provide at least one sheet detail to update.",
+});
 
 const sourceFields = {
   source: sourceSchema.default("custom"),
@@ -218,6 +236,111 @@ export const sheetCurrencyIdSchema = sheetIdSchema.extend({
   currencyId: uuidSchema,
 });
 
+const statValueSchema = z
+  .number()
+  .int()
+  .min(-MAX_STAT_VALUE)
+  .max(MAX_STAT_VALUE);
+
+export const sheetStatCreateSchema = sheetIdSchema.extend({
+  name: requiredText("a stat name", 40),
+  value: statValueSchema.default(10),
+  sort: sortSchema.default(0),
+});
+
+export const sheetStatUpdateSchema = mutable({
+  campaignId: uuidSchema,
+  sheetId: uuidSchema,
+  statId: uuidSchema,
+  name: requiredText("a stat name", 40).optional(),
+  value: statValueSchema.optional(),
+  sort: sortSchema.optional(),
+}).refine(requiresOneOf(...sheetScopeKeys, "statId"), {
+  message: "Provide at least one stat detail to update.",
+});
+
+export const sheetStatIdSchema = sheetIdSchema.extend({ statId: uuidSchema });
+
+export const sheetFeatCreateSchema = sheetIdSchema.extend({
+  name: entryNameSchema,
+  notes: optionalText(2_000).optional(),
+  ...sourceFields,
+  sort: sortSchema.default(0),
+});
+
+export const sheetFeatUpdateSchema = mutable({
+  campaignId: uuidSchema,
+  sheetId: uuidSchema,
+  featId: uuidSchema,
+  name: entryNameSchema.optional(),
+  notes: optionalText(2_000).optional(),
+  source: sourceSchema.optional(),
+  ref: refSchema.optional(),
+  sort: sortSchema.optional(),
+}).refine(requiresOneOf(...sheetScopeKeys, "featId"), {
+  message: "Provide at least one feat detail to update.",
+});
+
+export const sheetFeatIdSchema = sheetIdSchema.extend({ featId: uuidSchema });
+
+export const sheetNpcCreateSchema = sheetIdSchema.extend({
+  name: entryNameSchema,
+  relationship: optionalText(120).optional(),
+  notes: optionalText(2_000).optional(),
+  sort: sortSchema.default(0),
+});
+
+export const sheetNpcUpdateSchema = mutable({
+  campaignId: uuidSchema,
+  sheetId: uuidSchema,
+  npcId: uuidSchema,
+  name: entryNameSchema.optional(),
+  relationship: optionalText(120).optional(),
+  notes: optionalText(2_000).optional(),
+  sort: sortSchema.optional(),
+}).refine(requiresOneOf(...sheetScopeKeys, "npcId"), {
+  message: "Provide at least one contact detail to update.",
+});
+
+export const sheetNpcIdSchema = sheetIdSchema.extend({ npcId: uuidSchema });
+
+const spellLevelSchema = z.number().int().min(0).max(MAX_SPELL_LEVEL);
+
+export const sheetSpellCreateSchema = sheetIdSchema.extend({
+  name: entryNameSchema,
+  level: spellLevelSchema.default(0),
+  prepared: z.boolean().default(false),
+  notes: optionalText(2_000).optional(),
+  ...sourceFields,
+  sort: sortSchema.default(0),
+});
+
+export const sheetSpellUpdateSchema = mutable({
+  campaignId: uuidSchema,
+  sheetId: uuidSchema,
+  spellId: uuidSchema,
+  name: entryNameSchema.optional(),
+  level: spellLevelSchema.optional(),
+  prepared: z.boolean().optional(),
+  notes: optionalText(2_000).optional(),
+  source: sourceSchema.optional(),
+  ref: refSchema.optional(),
+  sort: sortSchema.optional(),
+}).refine(requiresOneOf(...sheetScopeKeys, "spellId"), {
+  message: "Provide at least one spell detail to update.",
+});
+
+export const sheetSpellIdSchema = sheetIdSchema.extend({ spellId: uuidSchema });
+
+export const sheetEventListSchema = sheetIdSchema.extend({
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_SHEET_EVENTS_PAGE)
+    .default(MAX_SHEET_EVENTS_PAGE),
+});
+
 export type CharacterCreateInput = z.infer<typeof characterCreateSchema>;
 export type CharacterUpdateInput = z.infer<typeof characterUpdateSchema>;
 export type SheetUpdateInput = z.infer<typeof sheetUpdateSchema>;
@@ -225,3 +348,7 @@ export type SheetClassInput = z.infer<typeof sheetClassCreateSchema>;
 export type SheetBackgroundInput = z.infer<typeof sheetBackgroundCreateSchema>;
 export type SheetItemInput = z.infer<typeof sheetItemCreateSchema>;
 export type SheetCurrencyInput = z.infer<typeof sheetCurrencyCreateSchema>;
+export type SheetStatInput = z.infer<typeof sheetStatCreateSchema>;
+export type SheetFeatInput = z.infer<typeof sheetFeatCreateSchema>;
+export type SheetNpcInput = z.infer<typeof sheetNpcCreateSchema>;
+export type SheetSpellInput = z.infer<typeof sheetSpellCreateSchema>;

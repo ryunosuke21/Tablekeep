@@ -52,7 +52,45 @@ M3 Player essentials is implemented. Its persistence boundary separates a global
 - Total level is derived from class rows. Currency is one row per freeform type, not fixed denomination columns or an enum.
 - `retired_at` applies to a campaign sheet. Global character removal uses `deleted_at` and must not be described as retirement.
 - Current HP is deliberately absent from M3 persistence. M6 owns it as encounter participant/combatant state and may initialize or constrain it using `character_sheets.max_hp`.
-- M4 spellbooks and spell resources attach to `sheet_id`, so the same global character can have independent spell state in different campaigns.
+- Spellbooks attach to `sheet_id`, so the same global character can have independent spell state in different campaigns. `sheet_spells` holds one row per spell with a `level` and a `prepared` flag; learned and prepared are one table, not two.
+- Ability scores are rows in `sheet_stats`, not fixed columns, for the same reason currencies are rows: a table that uses a different spread of abilities still fits. `sheet_feats` and `sheet_npcs` follow the `sheet_backgrounds` shape.
+- Alignment, appearance, and the campaign's backstory are sheet columns, because they are one value per sheet. The character's global `bio` stays on `characters` and is shown beside the backstory rather than merged with it.
+
+### Sheet history
+
+`sheet_events` is an append-only record of who changed what on a sheet. Rows are
+never updated or deleted, and nothing in the product rewrites them.
+
+Events are written by a middleware on `sheetProcedure`, not by each mutation.
+The middleware derives the entity and action from the tRPC path
+(`character.sheet.item.create` → `item` / `create`), so a new sheet editor is
+recorded without touching the middleware. The segment before the action names
+the entity and is matched against a known set, which keeps the derivation
+correct whether the path comes from the app router or from a caller created on
+the character router alone.
+
+The insert is best-effort and deliberately swallows its own failure: the Neon
+HTTP driver has no interactive transactions, so a failed history row must not
+report a write that already landed as a failure. History is a record, not a
+control. `actor_name` and `actor_role` are stamped at write time because the
+actor foreign key nulls out when an account is deleted.
+
+### The campaign sheet page
+
+`/campaigns/[slug]/characters/[sheetId]` is a profile with tabs — Overview,
+Lore, Inventory, Spellbook, Changes — and the active tab is mirrored into a
+`?tab=` search param with `history.replaceState`.
+
+Only a DM edits from this page, including on a character the viewing player
+owns. That is a product decision about what the page is for, not an
+authorization boundary: `sheetProcedure` still accepts writes from the sheet's
+owner, for the player-facing editing surface that comes later. Do not remove
+the owner branch from the router to enforce the page's read-only rendering.
+
+Every section component takes `canEdit` and renders either its editor or a
+read-only view built from the primitives in
+`components/characters/sheet-readouts.tsx`. Both paths show the same facts in
+the same order; only the controls differ.
 
 Use short, contextual Drizzle/SQL names for this domain: `charId`/`char_id`, `sheetId`/`sheet_id`, `maxHp`/`max_hp`, `qty`, `equipped`, `ref`, `sort`, and `updatedBy`/`updated_by`. Keep already-clear foreign keys such as `campaignId`/`campaign_id` and `ownerId`/`owner_id`; do not shorten them to ambiguous initials.
 

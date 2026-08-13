@@ -18,7 +18,11 @@ import {
   MAX_SHEET_CLASSES,
   MAX_SHEET_CONDITIONS,
   MAX_SHEET_CURRENCIES,
+  MAX_SHEET_FEATS,
   MAX_SHEET_ITEMS,
+  MAX_SHEET_NPCS,
+  MAX_SHEET_SPELLS,
+  MAX_SHEET_STATS,
 } from "@/lib/constants";
 import type * as schema from "@/server/db/schema";
 import {
@@ -30,7 +34,12 @@ import {
   sheetClasses,
   sheetConditions,
   sheetCurrencies,
+  sheetEvents,
+  sheetFeats,
   sheetItems,
+  sheetNpcs,
+  sheetSpells,
+  sheetStats,
 } from "@/server/db/schema";
 import { deriveCharacterSlug } from "@/server/domain/character/slug";
 import { randomUUID } from "node:crypto";
@@ -351,42 +360,72 @@ export async function getCharacterSheet(
     .limit(1);
   if (!sheet) return null;
 
-  const [classes, backgrounds, conditions, items, currencies] =
-    await Promise.all([
-      db
-        .select()
-        .from(sheetClasses)
-        .where(eq(sheetClasses.sheetId, sheetId))
-        .orderBy(asc(sheetClasses.sort), asc(sheetClasses.createdAt)),
-      db
-        .select()
-        .from(sheetBackgrounds)
-        .where(eq(sheetBackgrounds.sheetId, sheetId))
-        .orderBy(asc(sheetBackgrounds.sort), asc(sheetBackgrounds.createdAt)),
-      db
-        .select()
-        .from(sheetConditions)
-        .where(
-          and(
-            eq(sheetConditions.sheetId, sheetId),
-            isNull(sheetConditions.removedAt),
-          ),
-        )
-        .orderBy(asc(sheetConditions.createdAt)),
-      db
-        .select()
-        .from(sheetItems)
-        .where(eq(sheetItems.sheetId, sheetId))
-        .orderBy(asc(sheetItems.removedAt), asc(sheetItems.createdAt)),
-      db
-        .select()
-        .from(sheetCurrencies)
-        .where(eq(sheetCurrencies.sheetId, sheetId))
-        .orderBy(
-          asc(sheetCurrencies.removedAt),
-          asc(sheetCurrencies.createdAt),
+  const [
+    classes,
+    backgrounds,
+    conditions,
+    items,
+    currencies,
+    stats,
+    feats,
+    npcs,
+    spells,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(sheetClasses)
+      .where(eq(sheetClasses.sheetId, sheetId))
+      .orderBy(asc(sheetClasses.sort), asc(sheetClasses.createdAt)),
+    db
+      .select()
+      .from(sheetBackgrounds)
+      .where(eq(sheetBackgrounds.sheetId, sheetId))
+      .orderBy(asc(sheetBackgrounds.sort), asc(sheetBackgrounds.createdAt)),
+    db
+      .select()
+      .from(sheetConditions)
+      .where(
+        and(
+          eq(sheetConditions.sheetId, sheetId),
+          isNull(sheetConditions.removedAt),
         ),
-    ]);
+      )
+      .orderBy(asc(sheetConditions.createdAt)),
+    db
+      .select()
+      .from(sheetItems)
+      .where(eq(sheetItems.sheetId, sheetId))
+      .orderBy(asc(sheetItems.removedAt), asc(sheetItems.createdAt)),
+    db
+      .select()
+      .from(sheetCurrencies)
+      .where(eq(sheetCurrencies.sheetId, sheetId))
+      .orderBy(asc(sheetCurrencies.removedAt), asc(sheetCurrencies.createdAt)),
+    db
+      .select()
+      .from(sheetStats)
+      .where(eq(sheetStats.sheetId, sheetId))
+      .orderBy(asc(sheetStats.sort), asc(sheetStats.createdAt)),
+    db
+      .select()
+      .from(sheetFeats)
+      .where(eq(sheetFeats.sheetId, sheetId))
+      .orderBy(asc(sheetFeats.sort), asc(sheetFeats.createdAt)),
+    db
+      .select()
+      .from(sheetNpcs)
+      .where(eq(sheetNpcs.sheetId, sheetId))
+      .orderBy(asc(sheetNpcs.sort), asc(sheetNpcs.createdAt)),
+    db
+      .select()
+      .from(sheetSpells)
+      .where(eq(sheetSpells.sheetId, sheetId))
+      .orderBy(
+        asc(sheetSpells.level),
+        asc(sheetSpells.sort),
+        asc(sheetSpells.name),
+      ),
+  ]);
 
   return {
     ...sheet,
@@ -395,6 +434,10 @@ export async function getCharacterSheet(
     conditions,
     items,
     currencies,
+    stats,
+    feats,
+    npcs,
+    spells,
     totalLevel: classes.reduce((total, entry) => total + entry.level, 0),
   };
 }
@@ -449,6 +492,9 @@ export async function updateCharacterSheet(
   values: Partial<{
     name: string | null;
     ancestry: string | null;
+    alignment: string | null;
+    appearance: string | null;
+    backstory: string | null;
     maxHp: number;
     notes: string | null;
   }>,
@@ -977,4 +1023,341 @@ export async function restoreSheetCurrency(
     )
     .returning();
   return result ?? null;
+}
+
+type StatCreate = {
+  sheetId: string;
+  name: string;
+  value: number;
+  sort: number;
+  actorId: string;
+};
+
+export async function createSheetStat(
+  db: CharacterDatabase,
+  input: StatCreate,
+) {
+  const [countResult] = await db
+    .select({ value: count(), sheetActive: activeSheet(input.sheetId) })
+    .from(sheetStats)
+    .where(eq(sheetStats.sheetId, input.sheetId));
+  if (!countResult?.sheetActive || countResult.value >= MAX_SHEET_STATS) {
+    return null;
+  }
+  const [result] = await db
+    .insert(sheetStats)
+    .values({
+      sheetId: input.sheetId,
+      name: input.name,
+      value: input.value,
+      sort: input.sort,
+      createdBy: input.actorId,
+      updatedBy: input.actorId,
+    })
+    .returning();
+  return result ?? null;
+}
+
+export async function updateSheetStat(
+  db: CharacterDatabase,
+  sheetId: string,
+  statId: string,
+  values: Partial<Omit<StatCreate, "sheetId" | "actorId">>,
+  actorId: string,
+) {
+  const [result] = await db
+    .update(sheetStats)
+    .set({ ...values, updatedBy: actorId })
+    .where(
+      and(
+        eq(sheetStats.id, statId),
+        eq(sheetStats.sheetId, sheetId),
+        activeSheet(sheetStats.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+export async function removeSheetStat(
+  db: CharacterDatabase,
+  sheetId: string,
+  statId: string,
+  _actorId: string,
+) {
+  const [result] = await db
+    .delete(sheetStats)
+    .where(
+      and(
+        eq(sheetStats.id, statId),
+        eq(sheetStats.sheetId, sheetId),
+        activeSheet(sheetStats.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+type FeatCreate = {
+  sheetId: string;
+  name: string;
+  notes?: string | null;
+  source: string;
+  ref?: string | null;
+  sort: number;
+  actorId: string;
+};
+
+export async function createSheetFeat(
+  db: CharacterDatabase,
+  input: FeatCreate,
+) {
+  const [countResult] = await db
+    .select({ value: count(), sheetActive: activeSheet(input.sheetId) })
+    .from(sheetFeats)
+    .where(eq(sheetFeats.sheetId, input.sheetId));
+  if (!countResult?.sheetActive || countResult.value >= MAX_SHEET_FEATS) {
+    return null;
+  }
+  const [result] = await db
+    .insert(sheetFeats)
+    .values({
+      sheetId: input.sheetId,
+      name: input.name,
+      notes: input.notes,
+      source: input.source,
+      ref: input.ref,
+      sort: input.sort,
+      createdBy: input.actorId,
+      updatedBy: input.actorId,
+    })
+    .returning();
+  return result ?? null;
+}
+
+export async function updateSheetFeat(
+  db: CharacterDatabase,
+  sheetId: string,
+  featId: string,
+  values: Partial<Omit<FeatCreate, "sheetId" | "actorId">>,
+  actorId: string,
+) {
+  const [result] = await db
+    .update(sheetFeats)
+    .set({ ...values, updatedBy: actorId })
+    .where(
+      and(
+        eq(sheetFeats.id, featId),
+        eq(sheetFeats.sheetId, sheetId),
+        activeSheet(sheetFeats.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+export async function removeSheetFeat(
+  db: CharacterDatabase,
+  sheetId: string,
+  featId: string,
+  _actorId: string,
+) {
+  const [result] = await db
+    .delete(sheetFeats)
+    .where(
+      and(
+        eq(sheetFeats.id, featId),
+        eq(sheetFeats.sheetId, sheetId),
+        activeSheet(sheetFeats.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+type NpcCreate = {
+  sheetId: string;
+  name: string;
+  relationship?: string | null;
+  notes?: string | null;
+  sort: number;
+  actorId: string;
+};
+
+export async function createSheetNpc(db: CharacterDatabase, input: NpcCreate) {
+  const [countResult] = await db
+    .select({ value: count(), sheetActive: activeSheet(input.sheetId) })
+    .from(sheetNpcs)
+    .where(eq(sheetNpcs.sheetId, input.sheetId));
+  if (!countResult?.sheetActive || countResult.value >= MAX_SHEET_NPCS) {
+    return null;
+  }
+  const [result] = await db
+    .insert(sheetNpcs)
+    .values({
+      sheetId: input.sheetId,
+      name: input.name,
+      relationship: input.relationship,
+      notes: input.notes,
+      sort: input.sort,
+      createdBy: input.actorId,
+      updatedBy: input.actorId,
+    })
+    .returning();
+  return result ?? null;
+}
+
+export async function updateSheetNpc(
+  db: CharacterDatabase,
+  sheetId: string,
+  npcId: string,
+  values: Partial<Omit<NpcCreate, "sheetId" | "actorId">>,
+  actorId: string,
+) {
+  const [result] = await db
+    .update(sheetNpcs)
+    .set({ ...values, updatedBy: actorId })
+    .where(
+      and(
+        eq(sheetNpcs.id, npcId),
+        eq(sheetNpcs.sheetId, sheetId),
+        activeSheet(sheetNpcs.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+export async function removeSheetNpc(
+  db: CharacterDatabase,
+  sheetId: string,
+  npcId: string,
+  _actorId: string,
+) {
+  const [result] = await db
+    .delete(sheetNpcs)
+    .where(
+      and(
+        eq(sheetNpcs.id, npcId),
+        eq(sheetNpcs.sheetId, sheetId),
+        activeSheet(sheetNpcs.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+type SpellCreate = {
+  sheetId: string;
+  name: string;
+  level: number;
+  prepared: boolean;
+  notes?: string | null;
+  source: string;
+  ref?: string | null;
+  sort: number;
+  actorId: string;
+};
+
+export async function createSheetSpell(
+  db: CharacterDatabase,
+  input: SpellCreate,
+) {
+  const [countResult] = await db
+    .select({ value: count(), sheetActive: activeSheet(input.sheetId) })
+    .from(sheetSpells)
+    .where(eq(sheetSpells.sheetId, input.sheetId));
+  if (!countResult?.sheetActive || countResult.value >= MAX_SHEET_SPELLS) {
+    return null;
+  }
+  const [result] = await db
+    .insert(sheetSpells)
+    .values({
+      sheetId: input.sheetId,
+      name: input.name,
+      level: input.level,
+      prepared: input.prepared,
+      notes: input.notes,
+      source: input.source,
+      ref: input.ref,
+      sort: input.sort,
+      createdBy: input.actorId,
+      updatedBy: input.actorId,
+    })
+    .returning();
+  return result ?? null;
+}
+
+export async function updateSheetSpell(
+  db: CharacterDatabase,
+  sheetId: string,
+  spellId: string,
+  values: Partial<Omit<SpellCreate, "sheetId" | "actorId">>,
+  actorId: string,
+) {
+  const [result] = await db
+    .update(sheetSpells)
+    .set({ ...values, updatedBy: actorId })
+    .where(
+      and(
+        eq(sheetSpells.id, spellId),
+        eq(sheetSpells.sheetId, sheetId),
+        activeSheet(sheetSpells.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+export async function removeSheetSpell(
+  db: CharacterDatabase,
+  sheetId: string,
+  spellId: string,
+  _actorId: string,
+) {
+  const [result] = await db
+    .delete(sheetSpells)
+    .where(
+      and(
+        eq(sheetSpells.id, spellId),
+        eq(sheetSpells.sheetId, sheetId),
+        activeSheet(sheetSpells.sheetId),
+      ),
+    )
+    .returning();
+  return result ?? null;
+}
+
+/**
+ * History is append-only and deliberately unguarded by `activeSheet`: a change
+ * to a retired sheet still deserves a record, and the caller has already been
+ * authorized for this sheet by the time it writes one.
+ */
+export async function recordSheetEvent(
+  db: CharacterDatabase,
+  input: {
+    sheetId: string;
+    actorId: string;
+    actorName: string;
+    actorRole: string;
+    entity: string;
+    action: string;
+    summary: string;
+  },
+) {
+  const [result] = await db.insert(sheetEvents).values(input).returning();
+  return result ?? null;
+}
+
+export async function listSheetEvents(
+  db: CharacterDatabase,
+  sheetId: string,
+  limit: number,
+) {
+  return db
+    .select()
+    .from(sheetEvents)
+    .where(eq(sheetEvents.sheetId, sheetId))
+    .orderBy(desc(sheetEvents.createdAt), desc(sheetEvents.id))
+    .limit(limit);
 }
