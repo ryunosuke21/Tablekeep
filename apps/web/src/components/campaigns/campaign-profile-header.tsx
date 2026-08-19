@@ -2,6 +2,7 @@
 
 import { IconPlayerPlayFilled } from "@tabler/icons-react";
 import Image from "next/image";
+import Link from "next/link";
 
 import {
   Avatar,
@@ -10,7 +11,6 @@ import {
 } from "@tablekeep/ui/components/avatar";
 import { Badge } from "@tablekeep/ui/components/badge";
 import { Button } from "@tablekeep/ui/components/button";
-import { toast } from "@tablekeep/ui/components/sonner";
 import { cn } from "@tablekeep/ui/lib/utils";
 
 import { roleLabel } from "@/lib/campaign-format";
@@ -37,6 +37,7 @@ export function CampaignProfileHeader({
   memberCount,
 }: {
   campaign: {
+    id: string;
     name: string;
     description: string | null;
     logo: string | null;
@@ -97,13 +98,11 @@ export function CampaignProfileHeader({
           </div>
         </div>
 
-        <Button
-          type="button"
-          className="w-full shadow-sm sm:w-auto"
-          onClick={() => toast("Feature coming soon")}
-        >
-          <IconPlayerPlayFilled />
-          Launch
+        <Button asChild className="w-full shadow-sm sm:w-auto">
+          <Link href={`/play/${campaign.id}`}>
+            <IconPlayerPlayFilled />
+            Launch
+          </Link>
         </Button>
       </div>
     </header>
