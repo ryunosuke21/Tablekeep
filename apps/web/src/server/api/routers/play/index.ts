@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { env } from "@/env/server";
+import { issuePartyKitToken } from "@/lib/partykit-token";
 import { campaignMemberProcedure, createTRPCRouter } from "@/server/api/trpc";
 import {
   getPrivateCampaignNote,
@@ -40,8 +42,32 @@ const noteRouter = createTRPCRouter({
     }),
 });
 
+const realtimeRouter = createTRPCRouter({
+  token: campaignMemberProcedure.query(async ({ ctx }) => {
+    if (!env.PARTYKIT_SECRET) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED" });
+    }
+
+    const ttlSeconds = 60;
+    return {
+      expiresAt: new Date(Date.now() + ttlSeconds * 1000),
+      token: await issuePartyKitToken(
+        {
+          campaignId: ctx.campaign.id,
+          role: ctx.member.role,
+          scope: "connect",
+          sub: ctx.session.user.id,
+        },
+        env.PARTYKIT_SECRET,
+        { ttlSeconds },
+      ),
+    };
+  }),
+});
+
 export const playRouter = createTRPCRouter({
   dm: playDmRouter,
   note: noteRouter,
   player: playPlayerRouter,
+  realtime: realtimeRouter,
 });

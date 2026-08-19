@@ -6,6 +6,7 @@ const {
   getCampaignForMemberByIdMock,
   getDmPlayBootstrapMock,
   getPlayerPlayBootstrapMock,
+  publishEncounterChangedMock,
   savePrivateCampaignNoteMock,
 } = vi.hoisted(() => ({
   advanceEncounterTurnMock: vi.fn(),
@@ -13,8 +14,19 @@ const {
   getCampaignForMemberByIdMock: vi.fn(),
   getDmPlayBootstrapMock: vi.fn(),
   getPlayerPlayBootstrapMock: vi.fn(),
+  publishEncounterChangedMock: vi.fn(),
   savePrivateCampaignNoteMock: vi.fn(),
 }));
+
+vi.mock("@/env/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/env/server")>();
+  return {
+    env: {
+      ...actual.env,
+      PARTYKIT_SECRET: "a-test-secret-that-is-at-least-32-characters",
+    },
+  };
+});
 
 vi.mock("@/server/db/queries/encounter", () => ({
   addEncounterEffect: vi.fn(),
@@ -36,6 +48,11 @@ vi.mock("@/server/db/queries/play", () => ({
   savePrivateCampaignNote: savePrivateCampaignNoteMock,
 }));
 
+vi.mock("@/server/partykit/publish", () => ({
+  publishEncounterChanged: publishEncounterChangedMock,
+}));
+
+import { verifyPartyKitToken } from "@/lib/partykit-token";
 import { testContext } from "@/test/context";
 
 import { playRouter } from ".";
@@ -96,6 +113,8 @@ describe("play router", () => {
     getCampaignForMemberByIdMock.mockReset();
     getDmPlayBootstrapMock.mockReset();
     getPlayerPlayBootstrapMock.mockReset();
+    publishEncounterChangedMock.mockReset();
+    publishEncounterChangedMock.mockResolvedValue(true);
     savePrivateCampaignNoteMock.mockReset();
   });
 
@@ -191,6 +210,45 @@ describe("play router", () => {
       name: "Bridge ambush",
       initiativeMode: "auto",
       combatants: expect.any(Array),
+    });
+    expect(publishEncounterChangedMock).toHaveBeenCalledWith({
+      campaignId,
+      encounterId: "00000000-0000-4000-8000-000000000010",
+      revision: 1,
+    });
+  });
+
+  it("issues a short-lived realtime token to a campaign member", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(membership("player"));
+    const caller = playRouter.createCaller(
+      testContext(vi.fn(), session() as never),
+    );
+
+    const result = await caller.realtime.token({ campaignId });
+
+    expect(result.token.split(".")).toHaveLength(2);
+    expect(result.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    await expect(
+      verifyPartyKitToken(
+        result.token,
+        "a-test-secret-that-is-at-least-32-characters",
+        { scope: "connect" },
+      ),
+    ).resolves.toMatchObject({
+      campaignId,
+      role: "player",
+      sub: "user-1",
+    });
+  });
+
+  it("does not issue a realtime token to a non-member", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(null);
+    const caller = playRouter.createCaller(
+      testContext(vi.fn(), session() as never),
+    );
+
+    await expect(caller.realtime.token({ campaignId })).rejects.toMatchObject({
+      code: "NOT_FOUND",
     });
   });
 

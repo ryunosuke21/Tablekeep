@@ -41,7 +41,7 @@ Do not blur the boundary. Public, unauthenticated content belongs in `apps/docs`
 
 > Note the naming: `apps/docs` is the deployed public site, while the top-level `docs/` directory holds internal product and contributor documentation that is not published.
 
-The web app uses Next.js 16 Server Components by default. Client-side data access uses tRPC with TanStack Query. PostgreSQL is accessed through Drizzle ORM 0.45. Better Auth 1.6 owns authentication tables and session handling. PartyKit server entry points live under `apps/web/party/`, with project configuration in `apps/web/partykit.json`; run the local real-time server with `pnpm dev:party`. Use `pnpm login:party` to authenticate and `pnpm deploy:party` to deploy. The workspace uses TypeScript 6.0.3, pinned exactly in the pnpm catalog; do not broaden or upgrade that version without an explicit decision.
+The web app uses Next.js 16 Server Components by default. Client-side data access uses tRPC with TanStack Query. PostgreSQL is accessed through Drizzle ORM 0.45. Better Auth 1.6 owns authentication tables and session handling. PartyKit server entry points live under `apps/web/party/`, with project configuration in `apps/web/partykit.json`; run the local real-time server with `pnpm dev:party`. Use `pnpm login:party` to authenticate and `pnpm deploy:party` to deploy. Campaign rooms require short-lived membership tokens signed with `PARTYKIT_SECRET`. The web server uses the same secret to publish revision-only encounter events after committed mutations; clients then refetch authorized tRPC data. Configure the secret in both the web environment and PartyKit with `pnpm --filter web exec partykit env add PARTYKIT_SECRET`. The workspace uses TypeScript 6.0.3, pinned exactly in the pnpm catalog; do not broaden or upgrade that version without an explicit decision.
 
 ### M3 character architecture
 
@@ -105,6 +105,7 @@ Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to 
 | `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret. |
 | `BETTER_AUTH_SECRET` | Production | Secret used by Better Auth; set it locally as well when testing auth. |
+| `PARTYKIT_SECRET` | Realtime/production | At least 32 characters; the same signing secret must be configured for the web app and PartyKit. |
 | `NEXT_PUBLIC_DOCS_URL` | No | Public documentation URL used by the product Help link; defaults to `http://localhost:3001/docs`. |
 | `NEXT_PUBLIC_PARTYKIT_HOST` | No | PartyKit host used by browser clients; defaults to `localhost:1999` for local development. |
 | `DATA_SOURCE` | No | Versioned Open5e reference-data API base URL; defaults to `https://api.open5e.com/v2`. |

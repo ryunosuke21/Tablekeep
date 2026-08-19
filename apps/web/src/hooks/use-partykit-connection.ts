@@ -12,6 +12,7 @@ export type PartyKitConnectionStatus =
   | "error";
 
 type UsePartyKitConnectionOptions = {
+  getToken: () => Promise<string>;
   host: string;
   room: string;
 };
@@ -21,11 +22,16 @@ type ActiveConnection = {
   consumers: number;
   key: string;
   socket: PartySocket;
+  tokenProvider: { current: () => Promise<string> };
 };
 
 let activeConnection: ActiveConnection | null = null;
 
-function acquireConnection(host: string, room: string) {
+function acquireConnection(
+  host: string,
+  room: string,
+  getToken: () => Promise<string>,
+) {
   const key = `${host}/${room}`;
 
   if (activeConnection?.key === key) {
@@ -35,6 +41,7 @@ function acquireConnection(host: string, room: string) {
     }
 
     activeConnection.consumers += 1;
+    activeConnection.tokenProvider.current = getToken;
     return activeConnection.socket;
   }
 
@@ -45,12 +52,18 @@ function acquireConnection(host: string, room: string) {
     activeConnection.socket.close(1000, "PartyKit connection replaced");
   }
 
-  const socket = new PartySocket({ host, room });
+  const tokenProvider = { current: getToken };
+  const socket = new PartySocket({
+    host,
+    query: async () => ({ token: await tokenProvider.current() }),
+    room,
+  });
   activeConnection = {
     closeTimer: null,
     consumers: 1,
     key,
     socket,
+    tokenProvider,
   };
 
   return socket;
@@ -79,6 +92,7 @@ function releaseConnection(socket: PartySocket) {
 }
 
 export function usePartyKitConnection({
+  getToken,
   host,
   room,
 }: UsePartyKitConnectionOptions) {
@@ -92,7 +106,7 @@ export function usePartyKitConnection({
       return;
     }
 
-    const socket = acquireConnection(host, room);
+    const socket = acquireConnection(host, room, getToken);
     socketRef.current = socket;
 
     const handleOpen = () => {
@@ -129,7 +143,7 @@ export function usePartyKitConnection({
         releaseConnection(socket);
       }
     };
-  }, [host, room]);
+  }, [getToken, host, room]);
 
   const send = useCallback((message: string) => {
     const socket = socketRef.current;

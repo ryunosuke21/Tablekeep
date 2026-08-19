@@ -12,6 +12,11 @@ type MockSocket = EventTarget & {
 
 const socketState = vi.hoisted(() => ({
   instances: [] as MockSocket[],
+  options: [] as Array<{
+    host: string;
+    query: () => Promise<{ token: string }>;
+    room: string;
+  }>,
 }));
 
 vi.mock("partysocket", () => ({
@@ -21,9 +26,10 @@ vi.mock("partysocket", () => ({
     readyState = 0;
     send = vi.fn();
 
-    constructor() {
+    constructor(options: (typeof socketState.options)[number]) {
       super();
       socketState.instances.push(this);
+      socketState.options.push(options);
     }
   },
 }));
@@ -32,6 +38,7 @@ describe("usePartyKitConnection", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     socketState.instances.length = 0;
+    socketState.options.length = 0;
   });
 
   afterEach(() => {
@@ -41,8 +48,13 @@ describe("usePartyKitConnection", () => {
   });
 
   it("keeps one socket through rerenders and closes it on unmount", () => {
+    const getToken = vi.fn().mockResolvedValue("token-1");
     const { rerender, result, unmount } = renderHook(() =>
-      usePartyKitConnection({ host: "localhost:1999", room: "test-room" }),
+      usePartyKitConnection({
+        getToken,
+        host: "localhost:1999",
+        room: "test-room",
+      }),
     );
 
     expect(socketState.instances).toHaveLength(1);
@@ -76,8 +88,13 @@ describe("usePartyKitConnection", () => {
   });
 
   it("shares an established connection between hook consumers", () => {
+    const getToken = vi.fn().mockResolvedValue("token-1");
     const first = renderHook(() =>
-      usePartyKitConnection({ host: "localhost:1999", room: "test-room" }),
+      usePartyKitConnection({
+        getToken,
+        host: "localhost:1999",
+        room: "test-room",
+      }),
     );
     const socket = socketState.instances[0];
 
@@ -91,7 +108,11 @@ describe("usePartyKitConnection", () => {
     });
 
     const second = renderHook(() =>
-      usePartyKitConnection({ host: "localhost:1999", room: "test-room" }),
+      usePartyKitConnection({
+        getToken,
+        host: "localhost:1999",
+        room: "test-room",
+      }),
     );
 
     expect(socketState.instances).toHaveLength(1);
@@ -104,5 +125,51 @@ describe("usePartyKitConnection", () => {
     second.unmount();
     vi.runOnlyPendingTimers();
     expect(socket?.close).toHaveBeenCalledOnce();
+  });
+
+  it("fetches a token lazily for each connection attempt", async () => {
+    const getToken = vi
+      .fn<() => Promise<string>>()
+      .mockResolvedValueOnce("token-1")
+      .mockResolvedValueOnce("token-2");
+    const hook = renderHook(() =>
+      usePartyKitConnection({
+        getToken,
+        host: "localhost:1999",
+        room: "test-room",
+      }),
+    );
+
+    const query = socketState.options[0]?.query;
+    expect(query).toBeDefined();
+    await expect(query?.()).resolves.toEqual({ token: "token-1" });
+    await expect(query?.()).resolves.toEqual({ token: "token-2" });
+    expect(getToken).toHaveBeenCalledTimes(2);
+
+    hook.unmount();
+  });
+
+  it("uses the latest token provider without replacing the room socket", async () => {
+    const firstProvider = vi.fn().mockResolvedValue("token-1");
+    const secondProvider = vi.fn().mockResolvedValue("token-2");
+    const hook = renderHook(
+      ({ getToken }: { getToken: () => Promise<string> }) =>
+        usePartyKitConnection({
+          getToken,
+          host: "localhost:1999",
+          room: "test-room",
+        }),
+      { initialProps: { getToken: firstProvider } },
+    );
+    const query = socketState.options[0]?.query;
+
+    hook.rerender({ getToken: secondProvider });
+
+    expect(socketState.instances).toHaveLength(1);
+    await expect(query?.()).resolves.toEqual({ token: "token-2" });
+    expect(firstProvider).not.toHaveBeenCalled();
+    expect(secondProvider).toHaveBeenCalledOnce();
+
+    hook.unmount();
   });
 });

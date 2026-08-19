@@ -17,6 +17,10 @@ export const env = createEnv({
     RESEND_API_KEY: z.string(),
     FROM_EMAIL: z.email().default("noreply@tablekeep.com"),
     UPLOADTHING_TOKEN: z.string(),
+    PARTYKIT_SECRET:
+      process.env.NODE_ENV === "production"
+        ? z.string().min(32)
+        : z.string().min(32).optional(),
     DATABASE_URL: z.url(),
     DATA_SOURCE: z.url().default("https://api.open5e.com/v2"),
     NODE_ENV: z
@@ -37,6 +41,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,
     UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
+    PARTYKIT_SECRET: process.env.PARTYKIT_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     DATA_SOURCE: process.env.DATA_SOURCE,
     NODE_ENV: process.env.NODE_ENV,

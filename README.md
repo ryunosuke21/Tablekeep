@@ -74,7 +74,7 @@ cp apps/web/.env.example apps/web/.env
 cp apps/docs/.env.example apps/docs/.env
 ```
 
-Set `DATABASE_URL`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` in `apps/web/.env`. Set `BETTER_AUTH_SECRET` before deploying. Keep credentials out of version control.
+Set `DATABASE_URL`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` in `apps/web/.env`. Set `BETTER_AUTH_SECRET` before deploying. Realtime campaign rooms also need the same 32-character-or-longer `PARTYKIT_SECRET` in the web app and PartyKit environment. Keep credentials out of version control.
 
 Apply the current schema, then start the web app:
 
@@ -92,6 +92,13 @@ working on real-time features:
 
 ```bash
 pnpm dev:party
+```
+
+After `pnpm login:party`, configure the deployed PartyKit worker with the same
+secret used by the web app:
+
+```bash
+pnpm --filter web exec partykit env add PARTYKIT_SECRET
 ```
 
 For a more detailed guide to the repository and data changes, see [docs/development.md](docs/development.md).

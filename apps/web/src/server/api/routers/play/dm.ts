@@ -11,6 +11,7 @@ import {
   setEncounterCombatantHealth,
 } from "@/server/db/queries/encounter";
 import { getDmPlayBootstrap } from "@/server/db/queries/play";
+import { publishEncounterChanged } from "@/server/partykit/publish";
 
 import { playCampaignSummary } from "./common";
 
@@ -80,6 +81,17 @@ function requireEncounterResult<T>(result: T | null): T {
   return result;
 }
 
+async function publishResult<
+  T extends { encounterId: string; revision: number },
+>(campaignId: string, result: T) {
+  await publishEncounterChanged({
+    campaignId,
+    encounterId: result.encounterId,
+    revision: result.revision,
+  });
+  return result;
+}
+
 export const playDmRouter = createTRPCRouter({
   bootstrap: campaignDmProcedure.query(async ({ ctx }) => ({
     campaign: playCampaignSummary(ctx.campaign),
@@ -96,7 +108,7 @@ export const playDmRouter = createTRPCRouter({
       if (!result) {
         throw new TRPCError({ code: "PRECONDITION_FAILED" });
       }
-      return result;
+      return publishResult(input.campaignId, result);
     }),
   advanceTurn: campaignDmProcedure
     .input(
@@ -106,12 +118,13 @@ export const playDmRouter = createTRPCRouter({
         direction: z.enum(["next", "previous"]),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      advanceEncounterTurn(ctx.db, {
+    .mutation(async ({ ctx, input }) => {
+      const result = await advanceEncounterTurn(ctx.db, {
         ...input,
         actorId: ctx.session.user.id,
-      }).then(requireEncounterResult),
-    ),
+      });
+      return publishResult(input.campaignId, requireEncounterResult(result));
+    }),
   setHealth: campaignDmProcedure
     .input(
       z.object({
@@ -122,12 +135,13 @@ export const playDmRouter = createTRPCRouter({
         tempHp: z.number().int().min(0).max(1_000_000),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      setEncounterCombatantHealth(ctx.db, {
+    .mutation(async ({ ctx, input }) => {
+      const result = await setEncounterCombatantHealth(ctx.db, {
         ...input,
         actorId: ctx.session.user.id,
-      }).then(requireEncounterResult),
-    ),
+      });
+      return publishResult(input.campaignId, requireEncounterResult(result));
+    }),
   addEffect: campaignDmProcedure
     .input(
       z.object({
@@ -141,12 +155,13 @@ export const playDmRouter = createTRPCRouter({
         visibility: effectVisibilitySchema,
       }),
     )
-    .mutation(({ ctx, input }) =>
-      addEncounterEffect(ctx.db, {
+    .mutation(async ({ ctx, input }) => {
+      const result = await addEncounterEffect(ctx.db, {
         ...input,
         actorId: ctx.session.user.id,
-      }).then(requireEncounterResult),
-    ),
+      });
+      return publishResult(input.campaignId, requireEncounterResult(result));
+    }),
   removeEffect: campaignDmProcedure
     .input(
       z.object({
@@ -155,12 +170,13 @@ export const playDmRouter = createTRPCRouter({
         effectId: z.uuid(),
       }),
     )
-    .mutation(({ ctx, input }) =>
-      removeEncounterEffect(ctx.db, {
+    .mutation(async ({ ctx, input }) => {
+      const result = await removeEncounterEffect(ctx.db, {
         ...input,
         actorId: ctx.session.user.id,
-      }).then(requireEncounterResult),
-    ),
+      });
+      return publishResult(input.campaignId, requireEncounterResult(result));
+    }),
   completeEncounter: campaignDmProcedure
     .input(
       z.object({
@@ -168,10 +184,11 @@ export const playDmRouter = createTRPCRouter({
         expectedRevision: revisionSchema,
       }),
     )
-    .mutation(({ ctx, input }) =>
-      completeEncounter(ctx.db, {
+    .mutation(async ({ ctx, input }) => {
+      const result = await completeEncounter(ctx.db, {
         ...input,
         actorId: ctx.session.user.id,
-      }).then(requireEncounterResult),
-    ),
+      });
+      return publishResult(input.campaignId, requireEncounterResult(result));
+    }),
 });
