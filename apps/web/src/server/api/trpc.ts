@@ -177,6 +177,17 @@ export const campaignMemberProcedure = betaProcedure
     });
   });
 
+/** Player-only campaign access for role-specific client contracts. */
+export const campaignPlayerProcedure = campaignMemberProcedure.use(
+  ({ ctx, next }) => {
+    if (ctx.member.role !== "player") {
+      throw new TRPCError({ code: "FORBIDDEN" });
+    }
+
+    return next();
+  },
+);
+
 function assertCampaignDm(role: string) {
   if (!campaignMemberCan(role, { organization: ["update"] })) {
     throw new TRPCError({ code: "FORBIDDEN" });

@@ -3,6 +3,7 @@ import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { campaignRouter } from "./campaign";
 import { characterRouter } from "./character";
 import { feedbackRouter } from "./feedback";
+import { playRouter } from "./play";
 import { wikiRouter } from "./wiki";
 
 export const appRouter = createTRPCRouter({
@@ -16,5 +17,6 @@ export const appRouter = createTRPCRouter({
       };
     }),
   }),
+  play: playRouter,
   wiki: wikiRouter,
 });

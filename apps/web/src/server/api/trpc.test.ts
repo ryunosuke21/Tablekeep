@@ -12,6 +12,7 @@ vi.mock("@/server/db/queries/campaign", () => ({
 import {
   campaignDmProcedure,
   campaignMemberProcedure,
+  campaignPlayerProcedure,
   campaignRestoreProcedure,
   createTRPCRouter,
   paginationMiddleware,
@@ -27,6 +28,9 @@ const testRouter = createTRPCRouter({
     campaign: ctx.campaign,
     member: ctx.member,
   })),
+  campaignPlayerRead: campaignPlayerProcedure.query(
+    ({ ctx }) => ctx.member.role,
+  ),
   campaignDmRead: campaignDmProcedure.query(({ ctx }) => ctx.campaign.status),
   campaignDmWrite: campaignDmProcedure.mutation(() => "updated"),
   restore: campaignRestoreProcedure.mutation(() => "restored"),
@@ -154,6 +158,28 @@ describe("tRPC infrastructure", () => {
     await expect(caller.campaignDmRead({ campaignId })).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
+  });
+
+  it("keeps role-specific player procedures out of DM clients", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(membership("dm"));
+    const caller = testRouter.createCaller(
+      testContext(vi.fn(), sessionFor() as never),
+    );
+
+    await expect(
+      caller.campaignPlayerRead({ campaignId }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("allows players to use player procedures", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(membership("player"));
+    const caller = testRouter.createCaller(
+      testContext(vi.fn(), sessionFor() as never),
+    );
+
+    await expect(caller.campaignPlayerRead({ campaignId })).resolves.toBe(
+      "player",
+    );
   });
 
   it("allows DMs to use DM procedures", async () => {
