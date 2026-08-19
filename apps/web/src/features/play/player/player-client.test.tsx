@@ -1,14 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const bootstrapUseQuery = vi.fn();
 const characterSheetUseQuery = vi.fn();
 const dmBootstrapUseQuery = vi.fn();
 const noteUpdateMutate = vi.fn();
 const bootstrapInvalidate = vi.fn();
+const realtimeTokenQuery = vi.fn();
 
 let currentBootstrap: unknown;
 
@@ -74,6 +75,13 @@ const api: unknown = {
     },
   },
   useUtils: () => ({
+    client: {
+      play: {
+        realtime: {
+          token: { query: realtimeTokenQuery },
+        },
+      },
+    },
     play: {
       player: {
         bootstrap: {
@@ -85,6 +93,49 @@ const api: unknown = {
 };
 
 vi.mock("@/trpc/react", () => ({ api }));
+
+vi.mock("@/env/client", () => ({
+  env: { NEXT_PUBLIC_PARTYKIT_HOST: "party.example.test" },
+}));
+
+const partyKitState = vi.hoisted(() => ({
+  options: [] as Array<{
+    getToken: () => Promise<string>;
+    host: string;
+    room: string;
+  }>,
+  listeners: new Set<(message: string) => void>(),
+}));
+
+function pushPartyKitMessage(message: string) {
+  for (const listener of partyKitState.listeners) listener(message);
+}
+
+vi.mock("@/hooks/use-partykit-connection", async () => {
+  const { useEffect, useState } = await import("react");
+  return {
+    usePartyKitConnection: (options: {
+      getToken: () => Promise<string>;
+      host: string;
+      room: string;
+    }) => {
+      partyKitState.options.push(options);
+      const [lastMessage, setLastMessage] = useState<string | null>(null);
+      useEffect(() => {
+        partyKitState.listeners.add(setLastMessage);
+        return () => {
+          partyKitState.listeners.delete(setLastMessage);
+        };
+      }, []);
+      return {
+        connectionId: "test-connection",
+        lastMessage,
+        send: () => false,
+        status: "connected" as const,
+      };
+    },
+  };
+});
 
 vi.mock("@/components/characters/character-sheet", () => ({
   CharacterSheet: ({
@@ -139,6 +190,17 @@ function bootstrap(overrides: Record<string, unknown> = {}) {
 }
 
 describe("PlayerClient", () => {
+  beforeEach(() => {
+    partyKitState.options.length = 0;
+    partyKitState.listeners.clear();
+    realtimeTokenQuery.mockReset();
+    realtimeTokenQuery.mockResolvedValue({
+      token: "signed-token",
+      expiresAt: new Date(),
+    });
+    bootstrapInvalidate.mockClear();
+  });
+
   it("requests only the player-safe bootstrap for the campaign", () => {
     setBootstrap(bootstrap());
     render(<PlayerClient campaignId={campaignId} />);
@@ -274,5 +336,58 @@ describe("PlayerClient", () => {
       content: "New note",
     });
     expect(bootstrapInvalidate).toHaveBeenCalled();
+  });
+
+  it("fetches a realtime token lazily through the tRPC client", async () => {
+    setBootstrap(bootstrap());
+    render(<PlayerClient campaignId={campaignId} />);
+
+    expect(realtimeTokenQuery).not.toHaveBeenCalled();
+
+    const provider = partyKitState.options.at(-1);
+    expect(provider).toBeDefined();
+    await expect(provider?.getToken()).resolves.toBe("signed-token");
+    expect(realtimeTokenQuery).toHaveBeenCalledWith({ campaignId });
+    expect(provider?.host).toBe("party.example.test");
+    expect(provider?.room).toBe(campaignId);
+  });
+
+  it("invalidates the player bootstrap on a matching encounter.changed message", () => {
+    setBootstrap(bootstrap());
+    render(<PlayerClient campaignId={campaignId} />);
+
+    act(() => {
+      pushPartyKitMessage(
+        JSON.stringify({
+          type: "encounter.changed",
+          campaignId,
+          encounterId: "enc-1",
+          revision: 5,
+        }),
+      );
+    });
+
+    expect(bootstrapInvalidate).toHaveBeenCalledWith({ campaignId });
+  });
+
+  it("ignores unrelated and malformed realtime messages", () => {
+    setBootstrap(bootstrap());
+    render(<PlayerClient campaignId={campaignId} />);
+
+    act(() => {
+      pushPartyKitMessage(
+        JSON.stringify({
+          type: "encounter.changed",
+          campaignId: "another-campaign",
+          encounterId: "enc-1",
+          revision: 5,
+        }),
+      );
+    });
+    act(() => {
+      pushPartyKitMessage("not json");
+    });
+
+    expect(bootstrapInvalidate).not.toHaveBeenCalled();
   });
 });

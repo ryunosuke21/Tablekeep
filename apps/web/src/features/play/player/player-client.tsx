@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { Button } from "@tablekeep/ui/components/button";
@@ -23,6 +23,8 @@ import {
   ReadStat,
 } from "@/components/characters/sheet-readouts";
 import { SheetSpells } from "@/components/characters/sheet-spells";
+import { env } from "@/env/client";
+import { usePartyKitConnection } from "@/hooks/use-partykit-connection";
 import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
@@ -46,8 +48,17 @@ const SECTIONS = [
 
 type SectionValue = (typeof SECTIONS)[number]["value"];
 
+function isEncounterChangedForCampaign(value: unknown, campaignId: string) {
+  if (!value || typeof value !== "object") return false;
+  const message = value as Record<string, unknown>;
+  return (
+    message.type === "encounter.changed" && message.campaignId === campaignId
+  );
+}
+
 export function PlayerClient({ campaignId }: { campaignId: string }) {
   const bootstrap = api.play.player.bootstrap.useQuery({ campaignId });
+  const utils = api.useUtils();
   const bootstrapSheetId = bootstrap.data?.sheet?.id ?? null;
   // Existing sheet editors (SheetSpells, SheetInventory, ...) invalidate
   // character.sheet.get, not the play bootstrap, so this query is what keeps
@@ -61,6 +72,34 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
     },
   );
   const [section, setSection] = useState<SectionValue>("character");
+
+  const getToken = useCallback(async () => {
+    const result = await utils.client.play.realtime.token.query({
+      campaignId,
+    });
+    return result.token;
+  }, [utils.client, campaignId]);
+
+  const { lastMessage } = usePartyKitConnection({
+    getToken,
+    host: env.NEXT_PUBLIC_PARTYKIT_HOST,
+    room: campaignId,
+  });
+
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(lastMessage);
+    } catch {
+      return;
+    }
+
+    if (isEncounterChangedForCampaign(parsed, campaignId)) {
+      void utils.play.player.bootstrap.invalidate({ campaignId });
+    }
+  }, [lastMessage, campaignId, utils]);
 
   if (bootstrap.isPending) {
     return (
