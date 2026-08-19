@@ -54,6 +54,7 @@ Tablekeep is a pnpm/Turborepo monorepo built with:
 - PostgreSQL and Drizzle ORM 0.45
 - Better Auth 1.6 (Google OAuth, admin roles, and multi-session support)
 - tRPC and TanStack Query
+- PartyKit for real-time multiplayer services
 - Biome 2.5 for formatting and linting
 
 ## Getting started
@@ -86,6 +87,13 @@ Open [http://localhost:3000](http://localhost:3000).
 
 `pnpm dev` starts both applications: the product on port 3000 and the site on [http://localhost:3001](http://localhost:3001). Use `pnpm dev:web` or `pnpm dev:docs` to run just one. The site needs no database and uses local URLs by default; set `NEXT_PUBLIC_APP_URL` when the product lives elsewhere.
 
+PartyKit is initialized in `apps/web`. Start its local server separately when
+working on real-time features:
+
+```bash
+pnpm dev:party
+```
+
 For a more detailed guide to the repository and data changes, see [docs/development.md](docs/development.md).
 
 ## Useful commands
@@ -95,6 +103,9 @@ For a more detailed guide to the repository and data changes, see [docs/developm
 | `pnpm dev` | Run all development tasks through Turborepo. |
 | `pnpm dev:web` | Run only the product app (`apps/web`). |
 | `pnpm dev:docs` | Run only the marketing and documentation site (`apps/docs`). |
+| `pnpm dev:party` | Run the local PartyKit server. |
+| `pnpm login:party` | Authenticate the PartyKit CLI with GitHub. |
+| `pnpm deploy:party` | Deploy the PartyKit server. |
 | `pnpm build` | Build all workspaces. |
 | `pnpm check-types` | Type-check all workspaces. |
 | `pnpm check` | Format and lint the repository with Biome (writes safe fixes). |

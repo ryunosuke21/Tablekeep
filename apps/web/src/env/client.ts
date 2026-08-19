@@ -9,6 +9,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_DOCS_URL: z.url().default("http://localhost:3001/docs"),
+    NEXT_PUBLIC_PARTYKIT_HOST: z.string().default("localhost:1999"),
   },
 
   /**
@@ -17,6 +18,7 @@ export const env = createEnv({
    */
   runtimeEnv: {
     NEXT_PUBLIC_DOCS_URL: process.env.NEXT_PUBLIC_DOCS_URL,
+    NEXT_PUBLIC_PARTYKIT_HOST: process.env.NEXT_PUBLIC_PARTYKIT_HOST,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

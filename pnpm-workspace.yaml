@@ -5,6 +5,7 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   sharp: true
+  workerd: true
 overrides:
   typescript: 6.0.3
 catalog:
