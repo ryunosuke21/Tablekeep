@@ -9,8 +9,19 @@ import {
 } from "@/lib/redirect-destination";
 import { auth } from "@/server/better-auth";
 
+export function isPlayRoute(pathname: string) {
+  return pathname === "/play" || pathname.startsWith("/play/");
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // The play route owns its signed-out, incomplete-profile, and denied states.
+  // Let it render them in place instead of applying the dashboard redirects.
+  if (isPlayRoute(pathname)) {
+    return NextResponse.next();
+  }
+
   const session = await auth.api.getSession({ headers: request.headers });
   const requestedPath = safeDestination(
     `${request.nextUrl.pathname}${request.nextUrl.search}`,
