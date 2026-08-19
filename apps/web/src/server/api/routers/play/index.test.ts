@@ -115,7 +115,11 @@ describe("play router", () => {
       caller.player.bootstrap({ campaignId }),
     ).resolves.toMatchObject({
       role: "player",
-      campaign: { id: campaignId, name: "The Long Table" },
+      campaign: {
+        id: campaignId,
+        name: "The Long Table",
+        slug: "the-long-table",
+      },
     });
     expect(getDmPlayBootstrapMock).not.toHaveBeenCalled();
   });
@@ -133,7 +137,11 @@ describe("play router", () => {
 
     await expect(caller.dm.bootstrap({ campaignId })).resolves.toMatchObject({
       role: "dm",
-      campaign: { id: campaignId, name: "The Long Table" },
+      campaign: {
+        id: campaignId,
+        name: "The Long Table",
+        slug: "the-long-table",
+      },
     });
     expect(getPlayerPlayBootstrapMock).not.toHaveBeenCalled();
   });

@@ -6,6 +6,7 @@ export function playCampaignSummary(campaign: PlayCampaign) {
   return {
     id: campaign.id,
     name: campaign.name,
+    slug: campaign.slug,
     description: campaign.description,
     colors: campaign.colors,
     logo: campaign.logo,
