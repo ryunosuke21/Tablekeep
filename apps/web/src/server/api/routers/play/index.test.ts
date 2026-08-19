@@ -1,15 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
+  advanceEncounterTurnMock,
+  beginEncounterMock,
   getCampaignForMemberByIdMock,
   getDmPlayBootstrapMock,
   getPlayerPlayBootstrapMock,
   savePrivateCampaignNoteMock,
 } = vi.hoisted(() => ({
+  advanceEncounterTurnMock: vi.fn(),
+  beginEncounterMock: vi.fn(),
   getCampaignForMemberByIdMock: vi.fn(),
   getDmPlayBootstrapMock: vi.fn(),
   getPlayerPlayBootstrapMock: vi.fn(),
   savePrivateCampaignNoteMock: vi.fn(),
+}));
+
+vi.mock("@/server/db/queries/encounter", () => ({
+  addEncounterEffect: vi.fn(),
+  advanceEncounterTurn: advanceEncounterTurnMock,
+  beginEncounter: beginEncounterMock,
+  completeEncounter: vi.fn(),
+  removeEncounterEffect: vi.fn(),
+  setEncounterCombatantHealth: vi.fn(),
 }));
 
 vi.mock("@/server/db/queries/campaign", () => ({
@@ -78,6 +91,8 @@ function membership(
 
 describe("play router", () => {
   beforeEach(() => {
+    advanceEncounterTurnMock.mockReset();
+    beginEncounterMock.mockReset();
     getCampaignForMemberByIdMock.mockReset();
     getDmPlayBootstrapMock.mockReset();
     getPlayerPlayBootstrapMock.mockReset();
@@ -133,6 +148,85 @@ describe("play router", () => {
       code: "FORBIDDEN",
     });
     expect(getDmPlayBootstrapMock).not.toHaveBeenCalled();
+  });
+
+  it("starts an auto-initiative encounter for a DM", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(membership("dm"));
+    beginEncounterMock.mockResolvedValue({
+      encounterId: "00000000-0000-4000-8000-000000000010",
+      revision: 1,
+    });
+    const caller = playRouter.createCaller(
+      testContext(vi.fn(), session() as never),
+    );
+
+    await caller.dm.beginEncounter({
+      campaignId,
+      name: "Bridge ambush",
+      initiativeMode: "auto",
+      combatants: [
+        {
+          sheetId: null,
+          name: "Goblin",
+          initiativeModifier: 2,
+          initiativeTotal: null,
+          currentHp: 7,
+          maxHp: 7,
+          visibility: "players",
+        },
+      ],
+    });
+
+    expect(beginEncounterMock).toHaveBeenCalledWith(expect.anything(), {
+      campaignId,
+      actorId: "user-1",
+      name: "Bridge ambush",
+      initiativeMode: "auto",
+      combatants: expect.any(Array),
+    });
+  });
+
+  it("requires a manual initiative total for every combatant", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(membership("dm"));
+    const caller = playRouter.createCaller(
+      testContext(vi.fn(), session() as never),
+    );
+
+    await expect(
+      caller.dm.beginEncounter({
+        campaignId,
+        name: "Bridge ambush",
+        initiativeMode: "manual",
+        combatants: [
+          {
+            sheetId: null,
+            name: "Goblin",
+            initiativeModifier: 2,
+            initiativeTotal: null,
+            currentHp: 7,
+            maxHp: 7,
+            visibility: "players",
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(beginEncounterMock).not.toHaveBeenCalled();
+  });
+
+  it("maps stale encounter revisions to a conflict", async () => {
+    getCampaignForMemberByIdMock.mockResolvedValue(membership("dm"));
+    advanceEncounterTurnMock.mockResolvedValue(null);
+    const caller = playRouter.createCaller(
+      testContext(vi.fn(), session() as never),
+    );
+
+    await expect(
+      caller.dm.advanceTurn({
+        campaignId,
+        expectedRevision: 4,
+        direction: "next",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
   it("forbids DMs from the player bootstrap", async () => {
