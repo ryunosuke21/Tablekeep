@@ -153,6 +153,22 @@ vi.mock("@/components/characters/sheet-inventory", () => ({
 vi.mock("@/components/characters/sheet-currencies", () => ({
   SheetCurrencies: () => <div data-testid="sheet-currencies" />,
 }));
+vi.mock("./player-character-panel", () => ({
+  PlayerCharacterPanel: ({
+    sheet,
+    onOpenFullSheet,
+  }: {
+    sheet: { charName: string };
+    onOpenFullSheet: () => void;
+  }) => (
+    <div data-testid="player-character-panel">
+      {sheet.charName}
+      <button type="button" onClick={onOpenFullSheet}>
+        Open full sheet
+      </button>
+    </div>
+  ),
+}));
 
 const { PlayerClient } = await import("./player-client");
 
@@ -211,6 +227,25 @@ describe("PlayerClient", () => {
       expect.objectContaining({ enabled: true, initialData: sheet }),
     );
     expect(dmBootstrapUseQuery).not.toHaveBeenCalled();
+  });
+
+  it("opens the editable sheet from the character overview", async () => {
+    setBootstrap(bootstrap());
+    render(<PlayerClient campaignId={campaignId} />);
+
+    expect(screen.getByTestId("player-character-panel")).toBeInTheDocument();
+    expect(screen.queryByTestId("character-sheet")).toBeNull();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Open full sheet" }),
+    );
+
+    expect(screen.getByTestId("character-sheet")).toHaveTextContent(
+      "Vesper Quill",
+    );
+    expect(
+      screen.getByRole("button", { name: "Back to overview" }),
+    ).toBeInTheDocument();
   });
 
   it("renders the campaign name and the current turn information", async () => {

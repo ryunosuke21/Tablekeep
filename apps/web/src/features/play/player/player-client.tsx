@@ -37,6 +37,7 @@ import { api } from "@/trpc/react";
 
 import { PlayShell } from "../shared/play-shell";
 import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
+import { PlayerCharacterPanel } from "./player-character-panel";
 
 type PlayerBootstrap = RouterOutputs["play"]["player"]["bootstrap"];
 type PlayerCampaign = PlayerBootstrap["campaign"];
@@ -171,7 +172,11 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
       }
     >
       {section === "character" ? (
-        <CharacterSection campaign={campaign} sheet={sheet} />
+        <CharacterSection
+          campaign={campaign}
+          sheet={sheet}
+          encounter={encounter}
+        />
       ) : null}
       {section === "turn" ? (
         <TurnSection sheet={sheet} encounter={encounter} />
@@ -240,10 +245,14 @@ function NoActiveCharacter({ campaignSlug }: { campaignSlug: string }) {
 function CharacterSection({
   campaign,
   sheet,
+  encounter,
 }: {
   campaign: PlayerCampaign;
   sheet: PlayerSheet | null;
+  encounter: PlayerEncounter | null;
 }) {
+  const [showFullSheet, setShowFullSheet] = useState(false);
+
   if (!sheet) {
     return (
       <SectionShell headingId="character-heading" heading="Character">
@@ -252,18 +261,44 @@ function CharacterSection({
     );
   }
 
+  if (!showFullSheet) {
+    const ownCombatant = encounter?.combatants.find(
+      (combatant) => combatant.sheetId === sheet.id,
+    );
+
+    return (
+      <PlayerCharacterPanel
+        sheet={sheet}
+        currentHp={ownCombatant?.currentHp}
+        tempHp={ownCombatant?.tempHp}
+        encounterEffects={ownCombatant?.effects}
+        onOpenFullSheet={() => setShowFullSheet(true)}
+      />
+    );
+  }
+
   return (
-    <CharacterSheet
-      campaignId={campaign.id}
-      campaignSlug={campaign.slug}
-      campaignName={campaign.name}
-      // The play route only reaches here for an active campaign; see
-      // apps/web/src/app/play/[campaignId]/play-access-state.tsx.
-      campaignArchived={false}
-      sheetId={sheet.id}
-      initialSheet={sheet}
-      canEdit
-    />
+    <div className="grid gap-5">
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
+        onClick={() => setShowFullSheet(false)}
+      >
+        Back to overview
+      </Button>
+      <CharacterSheet
+        campaignId={campaign.id}
+        campaignSlug={campaign.slug}
+        campaignName={campaign.name}
+        // The play route only reaches here for an active campaign; see
+        // apps/web/src/app/play/[campaignId]/play-access-state.tsx.
+        campaignArchived={false}
+        sheetId={sheet.id}
+        initialSheet={sheet}
+        canEdit
+      />
+    </div>
   );
 }
 
