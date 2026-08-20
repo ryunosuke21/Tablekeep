@@ -45,7 +45,7 @@ function makeCurrency(overrides: Partial<SheetCurrency> = {}): SheetCurrency {
 }
 
 describe("PlayerInventoryPanel", () => {
-  it("excludes removed items from the primary view", () => {
+  it("excludes removed items from the carried list", () => {
     render(
       <PlayerInventoryPanel
         items={[
@@ -61,38 +61,38 @@ describe("PlayerInventoryPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", { name: "Moonsteel shield" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Lost blade/ })).toBeNull();
+    expect(screen.getByText("Moonsteel shield")).toBeInTheDocument();
+    expect(screen.queryByText("Lost blade")).toBeNull();
   });
 
-  it("splits equipped items into a labeled equipment rack while listing all active items in the grid", () => {
+  it("lists equipped gear first and marks it", () => {
     render(
       <PlayerInventoryPanel
         items={[
-          makeItem({ id: "item-1", name: "Moonsteel shield", equipped: true }),
-          makeItem({ id: "item-2", name: "Old lantern", equipped: false }),
+          makeItem({ id: "item-1", name: "Old lantern", equipped: false }),
+          makeItem({ id: "item-2", name: "Moonsteel shield", equipped: true }),
         ]}
         currencies={[]}
         onManageInventory={vi.fn()}
       />,
     );
 
-    expect(
-      screen.getByRole("heading", { name: "Equipment rack" }),
-    ).toBeInTheDocument();
+    const names = screen
+      .getAllByRole("listitem")
+      .map((node) => node.textContent ?? "");
+    const shieldIndex = names.findIndex((text) =>
+      text.includes("Moonsteel shield"),
+    );
+    const lanternIndex = names.findIndex((text) =>
+      text.includes("Old lantern"),
+    );
 
-    const equippedButtons = screen.getAllByRole("button", {
-      name: "Moonsteel shield (equipped)",
-    });
-    expect(equippedButtons).toHaveLength(2);
-    expect(
-      screen.getByRole("button", { name: "Old lantern" }),
-    ).toBeInTheDocument();
+    expect(shieldIndex).toBeGreaterThanOrEqual(0);
+    expect(shieldIndex).toBeLessThan(lanternIndex);
+    expect(screen.getByText("Equipped")).toBeInTheDocument();
   });
 
-  it("renders generic item cells with accessible names covering quantity and equipped state", () => {
+  it("shows quantity and notes inline without a separate detail panel", () => {
     render(
       <PlayerInventoryPanel
         items={[
@@ -100,7 +100,7 @@ describe("PlayerInventoryPanel", () => {
             id: "item-1",
             name: "Healing potion",
             qty: 3,
-            equipped: false,
+            notes: "Smells of mint.",
           }),
         ]}
         currencies={[]}
@@ -108,43 +108,25 @@ describe("PlayerInventoryPanel", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", { name: "Healing potion ×3" }),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Healing potion")).toBeInTheDocument();
+    expect(screen.getByText("×3")).toBeInTheDocument();
+    expect(screen.getByText("Smells of mint.")).toBeInTheDocument();
   });
 
-  it("selects an item on click and shows its details", async () => {
+  it("shows currencies in the purse", () => {
     render(
       <PlayerInventoryPanel
-        items={[
-          makeItem({
-            id: "item-1",
-            name: "Moonsteel shield",
-            qty: 1,
-            equipped: true,
-            notes: "Dented from the last brawl.",
-          }),
-        ]}
-        currencies={[]}
+        items={[]}
+        currencies={[makeCurrency({ name: "Gold", amount: 12 })]}
         onManageInventory={vi.fn()}
       />,
     );
 
-    expect(
-      screen.getByText("Select an item to see its details."),
-    ).toBeInTheDocument();
-
-    const [rackButton] = screen.getAllByRole("button", {
-      name: "Moonsteel shield (equipped)",
-    });
-    await userEvent.click(rackButton as HTMLElement);
-
-    expect(screen.getByText("Dented from the last brawl.")).toBeInTheDocument();
-    expect(screen.getByText("Equipped")).toBeInTheDocument();
-    expect(screen.getByText("Quantity 1")).toBeInTheDocument();
+    expect(screen.getByText("Gold")).toBeInTheDocument();
+    expect(screen.getByText("12")).toBeInTheDocument();
   });
 
-  it("filters the inventory grid by name and notes, including an empty result", async () => {
+  it("filters the carried list by name and notes, including an empty result", async () => {
     render(
       <PlayerInventoryPanel
         items={[
@@ -163,12 +145,8 @@ describe("PlayerInventoryPanel", () => {
     const search = screen.getByLabelText("Search inventory");
     await userEvent.type(search, "oil");
 
-    expect(
-      screen.getByRole("button", { name: "Old lantern" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Moonsteel shield" }),
-    ).toBeNull();
+    expect(screen.getByText("Old lantern")).toBeInTheDocument();
+    expect(screen.queryByText("Moonsteel shield")).toBeNull();
 
     await userEvent.clear(search);
     await userEvent.type(search, "nonexistent item");
@@ -178,67 +156,7 @@ describe("PlayerInventoryPanel", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps a filtered-out selection from showing stale details", async () => {
-    render(
-      <PlayerInventoryPanel
-        items={[
-          makeItem({ id: "item-1", name: "Moonsteel shield" }),
-          makeItem({ id: "item-2", name: "Old lantern" }),
-        ]}
-        currencies={[]}
-        onManageInventory={vi.fn()}
-      />,
-    );
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Moonsteel shield" }),
-    );
-    expect(screen.getByText("Quantity 1")).toBeInTheDocument();
-
-    const search = screen.getByLabelText("Search inventory");
-    await userEvent.type(search, "lantern");
-
-    expect(
-      screen.getByText("Select an item to see its details."),
-    ).toBeInTheDocument();
-  });
-
-  it("shows active currency totals and excludes removed currencies", () => {
-    render(
-      <PlayerInventoryPanel
-        items={[]}
-        currencies={[
-          makeCurrency({ id: "currency-1", name: "Gold", amount: 12 }),
-          makeCurrency({
-            id: "currency-2",
-            name: "Old scrip",
-            amount: 5,
-            removedAt: new Date("2026-08-01T00:00:00.000Z"),
-          }),
-        ]}
-        onManageInventory={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Gold")).toBeInTheDocument();
-    expect(screen.getByText("12")).toBeInTheDocument();
-    expect(screen.queryByText("Old scrip")).toBeNull();
-  });
-
-  it("shows meaningful empty states for no equipment and no active inventory", () => {
-    render(
-      <PlayerInventoryPanel
-        items={[]}
-        currencies={[]}
-        onManageInventory={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText("Nothing equipped.")).toBeInTheDocument();
-    expect(screen.getByText("Your pack is empty.")).toBeInTheDocument();
-  });
-
-  it("calls onManageInventory when the manage button is clicked", async () => {
+  it("invites the manager and reports an empty pack", async () => {
     const onManageInventory = vi.fn();
     render(
       <PlayerInventoryPanel
@@ -248,9 +166,12 @@ describe("PlayerInventoryPanel", () => {
       />,
     );
 
+    expect(screen.getByText("Your pack is empty.")).toBeInTheDocument();
+    expect(screen.getByText("No currency tracked.")).toBeInTheDocument();
+
     await userEvent.click(
       screen.getByRole("button", { name: "Manage inventory" }),
     );
-    expect(onManageInventory).toHaveBeenCalledOnce();
+    expect(onManageInventory).toHaveBeenCalledTimes(1);
   });
 });

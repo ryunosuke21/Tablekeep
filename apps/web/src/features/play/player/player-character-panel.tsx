@@ -1,13 +1,8 @@
-import {
-  IconBackpack,
-  IconHeartFilled,
-  IconShield,
-  IconSparkles,
-} from "@tabler/icons-react";
-
-import { Button } from "@tablekeep/ui/components/button";
+import { IconHeartFilled } from "@tabler/icons-react";
 
 import type { RouterOutputs } from "@/trpc/react";
+
+import { PlayActionButton, PlayEyebrow } from "../shared/play-surfaces";
 
 export type PlayerSheet = NonNullable<
   RouterOutputs["play"]["player"]["bootstrap"]["sheet"]
@@ -31,6 +26,21 @@ function initials(name: string) {
 function percentage(value: number, max: number) {
   if (max <= 0) return 0;
   return Math.min(100, Math.max(0, (value / max) * 100));
+}
+
+/** Vitality reads by color: healthy, hurt, bloodied. */
+function hpColor(ratio: number) {
+  if (ratio > 0.5) return "#4f9d78";
+  if (ratio > 0.25) return "#d9a441";
+  return "#d0524d";
+}
+
+function GroupHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="font-sans text-[#8a857b] text-[10px] uppercase tracking-[0.2em]">
+      {children}
+    </h3>
+  );
 }
 
 export function PlayerCharacterPanel({
@@ -64,66 +74,53 @@ export function PlayerCharacterPanel({
     })),
   ];
   const hasCurrentHp = currentHp !== undefined && currentHp !== null;
+  const hpValue = hasCurrentHp ? currentHp : sheet.maxHp;
+  const hpRatio = sheet.maxHp > 0 ? hpValue / sheet.maxHp : 0;
 
   return (
     <section
       aria-labelledby="player-character-name"
-      className="relative isolate overflow-hidden border border-[#6b4a24]/70 bg-[#120d0a] text-[#e9dfc5] shadow-[0_20px_70px_rgba(0,0,0,0.38)]"
+      className="border border-white/10 bg-[#131316]/85 text-[#f4f2ec] backdrop-blur-sm"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_22%_10%,rgba(115,77,35,0.2),transparent_32%),linear-gradient(115deg,transparent_49.8%,rgba(201,162,92,0.035)_50%,transparent_50.2%)]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute top-2 left-2 size-8 border-[#c9a25c]/45 border-t border-l"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute right-2 bottom-2 size-8 border-[#c9a25c]/45 border-r border-b"
-      />
-
-      <div className="grid gap-6 border-[#6b4a24]/60 border-b px-4 py-6 sm:px-7 lg:grid-cols-[10rem_minmax(0,1fr)_15rem] lg:items-center">
-        <div className="mx-auto flex size-32 items-center justify-center rounded-full border border-[#c9a25c]/70 bg-[#0b0807] p-2 shadow-[0_0_0_5px_rgba(107,74,36,0.18)] lg:mx-0">
-          <div className="flex size-full items-center justify-center rounded-full border border-[#6b4a24] bg-[radial-gradient(circle,rgba(104,48,42,0.7),rgba(28,14,13,0.95)_65%)] font-display text-3xl text-[#f2e5c8] tracking-[0.08em]">
-            {initials(displayName)}
-          </div>
+      <div className="grid gap-6 border-white/10 border-b px-5 py-6 sm:px-6 lg:grid-cols-[auto_minmax(0,1fr)_18rem] lg:items-center">
+        <div className="mx-auto flex size-24 items-center justify-center border border-white/15 bg-[#0e0e10] font-display text-2xl text-[#e0b061] tracking-[0.06em] lg:mx-0">
+          {initials(displayName)}
         </div>
 
         <div className="min-w-0 text-center lg:text-left">
-          <p className="font-sans text-[#9b7444] text-[10px] uppercase tracking-[0.24em]">
-            Active character
-          </p>
+          <PlayEyebrow>Active character</PlayEyebrow>
           <h2
             id="player-character-name"
-            className="mt-1 text-balance font-display text-3xl text-[#f2e5c8] sm:text-4xl"
+            className="mt-1 text-balance font-display text-3xl text-[#f4f2ec] sm:text-4xl"
           >
             {displayName}
           </h2>
           <div className="mt-3 space-y-1 font-sans text-sm">
-            <p className="text-[#d1b88b]">{classes || "No class recorded"}</p>
-            {sheet.ancestry ? <p>{sheet.ancestry}</p> : null}
+            <p className="text-[#d7d2c8]">{classes || "No class recorded"}</p>
+            {sheet.ancestry ? (
+              <p className="text-[#9b968c]">{sheet.ancestry}</p>
+            ) : null}
             {backgrounds ? (
-              <p className="text-[#b99c70]">{backgrounds}</p>
+              <p className="text-[#9b968c]">{backgrounds}</p>
             ) : null}
             {sheet.alignment ? (
-              <p className="text-[#8f7656] text-xs uppercase tracking-[0.16em]">
+              <p className="text-[#6f6a61] text-xs uppercase tracking-[0.16em]">
                 {sheet.alignment}
               </p>
             ) : null}
           </div>
         </div>
 
-        <div className="border-[#6b4a24]/50 border-t pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+        <div className="border-white/10 border-t pt-5 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
           <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 font-display text-[#c9a25c] text-sm">
+            <span className="flex items-center gap-2 font-sans text-[#c7c2b8] text-xs uppercase tracking-[0.14em]">
               <IconHeartFilled
                 aria-hidden="true"
-                className="size-4 text-[#8f3937]"
+                className="size-4 text-[#d0524d]"
               />
               Hit points
             </span>
-            <span className="font-mono text-[#f2e5c8] text-lg">
+            <span className="font-mono text-[#f4f2ec] text-lg tabular-nums">
               {hasCurrentHp
                 ? `${currentHp}/${sheet.maxHp}`
                 : `Max ${sheet.maxHp}`}
@@ -134,43 +131,41 @@ export function PlayerCharacterPanel({
             aria-label="Hit points"
             aria-valuemin={0}
             aria-valuemax={sheet.maxHp}
-            aria-valuenow={hasCurrentHp ? currentHp : sheet.maxHp}
+            aria-valuenow={hpValue}
             aria-valuetext={
               hasCurrentHp
                 ? `${currentHp} of ${sheet.maxHp} hit points`
                 : `Maximum ${sheet.maxHp} hit points; current hit points unknown`
             }
-            className="mt-2 h-2 overflow-hidden border border-[#6b4a24] bg-[#090705]"
+            className="mt-2 h-2.5 overflow-hidden border border-white/10 bg-[#0a0a0b]"
           >
             <div
-              className="h-full bg-[#2d8c9a] transition-[width] duration-300 motion-reduce:transition-none"
+              className="h-full transition-[width] duration-300 motion-reduce:transition-none"
               style={{
-                width: `${percentage(
-                  hasCurrentHp ? currentHp : sheet.maxHp,
-                  sheet.maxHp,
-                )}%`,
+                width: `${percentage(hpValue, sheet.maxHp)}%`,
+                backgroundColor: hasCurrentHp ? hpColor(hpRatio) : "#7c7669",
               }}
             />
           </div>
           {tempHp !== undefined && tempHp !== null && tempHp > 0 ? (
-            <p className="mt-2 font-mono text-cyan-200 text-xs">
+            <p className="mt-2 font-mono text-[#e0b061] text-xs">
               +{tempHp} temporary
             </p>
           ) : null}
-          <div className="mt-4 grid grid-cols-2 gap-2 border-[#4a3218]/60 border-t pt-3 text-center">
+          <div className="mt-4 grid grid-cols-2 gap-2 border-white/10 border-t pt-3 text-center">
             <div>
-              <p className="font-mono text-[#f2e5c8] text-lg">
+              <p className="font-mono text-[#f4f2ec] text-lg tabular-nums">
                 {activeItems.length}
               </p>
-              <p className="font-sans text-[#8f7656] text-[10px] uppercase tracking-wider">
+              <p className="font-sans text-[#6f6a61] text-[10px] uppercase tracking-[0.14em]">
                 Carried
               </p>
             </div>
             <div>
-              <p className="font-mono text-[#f2e5c8] text-lg">
+              <p className="font-mono text-[#f4f2ec] text-lg tabular-nums">
                 {preparedSpells}
               </p>
-              <p className="font-sans text-[#8f7656] text-[10px] uppercase tracking-wider">
+              <p className="font-sans text-[#6f6a61] text-[10px] uppercase tracking-[0.14em]">
                 Prepared
               </p>
             </div>
@@ -178,135 +173,122 @@ export function PlayerCharacterPanel({
         </div>
       </div>
 
-      <div className="border-[#4a3218]/60 border-b px-4 py-5 sm:px-7">
-        <h3 className="font-display text-[#c9a25c] text-sm tracking-wide">
-          Recorded stats
-        </h3>
+      <div className="border-white/10 border-b px-5 py-5 sm:px-6">
+        <GroupHeading>Stats</GroupHeading>
         {sheet.stats.length > 0 ? (
-          <ul className="mt-4 grid list-none grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+          <ul className="mt-3 grid list-none grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
             {sheet.stats.map((stat) => (
-              <li key={stat.id} className="min-w-0 text-center">
+              <li
+                key={stat.id}
+                className="min-w-0 border border-white/10 bg-[#0e0e10] px-2 py-3 text-center"
+              >
                 <p
-                  className="truncate font-sans text-[#a9885e] text-[10px] uppercase tracking-[0.14em]"
+                  className="truncate font-sans text-[#8a857b] text-[10px] uppercase tracking-[0.12em]"
                   title={stat.name}
                 >
                   {stat.name}
                 </p>
-                <div className="mx-auto mt-1 flex size-14 items-center justify-center rounded-full border border-[#8d6635] bg-[#0d0907] font-mono text-2xl text-[#f2e5c8] shadow-[inset_0_0_0_3px_rgba(107,74,36,0.16)]">
+                <p className="mt-1 font-mono text-2xl text-[#f4f2ec] tabular-nums">
                   {stat.value}
-                </div>
+                </p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 text-[#8f7656] text-sm">No stats recorded.</p>
+          <p className="mt-3 font-sans text-[#8a857b] text-sm">
+            No stats recorded.
+          </p>
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
-        <div className="border-[#4a3218]/60 px-4 py-6 sm:px-7 lg:border-r">
-          <h3 className="flex items-center gap-2 font-display text-[#c9a25c] text-lg">
-            <IconShield aria-hidden="true" className="size-5" />
-            Equipped
-          </h3>
+      <div className="grid gap-6 px-5 py-5 sm:px-6 lg:grid-cols-3">
+        <div>
+          <GroupHeading>Equipped</GroupHeading>
           {equippedItems.length > 0 ? (
-            <ul className="mt-4 grid list-none grid-cols-2 gap-2 sm:grid-cols-3">
+            <ul className="mt-3 grid list-none gap-2">
               {equippedItems.map((item) => (
                 <li
                   key={item.id}
-                  className="min-h-24 border border-[#6b4a24]/70 bg-[#0c0907] p-3"
+                  className="flex items-center justify-between gap-2 border border-white/10 bg-[#0e0e10] px-3 py-2"
                 >
-                  <IconShield
-                    aria-hidden="true"
-                    className="size-5 text-[#8f6638]"
-                  />
-                  <p className="mt-3 break-words font-sans text-[#e9dfc5] text-sm">
+                  <span className="min-w-0 truncate font-sans text-[#e5e1d8] text-sm">
                     {item.name}
-                  </p>
-                  <p className="mt-1 font-mono text-[#8f7656] text-xs">
-                    ×{item.qty}
-                  </p>
+                  </span>
+                  {item.qty > 1 ? (
+                    <span className="shrink-0 font-mono text-[#8a857b] text-xs tabular-nums">
+                      ×{item.qty}
+                    </span>
+                  ) : null}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-[#8f7656] text-sm">Nothing equipped.</p>
+            <p className="mt-3 font-sans text-[#8a857b] text-sm">
+              Nothing equipped.
+            </p>
           )}
         </div>
 
-        <div className="grid content-start gap-6 border-[#4a3218]/60 border-t px-4 py-6 sm:px-7 lg:border-t-0">
-          <div>
-            <h3 className="flex items-center gap-2 font-display text-[#c9a25c] text-lg">
-              <IconSparkles aria-hidden="true" className="size-5" />
-              Effects
-            </h3>
-            {effects.length > 0 ? (
-              <ul className="mt-3 flex list-none flex-wrap gap-2">
-                {effects.map((effect) => (
-                  <li
-                    key={effect.key}
-                    className="border border-[#7c3f39]/70 bg-[#2a1414] px-2.5 py-1 font-sans text-[#e3c9b3] text-xs"
-                  >
-                    {effect.name}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-[#8f7656] text-sm">No effects.</p>
-            )}
-          </div>
+        <div>
+          <GroupHeading>Effects</GroupHeading>
+          {effects.length > 0 ? (
+            <ul className="mt-3 flex list-none flex-wrap gap-2">
+              {effects.map((effect) => (
+                <li
+                  key={effect.key}
+                  className="border border-[#d0524d]/40 bg-[#d0524d]/10 px-2.5 py-1 font-sans text-[#e8b0ad] text-xs"
+                >
+                  {effect.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 font-sans text-[#8a857b] text-sm">No effects.</p>
+          )}
+        </div>
 
-          <div>
-            <h3 className="flex items-center gap-2 font-display text-[#c9a25c] text-lg">
-              <IconBackpack aria-hidden="true" className="size-5" />
-              Resources
-            </h3>
-            {sheet.resources.length > 0 ? (
-              <ul className="mt-3 grid list-none gap-3">
-                {sheet.resources.map((resource) => (
-                  <li key={resource.id}>
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate font-sans text-[#d1b88b]">
-                        {resource.name}
-                      </span>
-                      <span className="shrink-0 font-mono text-[#f2e5c8]">
-                        {resource.currentValue}
-                        {resource.maxValue !== null
-                          ? `/${resource.maxValue}`
-                          : ""}
-                      </span>
+        <div>
+          <GroupHeading>Resources</GroupHeading>
+          {sheet.resources.length > 0 ? (
+            <ul className="mt-3 grid list-none gap-3">
+              {sheet.resources.map((resource) => (
+                <li key={resource.id}>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate font-sans text-[#d7d2c8]">
+                      {resource.name}
+                    </span>
+                    <span className="shrink-0 font-mono text-[#f4f2ec] tabular-nums">
+                      {resource.currentValue}
+                      {resource.maxValue !== null
+                        ? `/${resource.maxValue}`
+                        : ""}
+                    </span>
+                  </div>
+                  {resource.maxValue !== null ? (
+                    <div className="mt-1 h-1.5 overflow-hidden border border-white/10 bg-[#0a0a0b]">
+                      <div
+                        className="h-full bg-[#e0b061]"
+                        style={{
+                          width: `${percentage(resource.currentValue, resource.maxValue)}%`,
+                        }}
+                      />
                     </div>
-                    {resource.maxValue !== null ? (
-                      <div className="mt-1 h-1.5 overflow-hidden border border-[#4a3218] bg-[#090705]">
-                        <div
-                          className="h-full bg-[#2d8c9a]"
-                          style={{
-                            width: `${percentage(resource.currentValue, resource.maxValue)}%`,
-                          }}
-                        />
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-[#8f7656] text-sm">
-                No resources tracked.
-              </p>
-            )}
-          </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 font-sans text-[#8a857b] text-sm">
+              No resources tracked.
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="flex justify-end border-[#6b4a24]/60 border-t px-4 py-4 sm:px-7">
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11 rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6] focus-visible:ring-cyan-300/60"
-          onClick={onOpenFullSheet}
-        >
+      <div className="flex justify-end border-white/10 border-t px-5 py-4 sm:px-6">
+        <PlayActionButton onClick={onOpenFullSheet}>
           Open full sheet
-        </Button>
+        </PlayActionButton>
       </div>
     </section>
   );

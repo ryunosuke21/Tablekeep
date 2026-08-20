@@ -34,7 +34,7 @@ export function TurnRail({
       <div
         data-slot="turn-rail"
         data-state="inactive"
-        className="flex items-center gap-2 border-[#4a3218]/60 border-y bg-[#120d0a] px-4 py-2 font-sans text-[#8a6a45] text-xs uppercase tracking-widest"
+        className="flex items-center gap-2 border-white/10 border-b bg-[#0b0b0d]/60 px-4 py-2 font-sans text-[#8a857b] text-xs uppercase tracking-[0.16em] backdrop-blur-sm"
       >
         <span
           aria-hidden="true"
@@ -53,21 +53,16 @@ export function TurnRail({
     <div
       data-slot="turn-rail"
       data-state="active"
-      className="relative flex items-stretch border-[#6b4a24]/70 border-y bg-[#140f0b]"
+      className="relative flex items-stretch border-white/10 border-b bg-[#0b0b0d]/70 backdrop-blur-sm"
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#c9a25c]/30"
-      />
-
-      <div className="flex shrink-0 flex-col items-center justify-center border-[#6b4a24]/50 border-r bg-[#0d0a08] px-3 py-2">
-        <span className="font-display text-[#c9a25c] text-xs uppercase tracking-[0.2em]">
+      <div className="flex shrink-0 flex-col items-center justify-center border-white/10 border-r px-4 py-2">
+        <span className="font-sans text-[#e0b061] text-xs uppercase tracking-[0.18em]">
           {round !== null ? `Round ${round}` : "Round not set"}
         </span>
       </div>
 
       {orderedCombatants.length === 0 ? (
-        <p className="flex-1 self-center px-4 py-3 font-sans text-[#8a6a45] text-sm">
+        <p className="flex-1 self-center px-4 py-3 font-sans text-[#8a857b] text-sm">
           Initiative order has not been set.
         </p>
       ) : (
@@ -91,20 +86,20 @@ export function TurnRail({
                 >
                   <div
                     className={cn(
-                      "relative flex size-11 items-center justify-center rounded-full border-2 font-sans font-semibold text-sm",
+                      "relative flex size-11 items-center justify-center rounded-sm border font-sans font-semibold text-sm",
                       isActive
-                        ? "border-cyan-300 bg-[#0d2b2e] text-cyan-100 shadow-[0_0_0_3px_rgba(34,211,238,0.15)]"
-                        : "border-[#5c2323] bg-[#2a1414] text-[#e9dfc5]",
+                        ? "border-[#e0b061] bg-[#e0b061] text-[#0b0b0d]"
+                        : "border-white/15 bg-white/5 text-[#e5e1d8]",
                     )}
                   >
                     <span aria-hidden="true">{initials}</span>
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full border font-mono text-[10px] leading-none",
+                        "absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-sm border font-mono text-[10px] leading-none",
                         isActive
-                          ? "border-cyan-300 bg-[#0d2b2e] text-cyan-100"
-                          : "border-[#6b4a24]/70 bg-[#14100c] text-[#c9a25c]",
+                          ? "border-[#e0b061] bg-[#0b0b0d] text-[#e0b061]"
+                          : "border-white/15 bg-[#0b0b0d] text-[#c7c2b8]",
                       )}
                     >
                       {combatant.initiativeTotal ?? "–"}
@@ -119,19 +114,22 @@ export function TurnRail({
                   {isActive && (
                     <span
                       aria-hidden="true"
-                      className="h-0 w-0 border-x-4 border-x-transparent border-t-4 border-t-cyan-300"
+                      className="h-0 w-0 border-x-4 border-x-transparent border-t-4 border-t-[#e0b061]"
                     />
                   )}
 
                   <span
                     title={combatant.name}
-                    className="w-full truncate text-center font-sans text-[#e9dfc5] text-xs"
+                    className={cn(
+                      "w-full truncate text-center font-sans text-xs",
+                      isActive ? "text-[#f4f2ec]" : "text-[#c7c2b8]",
+                    )}
                   >
                     {combatant.name}
                   </span>
 
                   {isActive && (
-                    <span className="font-medium font-sans text-[10px] text-cyan-300">
+                    <span className="font-medium font-sans text-[#e0b061] text-[10px] uppercase tracking-wide">
                       Current turn
                     </span>
                   )}

@@ -147,10 +147,10 @@ export function ActiveEncounterPanel({
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-2xl text-[#f2e5c8]">
+          <h2 className="font-display text-2xl text-[#f4f2ec]">
             {encounter.name}
           </h2>
-          <p className="mt-1 font-mono text-[#9b7444] text-xs uppercase tracking-widest">
+          <p className="mt-1 font-mono text-[#8a857b] text-xs uppercase tracking-widest">
             Round {encounter.round}
           </p>
         </div>
@@ -180,7 +180,7 @@ export function ActiveEncounterPanel({
         <Button
           type="button"
           variant="outline"
-          className="min-h-11 min-w-11 rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
+          className="min-h-11 min-w-11 rounded-sm border border-white/15 bg-white/5 text-[#f4f2ec] hover:border-[#e0b061]/60 hover:bg-white/10"
           disabled={isPending}
           onClick={() => advance("previous")}
         >
@@ -188,7 +188,7 @@ export function ActiveEncounterPanel({
         </Button>
         <Button
           type="button"
-          className="min-h-11 min-w-11 rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
+          className="min-h-11 min-w-11 rounded-sm bg-[#e0b061] font-medium text-[#0b0b0d] hover:bg-[#eec27a]"
           disabled={isPending}
           onClick={() => advance("next")}
         >
@@ -286,11 +286,11 @@ function CombatantCard({
   return (
     <li
       data-state={isCurrentTurn ? "current-turn" : undefined}
-      className="flex flex-col gap-3 border border-[#6b4a24]/60 bg-[#0c0907] px-3 py-3 data-[state=current-turn]:border-cyan-500/80 data-[state=current-turn]:shadow-[inset_3px_0_0_rgba(34,211,238,0.55)]"
+      className="flex flex-col gap-3 border border-white/10 bg-[#0e0e10] px-3 py-3 data-[state=current-turn]:border-[#e0b061]/70 data-[state=current-turn]:shadow-[inset_3px_0_0_#e0b061]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-display text-[#f2e5c8] text-base">
+          <span className="truncate font-display text-[#f4f2ec] text-base">
             {combatant.name}
           </span>
           <Badge variant="outline">
@@ -300,7 +300,7 @@ function CombatantCard({
             <Badge variant="secondary">Current turn</Badge>
           ) : null}
         </div>
-        <span className="font-mono text-[#9f8562] text-xs tabular-nums">
+        <span className="font-mono text-[#9b968c] text-xs tabular-nums">
           {combatant.initiativeTotal !== null
             ? `Init ${combatant.initiativeTotal}`
             : "Init pending"}

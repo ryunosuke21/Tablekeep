@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   IconBackpack,
@@ -12,7 +11,6 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 
-import { Button } from "@tablekeep/ui/components/button";
 import { LoadingSwap } from "@tablekeep/ui/components/loading-swap";
 import { Spinner } from "@tablekeep/ui/components/spinner";
 import { Textarea } from "@tablekeep/ui/components/textarea";
@@ -21,13 +19,6 @@ import { CharacterSheet } from "@/components/characters/character-sheet";
 import { SaveStatus, saveState } from "@/components/characters/save-status";
 import { SheetCurrencies } from "@/components/characters/sheet-currencies";
 import { SheetInventory } from "@/components/characters/sheet-inventory";
-import {
-  EmptyNote,
-  ReadEntry,
-  ReadField,
-  ReadList,
-  ReadStat,
-} from "@/components/characters/sheet-readouts";
 import { SheetSpells } from "@/components/characters/sheet-spells";
 import { env } from "@/env/client";
 import { usePartyKitConnection } from "@/hooks/use-partykit-connection";
@@ -35,7 +26,14 @@ import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
 import { PlayShell } from "../shared/play-shell";
+import {
+  PlayBackButton,
+  PlayEmpty,
+  PlaySection,
+  StatTile,
+} from "../shared/play-surfaces";
 import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
+import { usePlayNav } from "../shared/use-play-nav";
 import { PlayerCharacterPanel } from "./player-character-panel";
 import { PlayerInventoryPanel } from "./player-inventory-panel";
 import { PlayerSpellbookPanel } from "./player-spellbook-panel";
@@ -57,6 +55,7 @@ const SECTIONS = [
 ] as const;
 
 type SectionValue = (typeof SECTIONS)[number]["value"];
+const SECTION_VALUES = SECTIONS.map((entry) => entry.value);
 
 function isEncounterChangedForCampaign(value: unknown, campaignId: string) {
   if (!value || typeof value !== "object") return false;
@@ -81,7 +80,10 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
       initialData: bootstrap.data?.sheet ?? undefined,
     },
   );
-  const [section, setSection] = useState<SectionValue>("character");
+  const { section, view, setSection, setView } = usePlayNav<SectionValue>({
+    sections: SECTION_VALUES,
+    defaultSection: "character",
+  });
 
   const getToken = useCallback(async () => {
     const result = await utils.client.play.realtime.token.query({
@@ -112,23 +114,16 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
   }, [lastMessage, campaignId, utils]);
 
   if (bootstrap.isPending) {
-    return (
-      <main className="flex min-h-svh items-center justify-center bg-background px-6 py-12">
-        <p className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Spinner /> Loading the table…
-        </p>
-      </main>
-    );
+    return <PlayLoading message="Loading the table…" />;
   }
 
   if (bootstrap.isError) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-background px-6 py-12">
-        <p className="max-w-sm text-balance text-center text-muted-foreground text-sm">
-          This player view could not be loaded.{" "}
-          {bootstrap.error.message || "Try again in a moment."}
-        </p>
-      </main>
+      <PlayLoading
+        message={`This player view could not be loaded. ${
+          bootstrap.error.message || "Try again in a moment."
+        }`}
+      />
     );
   }
 
@@ -160,6 +155,8 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
       campaignName={campaign.name}
       campaignHref={`/campaigns/${campaign.slug}`}
       viewLabel="Player table"
+      backgroundImage={campaign.bannerImage}
+      logo={campaign.logo}
       sections={SECTIONS}
       activeSection={section}
       onSectionChange={(value) => setSection(value as SectionValue)}
@@ -177,6 +174,9 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
           campaign={campaign}
           sheet={sheet}
           encounter={encounter}
+          fullSheetOpen={view === "sheet"}
+          onOpenFullSheet={() => setView("sheet")}
+          onCloseFullSheet={() => setView(null)}
         />
       ) : null}
       {section === "turn" ? (
@@ -187,6 +187,9 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
           campaignId={campaignId}
           campaignSlug={campaign.slug}
           sheet={sheet}
+          managerOpen={view === "manage"}
+          onOpenManager={() => setView("manage")}
+          onCloseManager={() => setView(null)}
         />
       ) : null}
       {section === "inventory" ? (
@@ -194,6 +197,9 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
           campaignId={campaignId}
           campaignSlug={campaign.slug}
           sheet={sheet}
+          managerOpen={view === "manage"}
+          onOpenManager={() => setView("manage")}
+          onCloseManager={() => setView(null)}
         />
       ) : null}
       {section === "party" ? (
@@ -206,39 +212,28 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
   );
 }
 
-function SectionShell({
-  headingId,
-  heading,
-  children,
-}: {
-  headingId: string;
-  heading: string;
-  children: ReactNode;
-}) {
+function PlayLoading({ message }: { message: string }) {
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex flex-col gap-4 border border-[#6b4a24]/70 bg-[#120d0a] p-4 text-[#e9dfc5] sm:p-6"
-    >
-      <h2 id={headingId} className="font-display text-2xl text-[#f2e5c8]">
-        {heading}
-      </h2>
-      {children}
-    </section>
+    <main className="flex min-h-svh items-center justify-center bg-[#0b0b0d] px-6 py-12 text-[#f4f2ec]">
+      <p className="flex max-w-sm items-center gap-2 text-balance text-center font-sans text-[#9b968c] text-sm">
+        <Spinner /> {message}
+      </p>
+    </main>
   );
 }
 
 function NoActiveCharacter({ campaignSlug }: { campaignSlug: string }) {
   return (
     <div className="flex flex-col gap-3">
-      <EmptyNote>
+      <PlayEmpty>
         No active character is attached to this campaign yet.
-      </EmptyNote>
-      <Button asChild className="min-h-11 w-fit">
-        <Link href={`/campaigns/${campaignSlug}/characters`}>
-          Go to characters
-        </Link>
-      </Button>
+      </PlayEmpty>
+      <Link
+        href={`/campaigns/${campaignSlug}/characters`}
+        className="inline-flex min-h-11 w-fit items-center rounded-sm border border-white/15 bg-white/5 px-4 font-sans text-[#f4f2ec] text-xs uppercase tracking-[0.14em] transition-colors hover:border-[#e0b061]/60 hover:bg-white/10"
+      >
+        Go to characters
+      </Link>
     </div>
   );
 }
@@ -247,22 +242,26 @@ function CharacterSection({
   campaign,
   sheet,
   encounter,
+  fullSheetOpen,
+  onOpenFullSheet,
+  onCloseFullSheet,
 }: {
   campaign: PlayerCampaign;
   sheet: PlayerSheet | null;
   encounter: PlayerEncounter | null;
+  fullSheetOpen: boolean;
+  onOpenFullSheet: () => void;
+  onCloseFullSheet: () => void;
 }) {
-  const [showFullSheet, setShowFullSheet] = useState(false);
-
   if (!sheet) {
     return (
-      <SectionShell headingId="character-heading" heading="Character">
+      <PlaySection headingId="character-heading" heading="Character">
         <NoActiveCharacter campaignSlug={campaign.slug} />
-      </SectionShell>
+      </PlaySection>
     );
   }
 
-  if (!showFullSheet) {
+  if (!fullSheetOpen) {
     const ownCombatant = encounter?.combatants.find(
       (combatant) => combatant.sheetId === sheet.id,
     );
@@ -273,21 +272,16 @@ function CharacterSection({
         currentHp={ownCombatant?.currentHp}
         tempHp={ownCombatant?.tempHp}
         encounterEffects={ownCombatant?.effects}
-        onOpenFullSheet={() => setShowFullSheet(true)}
+        onOpenFullSheet={onOpenFullSheet}
       />
     );
   }
 
   return (
     <div className="grid gap-5">
-      <Button
-        type="button"
-        variant="outline"
-        className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
-        onClick={() => setShowFullSheet(false)}
-      >
+      <PlayBackButton onClick={onCloseFullSheet}>
         Back to overview
-      </Button>
+      </PlayBackButton>
       <CharacterSheet
         campaignId={campaign.id}
         campaignSlug={campaign.slug}
@@ -312,12 +306,12 @@ function TurnSection({
 }) {
   if (!encounter) {
     return (
-      <SectionShell headingId="turn-heading" heading="Turn">
-        <EmptyNote>
+      <PlaySection headingId="turn-heading" heading="Turn">
+        <PlayEmpty>
           No encounter is active right now. When the DM starts one, the turn
           order and your HP will show up here.
-        </EmptyNote>
-      </SectionShell>
+        </PlayEmpty>
+      </PlaySection>
     );
   }
 
@@ -329,53 +323,60 @@ function TurnSection({
     : undefined;
 
   return (
-    <SectionShell headingId="turn-heading" heading="Turn">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <ReadStat label="Round" value={encounter.round ?? "Not set"} />
-        <ReadStat
+    <PlaySection headingId="turn-heading" heading="Turn">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <StatTile label="Round" value={encounter.round ?? "—"} />
+        <StatTile
           label="Current turn"
-          value={activeCombatant ? activeCombatant.name : "Not set"}
+          value={activeCombatant ? activeCombatant.name : "—"}
         />
+        {own && own.currentHp !== null && own.maxHp !== null ? (
+          <StatTile
+            label="Your HP"
+            value={`${own.currentHp} / ${own.maxHp}`}
+            hint={own.tempHp ? `+${own.tempHp} temp` : undefined}
+          />
+        ) : null}
       </div>
 
       {own ? (
-        <div className="flex flex-col gap-3">
-          <h3 className="text-[10px] text-muted-foreground uppercase tracking-[0.14em]">
-            {own.name}
+        <div className="mt-5">
+          <h3 className="font-sans text-[#8a857b] text-[10px] uppercase tracking-[0.2em]">
+            {own.name} · effects
           </h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <ReadField
-              label="HP"
-              value={
-                own.currentHp !== null && own.maxHp !== null
-                  ? `${own.currentHp} / ${own.maxHp}${
-                      own.tempHp ? ` (+${own.tempHp} temp)` : ""
-                    }`
-                  : null
-              }
-            />
-          </div>
           {own.effects.length > 0 ? (
-            <ReadList>
+            <ul className="mt-3 grid list-none gap-2">
               {own.effects.map((effect) => (
-                <ReadEntry
+                <li
                   key={effect.id}
-                  name={effect.name}
-                  notes={effect.description}
-                  meta={
-                    effect.remainingTurns !== null
-                      ? `${effect.remainingTurns} turns left`
-                      : undefined
-                  }
-                />
+                  className="border border-white/10 bg-[#0e0e10] px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-sans text-[#e5e1d8] text-sm">
+                      {effect.name}
+                    </span>
+                    {effect.remainingTurns !== null ? (
+                      <span className="shrink-0 font-mono text-[#8a857b] text-xs">
+                        {effect.remainingTurns} turns left
+                      </span>
+                    ) : null}
+                  </div>
+                  {effect.description ? (
+                    <p className="mt-1 font-sans text-[#8a857b] text-xs">
+                      {effect.description}
+                    </p>
+                  ) : null}
+                </li>
               ))}
-            </ReadList>
+            </ul>
           ) : (
-            <EmptyNote>No effects are on you right now.</EmptyNote>
+            <p className="mt-3 font-sans text-[#8a857b] text-sm">
+              No effects are on you right now.
+            </p>
           )}
         </div>
       ) : null}
-    </SectionShell>
+    </PlaySection>
   );
 }
 
@@ -383,48 +384,49 @@ function SpellsSection({
   campaignId,
   campaignSlug,
   sheet,
+  managerOpen,
+  onOpenManager,
+  onCloseManager,
 }: {
   campaignId: string;
   campaignSlug: string;
   sheet: PlayerSheet | null;
+  managerOpen: boolean;
+  onOpenManager: () => void;
+  onCloseManager: () => void;
 }) {
-  const [showManager, setShowManager] = useState(false);
-
   if (!sheet) {
     return (
-      <SectionShell headingId="spells-heading" heading="Spells">
+      <PlaySection headingId="spells-heading" heading="Spells">
         <NoActiveCharacter campaignSlug={campaignSlug} />
-      </SectionShell>
+      </PlaySection>
     );
   }
 
-  if (!showManager) {
+  if (!managerOpen) {
     return (
       <PlayerSpellbookPanel
         spells={sheet.spells}
-        onManageSpells={() => setShowManager(true)}
+        onManageSpells={onOpenManager}
       />
     );
   }
 
   return (
-    <SectionShell headingId="spells-heading" heading="Spells">
-      <Button
-        type="button"
-        variant="outline"
-        className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
-        onClick={() => setShowManager(false)}
-      >
-        Back to spellbook
-      </Button>
-      <SheetSpells
-        campaignId={campaignId}
-        sheetId={sheet.id}
-        spells={sheet.spells}
-        disabled={false}
-        canEdit
-      />
-    </SectionShell>
+    <PlaySection headingId="spells-heading" heading="Spellbook">
+      <div className="flex flex-col gap-5">
+        <PlayBackButton onClick={onCloseManager}>
+          Back to spellbook
+        </PlayBackButton>
+        <SheetSpells
+          campaignId={campaignId}
+          sheetId={sheet.id}
+          spells={sheet.spells}
+          disabled={false}
+          canEdit
+        />
+      </div>
+    </PlaySection>
   );
 }
 
@@ -432,42 +434,41 @@ function InventorySection({
   campaignId,
   campaignSlug,
   sheet,
+  managerOpen,
+  onOpenManager,
+  onCloseManager,
 }: {
   campaignId: string;
   campaignSlug: string;
   sheet: PlayerSheet | null;
+  managerOpen: boolean;
+  onOpenManager: () => void;
+  onCloseManager: () => void;
 }) {
-  const [showManager, setShowManager] = useState(false);
-
   if (!sheet) {
     return (
-      <SectionShell headingId="inventory-heading" heading="Inventory">
+      <PlaySection headingId="inventory-heading" heading="Inventory">
         <NoActiveCharacter campaignSlug={campaignSlug} />
-      </SectionShell>
+      </PlaySection>
     );
   }
 
-  if (!showManager) {
+  if (!managerOpen) {
     return (
       <PlayerInventoryPanel
         items={sheet.items}
         currencies={sheet.currencies}
-        onManageInventory={() => setShowManager(true)}
+        onManageInventory={onOpenManager}
       />
     );
   }
 
   return (
-    <SectionShell headingId="inventory-heading" heading="Inventory">
-      <Button
-        type="button"
-        variant="outline"
-        className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
-        onClick={() => setShowManager(false)}
-      >
-        Back to inventory
-      </Button>
+    <PlaySection headingId="inventory-heading" heading="Inventory">
       <div className="flex flex-col gap-7">
+        <PlayBackButton onClick={onCloseManager}>
+          Back to inventory
+        </PlayBackButton>
         <SheetInventory
           campaignId={campaignId}
           sheetId={sheet.id}
@@ -483,7 +484,7 @@ function InventorySection({
           canEdit
         />
       </div>
-    </SectionShell>
+    </PlaySection>
   );
 }
 
@@ -496,23 +497,23 @@ function PartySection({
 }) {
   if (party.length === 0) {
     return (
-      <SectionShell headingId="party-heading" heading="Party">
-        <EmptyNote>
+      <PlaySection headingId="party-heading" heading="Party">
+        <PlayEmpty>
           No one else has an active character in this campaign yet.
-        </EmptyNote>
-      </SectionShell>
+        </PlayEmpty>
+      </PlaySection>
     );
   }
 
   return (
-    <SectionShell headingId="party-heading" heading="Party">
-      <ul className="grid list-none gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <PlaySection headingId="party-heading" heading="Party">
+      <ul className="grid list-none gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {party.map((member) => (
           <li
             key={member.sheetId}
-            className="flex min-w-0 items-center gap-3 border border-[#6b4a24]/60 bg-[#0c0907] p-3"
+            className="flex min-w-0 items-center gap-3 border border-white/10 bg-[#0e0e10] p-3"
           >
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-[#8d6635] bg-[#25140f] font-display text-[#e9dfc5] text-sm">
+            <div className="flex size-11 shrink-0 items-center justify-center border border-white/15 bg-[#131316] font-display text-[#e0b061] text-sm">
               {member.name
                 .split(/\s+/)
                 .filter(Boolean)
@@ -523,16 +524,16 @@ function PartySection({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <p className="truncate font-display text-[#f2e5c8]">
+                <p className="truncate font-sans text-[#f4f2ec] text-sm">
                   {member.name}
                 </p>
                 {member.sheetId === sheet?.id ? (
-                  <span className="shrink-0 border border-cyan-700/70 px-1.5 py-0.5 font-sans text-[9px] text-cyan-200 uppercase tracking-wider">
+                  <span className="shrink-0 border border-[#e0b061]/40 px-1.5 py-0.5 font-sans text-[#e0b061] text-[9px] uppercase tracking-wider">
                     You
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 truncate font-sans text-[#b99c70] text-xs">
+              <p className="mt-0.5 truncate font-sans text-[#9b968c] text-xs">
                 {member.classes.length > 0
                   ? member.classes
                       .map((entry) => `${entry.name} ${entry.level}`)
@@ -540,7 +541,7 @@ function PartySection({
                   : `Level ${member.totalLevel}`}
               </p>
               {member.ancestry ? (
-                <p className="mt-0.5 truncate text-[#8f7656] text-xs">
+                <p className="truncate font-sans text-[#6f6a61] text-xs">
                   {member.ancestry}
                 </p>
               ) : null}
@@ -548,7 +549,7 @@ function PartySection({
           </li>
         ))}
       </ul>
-    </SectionShell>
+    </PlaySection>
   );
 }
 
@@ -560,60 +561,78 @@ function NotesSection({
   note: PlayerNote;
 }) {
   const utils = api.useUtils();
-  const [content, setContent] = useState(note.content);
+  const { content, setContent, save, update } = useNoteEditor(
+    campaignId,
+    note,
+    () => void utils.play.player.bootstrap.invalidate({ campaignId }),
+  );
+
+  return (
+    <PlaySection
+      headingId="notes-heading"
+      heading="Notes"
+      eyebrow="Private to you · the DM cannot see this"
+    >
+      <div className="flex flex-col gap-4">
+        <Textarea
+          aria-label="Private campaign note"
+          rows={10}
+          maxLength={100_000}
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          placeholder="Whatever is worth remembering next session."
+          disabled={update.isPending}
+          className="min-h-64 rounded-sm border-white/10 bg-[#0e0e10] text-[#f4f2ec] placeholder:text-[#6f6a61] focus-visible:border-[#e0b061]/60 focus-visible:ring-[#e0b061]/30"
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={update.isPending}
+            onClick={save}
+            className="inline-flex min-h-11 items-center justify-center rounded-sm bg-[#e0b061] px-5 font-sans text-[#0b0b0d] text-xs uppercase tracking-[0.14em] transition-colors hover:bg-[#eec27a] disabled:opacity-60"
+          >
+            <LoadingSwap isLoading={update.isPending}>Save notes</LoadingSwap>
+          </button>
+          <SaveStatus
+            state={saveState(update)}
+            onRetry={save}
+            savedLabel="Notes saved"
+          />
+        </div>
+      </div>
+    </PlaySection>
+  );
+}
+
+/** Shared note-editor wiring for player and DM notes. */
+function useNoteEditor(
+  campaignId: string,
+  note: PlayerNote,
+  onSaved: () => void,
+) {
+  const [content, setContentState] = useState(note.content);
   const [dirty, setDirty] = useState(false);
 
   // Follow a refreshed bootstrap unless this editor is mid-edit.
   useEffect(() => {
     if (dirty) return;
-    setContent(note.content);
+    setContentState(note.content);
   }, [note.content, dirty]);
 
   const update = api.play.note.update.useMutation({
     onSuccess: (saved) => {
       setDirty(false);
-      setContent(saved.content);
-      void utils.play.player.bootstrap.invalidate({ campaignId });
+      setContentState(saved.content);
+      onSaved();
     },
   });
 
-  function save() {
-    update.mutate({ campaignId, content });
-  }
+  const setContent = (value: string) => {
+    setContentState(value);
+    setDirty(true);
+  };
 
-  return (
-    <SectionShell headingId="notes-heading" heading="Notes">
-      <p className="text-[#9f8562] text-sm">
-        Private to you. The DM cannot see this.
-      </p>
-      <Textarea
-        aria-label="Private campaign note"
-        rows={10}
-        maxLength={100_000}
-        value={content}
-        onChange={(event) => {
-          setContent(event.target.value);
-          setDirty(true);
-        }}
-        placeholder="Whatever is worth remembering next session."
-        disabled={update.isPending}
-        className="min-h-64 rounded-none border-[#6b4a24] bg-[#0c0907] text-[#e9dfc5] placeholder:text-[#5f4a30] focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/40"
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          className="min-h-11 rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
-          disabled={update.isPending}
-          onClick={save}
-        >
-          <LoadingSwap isLoading={update.isPending}>Save notes</LoadingSwap>
-        </Button>
-        <SaveStatus
-          state={saveState(update)}
-          onRetry={save}
-          savedLabel="Notes saved"
-        />
-      </div>
-    </SectionShell>
-  );
+  const save = () => update.mutate({ campaignId, content });
+
+  return { content, setContent, save, update };
 }

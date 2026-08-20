@@ -98,6 +98,42 @@ vi.mock("@/env/client", () => ({
   env: { NEXT_PUBLIC_PARTYKIT_HOST: "party.example.test" },
 }));
 
+const navState = vi.hoisted(() => ({
+  params: new URLSearchParams(),
+  listeners: new Set<() => void>(),
+}));
+
+function applyNavUrl(url: string) {
+  const query = url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";
+  navState.params = new URLSearchParams(query);
+  for (const listener of navState.listeners) listener();
+}
+
+vi.mock("next/navigation", async () => {
+  const { useEffect, useReducer } = await import("react");
+  return {
+    usePathname: () => "/play/campaign-1",
+    useSearchParams: () => {
+      const [, force] = useReducer((count: number) => count + 1, 0);
+      useEffect(() => {
+        navState.listeners.add(force);
+        return () => {
+          navState.listeners.delete(force);
+        };
+      }, []);
+      return navState.params;
+    },
+    useRouter: () => ({
+      push: applyNavUrl,
+      replace: applyNavUrl,
+      back: () => {},
+      forward: () => {},
+      refresh: () => {},
+      prefetch: () => {},
+    }),
+  };
+});
+
 const partyKitState = vi.hoisted(() => ({
   options: [] as Array<{
     getToken: () => Promise<string>;
@@ -233,6 +269,7 @@ function bootstrap(overrides: Record<string, unknown> = {}) {
 
 describe("PlayerClient", () => {
   beforeEach(() => {
+    navState.params = new URLSearchParams();
     partyKitState.options.length = 0;
     partyKitState.listeners.clear();
     realtimeTokenQuery.mockReset();

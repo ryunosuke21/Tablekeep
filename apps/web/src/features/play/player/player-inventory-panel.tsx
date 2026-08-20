@@ -11,10 +11,9 @@ import {
   IconSword,
 } from "@tabler/icons-react";
 
-import { Button } from "@tablekeep/ui/components/button";
-import { Input } from "@tablekeep/ui/components/input";
 import { cn } from "@tablekeep/ui/lib/utils";
 
+import { CurrencyTile, PlayActionButton } from "../shared/play-surfaces";
 import type { PlayerSheet } from "./player-character-panel";
 
 export type PlayerInventoryPanelProps = {
@@ -41,47 +40,48 @@ function matchesQuery(item: SheetItem, query: string) {
   return haystack.includes(query);
 }
 
-function itemAccessibleName(item: SheetItem) {
-  const quantity = item.qty > 1 ? ` ×${item.qty}` : "";
-  const equipped = item.equipped ? " (equipped)" : "";
-  return `${item.name}${quantity}${equipped}`;
-}
-
-function InventoryCell({
-  item,
-  selected,
-  onSelect,
-}: {
-  item: SheetItem;
-  selected: boolean;
-  onSelect: () => void;
-}) {
+function ItemRow({ item }: { item: SheetItem }) {
   const Glyph = itemGlyph(item.name);
   return (
-    <li>
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-pressed={selected}
-        aria-label={itemAccessibleName(item)}
-        className={cn(
-          "relative flex aspect-square min-h-11 w-full items-center justify-center border bg-[#0c0907] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 motion-reduce:transition-none",
-          item.equipped ? "border-cyan-500/70" : "border-[#6b4a24]/60",
-          selected
-            ? "ring-2 ring-[#c9a25c] ring-offset-1 ring-offset-[#0c0907]"
-            : "hover:border-[#8d6635]",
-        )}
+    <li
+      className={cn(
+        "flex items-start gap-3 border border-white/10 bg-[#0e0e10] p-3",
+        item.equipped && "border-l-2 border-l-[#e0b061] pl-2.5",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className="flex size-10 shrink-0 items-center justify-center border border-white/10 bg-[#131316] text-[#c7c2b8]"
       >
-        <Glyph aria-hidden="true" className="size-5 text-[#c9a25c]" />
-        {item.qty > 1 ? (
-          <span
-            aria-hidden="true"
-            className="absolute right-0.5 bottom-0.5 min-w-4 bg-[#1c130c] px-1 text-center font-mono text-[#f2e5c8] text-[10px] leading-tight"
-          >
-            {item.qty}
-          </span>
-        ) : null}
-      </button>
+        <Glyph className="size-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="truncate font-sans text-[#f4f2ec] text-sm">
+            {item.name}
+          </p>
+          {item.qty > 1 ? (
+            <span className="shrink-0 font-mono text-[#9b968c] text-xs tabular-nums">
+              ×{item.qty}
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {item.equipped ? (
+            <span className="border border-[#e0b061]/40 px-1.5 py-0.5 font-sans text-[#e0b061] text-[9px] uppercase tracking-[0.14em]">
+              Equipped
+            </span>
+          ) : null}
+          {item.notes ? (
+            <p
+              className="line-clamp-2 min-w-0 font-sans text-[#8a857b] text-xs"
+              title={item.notes}
+            >
+              {item.notes}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </li>
   );
 }
@@ -92,15 +92,10 @@ export function PlayerInventoryPanel({
   onManageInventory,
 }: PlayerInventoryPanelProps) {
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const activeItems = useMemo(
     () => items.filter((item) => item.removedAt === null),
     [items],
-  );
-  const equippedItems = useMemo(
-    () => activeItems.filter((item) => item.equipped),
-    [activeItems],
   );
   const activeCurrencies = useMemo(
     () => currencies.filter((currency) => currency.removedAt === null),
@@ -109,150 +104,102 @@ export function PlayerInventoryPanel({
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredItems = useMemo(
-    () => activeItems.filter((item) => matchesQuery(item, normalizedQuery)),
+    () =>
+      activeItems
+        .filter((item) => matchesQuery(item, normalizedQuery))
+        // Equipped gear reads first — it is what is actually in hand.
+        .sort((a, b) => Number(b.equipped) - Number(a.equipped)),
     [activeItems, normalizedQuery],
   );
-
-  const selectedItem =
-    filteredItems.find((item) => item.id === selectedId) ?? null;
 
   return (
     <section
       aria-labelledby="player-inventory-heading"
-      className="border border-[#6b4a24]/70 bg-[#120d0a] text-[#e9dfc5]"
+      className="border border-white/10 bg-[#131316]/85 text-[#f4f2ec] backdrop-blur-sm"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-[#6b4a24]/60 border-b px-4 py-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-white/10 border-b px-5 py-4 sm:px-6">
         <h2
           id="player-inventory-heading"
-          className="font-display text-[#f2e5c8] text-xl"
+          className="font-display text-2xl text-[#f4f2ec] leading-tight"
         >
-          Inventory &amp; equipment
+          Inventory
         </h2>
-        {activeCurrencies.length > 0 ? (
-          <ul className="flex list-none flex-wrap gap-2">
-            {activeCurrencies.map((currency) => (
-              <li
-                key={currency.id}
-                className="flex items-center gap-1.5 border border-[#6b4a24]/60 bg-[#0c0907] px-2 py-1"
-              >
-                <span className="font-sans text-[#9b7444] text-[10px] uppercase tracking-[0.14em]">
-                  {currency.name}
-                </span>
-                <span className="font-mono text-[#f2e5c8] text-sm">
-                  {currency.amount}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <PlayActionButton onClick={onManageInventory}>
+          Manage inventory
+        </PlayActionButton>
       </div>
 
-      <div className="grid gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <div className="border-[#4a3218]/60 border-b pb-6 lg:border-r lg:border-b-0 lg:pr-6 lg:pb-0">
-          <h3 className="font-display text-[#c9a25c] text-sm tracking-wide">
-            Equipment rack
+      <div className="flex flex-col gap-6 px-5 py-5 sm:px-6">
+        <section aria-labelledby="player-currency-heading">
+          <h3
+            id="player-currency-heading"
+            className="font-sans text-[#8a857b] text-[10px] uppercase tracking-[0.2em]"
+          >
+            Purse
           </h3>
-          {equippedItems.length > 0 ? (
-            <ul className="mt-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6 lg:grid-cols-4">
-              {equippedItems.map((item) => (
-                <InventoryCell
-                  key={item.id}
-                  item={item}
-                  selected={item.id === selectedId}
-                  onSelect={() => setSelectedId(item.id)}
-                />
+          {activeCurrencies.length > 0 ? (
+            <ul className="mt-2 grid list-none grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {activeCurrencies.map((currency) => (
+                <li key={currency.id}>
+                  <CurrencyTile name={currency.name} amount={currency.amount} />
+                </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-[#8f7656] text-sm">Nothing equipped.</p>
+            <p className="mt-2 font-sans text-[#8a857b] text-sm">
+              No currency tracked.
+            </p>
           )}
-        </div>
+        </section>
 
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="font-display text-[#c9a25c] text-sm tracking-wide">
-              Inventory
-            </h3>
-            <Button
-              type="button"
-              variant="outline"
-              className="min-h-11 rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6] focus-visible:ring-cyan-300/60"
-              onClick={onManageInventory}
+        <section aria-labelledby="player-carried-heading">
+          <div className="flex items-center justify-between gap-3">
+            <h3
+              id="player-carried-heading"
+              className="font-sans text-[#8a857b] text-[10px] uppercase tracking-[0.2em]"
             >
-              Manage inventory
-            </Button>
+              Carried · {activeItems.length}
+            </h3>
           </div>
 
           {activeItems.length > 0 ? (
             <>
-              <div className="relative mt-4">
-                <label
-                  htmlFor="inventory-search"
-                  className="mb-1 block font-sans text-[#9b7444] text-[10px] uppercase tracking-[0.14em]"
-                >
+              <div className="relative mt-3">
+                <label htmlFor="inventory-search" className="sr-only">
                   Search inventory
                 </label>
                 <IconSearch
                   aria-hidden="true"
-                  className="pointer-events-none absolute bottom-2.5 left-2.5 size-4 text-[#8f7656]"
+                  className="pointer-events-none absolute top-3 left-3 size-4 text-[#6f6a61]"
                 />
-                <Input
+                <input
                   id="inventory-search"
                   type="text"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Filter by name or notes"
-                  className="h-11 rounded-none border-[#6b4a24] bg-[#0c0907] pl-8 text-[#e9dfc5] placeholder:text-[#5f4a30] focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/40"
+                  placeholder="Search inventory"
+                  className="h-11 w-full rounded-sm border border-white/10 bg-[#0e0e10] pl-9 font-sans text-[#f4f2ec] text-sm outline-none placeholder:text-[#6f6a61] focus-visible:border-[#e0b061]/60 focus-visible:ring-2 focus-visible:ring-[#e0b061]/30"
                 />
               </div>
 
               {filteredItems.length > 0 ? (
-                <ul className="mt-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6 lg:grid-cols-8">
+                <ul className="mt-3 grid list-none gap-2 sm:grid-cols-2">
                   {filteredItems.map((item) => (
-                    <InventoryCell
-                      key={item.id}
-                      item={item}
-                      selected={item.id === selectedId}
-                      onSelect={() => setSelectedId(item.id)}
-                    />
+                    <ItemRow key={item.id} item={item} />
                   ))}
                 </ul>
               ) : (
-                <p className="mt-4 text-[#8f7656] text-sm">
+                <p className="mt-3 font-sans text-[#8a857b] text-sm">
                   No items match &quot;{query.trim()}&quot;.
                 </p>
               )}
             </>
           ) : (
-            <p className="mt-4 text-[#8f7656] text-sm">Your pack is empty.</p>
+            <p className="mt-3 font-sans text-[#8a857b] text-sm">
+              Your pack is empty.
+            </p>
           )}
-
-          <div
-            aria-live="polite"
-            className="mt-4 border border-[#4a3218]/60 bg-[#0c0907] p-4"
-          >
-            {selectedItem ? (
-              <>
-                <p className="font-sans text-[#e9dfc5] text-base">
-                  {selectedItem.name}
-                </p>
-                <p className="mt-1 font-mono text-[#8f7656] text-xs">
-                  Quantity {selectedItem.qty}
-                </p>
-                <p className="mt-1 font-sans text-[#8f7656] text-xs">
-                  {selectedItem.equipped ? "Equipped" : "Not equipped"}
-                </p>
-                <p className="mt-2 font-sans text-[#b99c70] text-sm">
-                  {selectedItem.notes || "No notes recorded."}
-                </p>
-              </>
-            ) : (
-              <p className="font-sans text-[#8f7656] text-sm">
-                Select an item to see its details.
-              </p>
-            )}
-          </div>
-        </div>
+        </section>
       </div>
     </section>
   );

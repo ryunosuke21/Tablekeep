@@ -1,25 +1,28 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { IconNotebook, IconSwords, IconUsers } from "@tabler/icons-react";
 
 import { Alert, AlertDescription } from "@tablekeep/ui/components/alert";
-import { Button } from "@tablekeep/ui/components/button";
 import { LoadingSwap } from "@tablekeep/ui/components/loading-swap";
 import { Spinner } from "@tablekeep/ui/components/spinner";
 import { Textarea } from "@tablekeep/ui/components/textarea";
 
 import { CharacterSheet } from "@/components/characters/character-sheet";
 import { SaveStatus, saveState } from "@/components/characters/save-status";
-import { EmptyNote } from "@/components/characters/sheet-readouts";
 import { env } from "@/env/client";
 import { usePartyKitConnection } from "@/hooks/use-partykit-connection";
 import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
 import { PlayShell } from "../shared/play-shell";
+import {
+  PlayBackButton,
+  PlayEmpty,
+  PlaySection,
+} from "../shared/play-surfaces";
 import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
+import { usePlayNav } from "../shared/use-play-nav";
 import {
   ActiveEncounterPanel,
   type AddEffectValue,
@@ -58,6 +61,7 @@ const SECTIONS = [
 ] as const;
 
 type SectionValue = (typeof SECTIONS)[number]["value"];
+const SECTION_VALUES = SECTIONS.map((entry) => entry.value);
 
 function isEncounterChangedForCampaign(value: unknown, campaignId: string) {
   if (!value || typeof value !== "object") return false;
@@ -70,7 +74,10 @@ function isEncounterChangedForCampaign(value: unknown, campaignId: string) {
 export function DmClient({ campaignId }: { campaignId: string }) {
   const bootstrap = api.play.dm.bootstrap.useQuery({ campaignId });
   const utils = api.useUtils();
-  const [section, setSection] = useState<SectionValue>("table");
+  const { section, member, setSection, setMember } = usePlayNav<SectionValue>({
+    sections: SECTION_VALUES,
+    defaultSection: "table",
+  });
 
   const invalidateBootstrap = useCallback(() => {
     void utils.play.dm.bootstrap.invalidate({ campaignId });
@@ -124,23 +131,16 @@ export function DmClient({ campaignId }: { campaignId: string }) {
   }, [lastMessage, campaignId, invalidateBootstrap]);
 
   if (bootstrap.isPending) {
-    return (
-      <main className="flex min-h-svh items-center justify-center bg-[#0b0908] px-6 py-12 text-[#e9dfc5]">
-        <p className="flex items-center gap-2 text-[#8a6a45] text-sm">
-          <Spinner /> Loading the table…
-        </p>
-      </main>
-    );
+    return <DmLoading message="Loading the table…" />;
   }
 
   if (bootstrap.isError) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-[#0b0908] px-6 py-12 text-[#e9dfc5]">
-        <p className="max-w-sm text-balance text-center text-[#8a6a45] text-sm">
-          This DM view could not be loaded.{" "}
-          {bootstrap.error.message || "Try again in a moment."}
-        </p>
-      </main>
+      <DmLoading
+        message={`This DM view could not be loaded. ${
+          bootstrap.error.message || "Try again in a moment."
+        }`}
+      />
     );
   }
 
@@ -160,6 +160,8 @@ export function DmClient({ campaignId }: { campaignId: string }) {
       campaignName={campaign.name}
       campaignHref={`/campaigns/${campaign.slug}`}
       viewLabel="DM table"
+      backgroundImage={campaign.bannerImage}
+      logo={campaign.logo}
       sections={SECTIONS}
       activeSection={section}
       onSectionChange={(value) => setSection(value as SectionValue)}
@@ -186,7 +188,12 @@ export function DmClient({ campaignId }: { campaignId: string }) {
         />
       ) : null}
       {section === "party" ? (
-        <PartySection campaign={campaign} party={party} />
+        <PartySection
+          campaign={campaign}
+          party={party}
+          selectedSheetId={member}
+          onSelectMember={setMember}
+        />
       ) : null}
       {section === "notes" ? (
         <NotesSection campaignId={campaignId} note={note} />
@@ -195,25 +202,13 @@ export function DmClient({ campaignId }: { campaignId: string }) {
   );
 }
 
-function SectionShell({
-  headingId,
-  heading,
-  children,
-}: {
-  headingId: string;
-  heading: string;
-  children: ReactNode;
-}) {
+function DmLoading({ message }: { message: string }) {
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex flex-col gap-4 border border-[#6b4a24]/70 bg-[#120d0a] p-4 text-[#e9dfc5] sm:p-6"
-    >
-      <h2 id={headingId} className="font-display text-2xl text-[#f2e5c8]">
-        {heading}
-      </h2>
-      {children}
-    </section>
+    <main className="flex min-h-svh items-center justify-center bg-[#0b0b0d] px-6 py-12 text-[#f4f2ec]">
+      <p className="flex max-w-sm items-center gap-2 text-balance text-center font-sans text-[#9b968c] text-sm">
+        <Spinner /> {message}
+      </p>
+    </main>
   );
 }
 
@@ -240,7 +235,7 @@ function TableSection({
 }) {
   if (!encounter) {
     return (
-      <SectionShell headingId="table-heading" heading="Table">
+      <PlaySection headingId="table-heading" heading="Table">
         <EncounterSetup
           party={party.map((member) => ({
             sheetId: member.sheetId,
@@ -252,7 +247,7 @@ function TableSection({
             beginEncounter.mutate({ campaignId, ...value })
           }
         />
-      </SectionShell>
+      </PlaySection>
     );
   }
 
@@ -271,7 +266,7 @@ function TableSection({
     null;
 
   return (
-    <SectionShell headingId="table-heading" heading="Table">
+    <PlaySection headingId="table-heading" heading="Table">
       <ActiveEncounterPanel
         encounter={encounter}
         isPending={isPending}
@@ -292,18 +287,21 @@ function TableSection({
           completeEncounter.mutate({ campaignId, ...value })
         }
       />
-    </SectionShell>
+    </PlaySection>
   );
 }
 
 function PartySection({
   campaign,
   party,
+  selectedSheetId,
+  onSelectMember,
 }: {
   campaign: DmCampaign;
   party: readonly DmPartyMember[];
+  selectedSheetId: string | null;
+  onSelectMember: (sheetId: string | null) => void;
 }) {
-  const [selectedSheetId, setSelectedSheetId] = useState<string | null>(null);
   const selected =
     party.find((member) => member.sheetId === selectedSheetId) ?? null;
 
@@ -314,67 +312,64 @@ function PartySection({
 
   if (selectedSheetId && selected) {
     return (
-      <SectionShell headingId="party-heading" heading="Party">
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
-          onClick={() => setSelectedSheetId(null)}
-        >
-          Back to party
-        </Button>
+      <PlaySection headingId="party-heading" heading={selected.name}>
+        <div className="flex flex-col gap-5">
+          <PlayBackButton onClick={() => onSelectMember(null)}>
+            Back to party
+          </PlayBackButton>
 
-        {sheetQuery.isPending ? (
-          <p className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Spinner /> Loading {selected.name}…
-          </p>
-        ) : null}
+          {sheetQuery.isPending ? (
+            <p className="flex items-center gap-2 font-sans text-[#9b968c] text-sm">
+              <Spinner /> Loading {selected.name}…
+            </p>
+          ) : null}
 
-        {sheetQuery.isError ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {selected.name}'s sheet could not be loaded.{" "}
-              {sheetQuery.error.message || "Try again in a moment."}
-            </AlertDescription>
-          </Alert>
-        ) : null}
+          {sheetQuery.isError ? (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {selected.name}'s sheet could not be loaded.{" "}
+                {sheetQuery.error.message || "Try again in a moment."}
+              </AlertDescription>
+            </Alert>
+          ) : null}
 
-        {sheetQuery.data ? (
-          <CharacterSheet
-            campaignId={campaign.id}
-            campaignSlug={campaign.slug}
-            campaignName={campaign.name}
-            campaignArchived={false}
-            sheetId={selectedSheetId}
-            initialSheet={sheetQuery.data}
-            canEdit
-          />
-        ) : null}
-      </SectionShell>
+          {sheetQuery.data ? (
+            <CharacterSheet
+              campaignId={campaign.id}
+              campaignSlug={campaign.slug}
+              campaignName={campaign.name}
+              campaignArchived={false}
+              sheetId={selectedSheetId}
+              initialSheet={sheetQuery.data}
+              canEdit
+            />
+          ) : null}
+        </div>
+      </PlaySection>
     );
   }
 
   if (party.length === 0) {
     return (
-      <SectionShell headingId="party-heading" heading="Party">
-        <EmptyNote>
+      <PlaySection headingId="party-heading" heading="Party">
+        <PlayEmpty>
           No one has an active character in this campaign yet.
-        </EmptyNote>
-      </SectionShell>
+        </PlayEmpty>
+      </PlaySection>
     );
   }
 
   return (
-    <SectionShell headingId="party-heading" heading="Party">
-      <ul className="grid list-none gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <PlaySection headingId="party-heading" heading="Party">
+      <ul className="grid list-none gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {party.map((member) => (
           <li key={member.sheetId}>
             <button
               type="button"
-              onClick={() => setSelectedSheetId(member.sheetId)}
-              className="flex min-h-16 w-full items-center gap-3 border border-[#6b4a24]/60 bg-[#0c0907] p-3 text-left outline-none transition-colors hover:border-[#8d6635] focus-visible:ring-2 focus-visible:ring-cyan-300/60 motion-reduce:transition-none"
+              onClick={() => onSelectMember(member.sheetId)}
+              className="flex min-h-16 w-full items-center gap-3 border border-white/10 bg-[#0e0e10] p-3 text-left outline-none transition-colors hover:border-[#e0b061]/50 focus-visible:ring-2 focus-visible:ring-[#e0b061]/60 motion-reduce:transition-none"
             >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#8d6635] bg-[#25140f] font-display text-[#e9dfc5] text-xs">
+              <span className="flex size-10 shrink-0 items-center justify-center border border-white/15 bg-[#131316] font-display text-[#e0b061] text-xs">
                 {member.name
                   .split(/\s+/)
                   .filter(Boolean)
@@ -384,10 +379,10 @@ function PartySection({
                   .toUpperCase() || "?"}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-display text-[#f2e5c8] text-sm">
+                <span className="block truncate font-sans text-[#f4f2ec] text-sm">
                   {member.name}
                 </span>
-                <span className="mt-1 block truncate text-[#9f8562] text-xs">
+                <span className="mt-0.5 block truncate font-sans text-[#9b968c] text-xs">
                   {member.classes.length > 0
                     ? member.classes
                         .map((entry) => `${entry.name} ${entry.level}`)
@@ -399,7 +394,7 @@ function PartySection({
           </li>
         ))}
       </ul>
-    </SectionShell>
+    </PlaySection>
   );
 }
 
@@ -433,38 +428,41 @@ function NotesSection({
   }
 
   return (
-    <SectionShell headingId="notes-heading" heading="Notes">
-      <p className="text-[#9f8562] text-sm">
-        Private to you. Players cannot see this.
-      </p>
-      <Textarea
-        aria-label="Private campaign note"
-        rows={10}
-        maxLength={100_000}
-        value={content}
-        onChange={(event) => {
-          setContent(event.target.value);
-          setDirty(true);
-        }}
-        placeholder="Whatever is worth remembering next session."
-        disabled={update.isPending}
-        className="min-h-64 rounded-none border-[#6b4a24] bg-[#0c0907] text-[#e9dfc5] placeholder:text-[#5f4a30] focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/40"
-      />
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          className="min-h-11 rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
+    <PlaySection
+      headingId="notes-heading"
+      heading="Notes"
+      eyebrow="Private to you · players cannot see this"
+    >
+      <div className="flex flex-col gap-4">
+        <Textarea
+          aria-label="Private campaign note"
+          rows={10}
+          maxLength={100_000}
+          value={content}
+          onChange={(event) => {
+            setContent(event.target.value);
+            setDirty(true);
+          }}
+          placeholder="Whatever is worth remembering next session."
           disabled={update.isPending}
-          onClick={save}
-        >
-          <LoadingSwap isLoading={update.isPending}>Save notes</LoadingSwap>
-        </Button>
-        <SaveStatus
-          state={saveState(update)}
-          onRetry={save}
-          savedLabel="Notes saved"
+          className="min-h-64 rounded-sm border-white/10 bg-[#0e0e10] text-[#f4f2ec] placeholder:text-[#6f6a61] focus-visible:border-[#e0b061]/60 focus-visible:ring-[#e0b061]/30"
         />
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={update.isPending}
+            onClick={save}
+            className="inline-flex min-h-11 items-center justify-center rounded-sm bg-[#e0b061] px-5 font-sans text-[#0b0b0d] text-xs uppercase tracking-[0.14em] transition-colors hover:bg-[#eec27a] disabled:opacity-60"
+          >
+            <LoadingSwap isLoading={update.isPending}>Save notes</LoadingSwap>
+          </button>
+          <SaveStatus
+            state={saveState(update)}
+            onRetry={save}
+            savedLabel="Notes saved"
+          />
+        </div>
       </div>
-    </SectionShell>
+    </PlaySection>
   );
 }
