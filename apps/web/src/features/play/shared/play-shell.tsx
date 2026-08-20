@@ -29,7 +29,7 @@ export function PlayShell({
   children: ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-svh flex-col overflow-x-hidden bg-[#0b0908] text-[#e9dfc5]">
+    <div className="dark relative flex min-h-svh flex-col overflow-x-hidden bg-[#0b0908] text-[#e9dfc5]">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(120,90,50,0.16),transparent),radial-gradient(ellipse_60%_50%_at_50%_110%,rgba(20,15,10,0.6),transparent)]"

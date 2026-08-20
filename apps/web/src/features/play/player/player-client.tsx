@@ -38,6 +38,7 @@ import { api } from "@/trpc/react";
 import { PlayShell } from "../shared/play-shell";
 import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
 import { PlayerCharacterPanel } from "./player-character-panel";
+import { PlayerInventoryPanel } from "./player-inventory-panel";
 
 type PlayerBootstrap = RouterOutputs["play"]["player"]["bootstrap"];
 type PlayerCampaign = PlayerBootstrap["campaign"];
@@ -413,28 +414,52 @@ function InventorySection({
   campaignSlug: string;
   sheet: PlayerSheet | null;
 }) {
+  const [showManager, setShowManager] = useState(false);
+
+  if (!sheet) {
+    return (
+      <SectionShell headingId="inventory-heading" heading="Inventory">
+        <NoActiveCharacter campaignSlug={campaignSlug} />
+      </SectionShell>
+    );
+  }
+
+  if (!showManager) {
+    return (
+      <PlayerInventoryPanel
+        items={sheet.items}
+        currencies={sheet.currencies}
+        onManageInventory={() => setShowManager(true)}
+      />
+    );
+  }
+
   return (
     <SectionShell headingId="inventory-heading" heading="Inventory">
-      {sheet ? (
-        <div className="flex flex-col gap-7">
-          <SheetInventory
-            campaignId={campaignId}
-            sheetId={sheet.id}
-            items={sheet.items}
-            disabled={false}
-            canEdit
-          />
-          <SheetCurrencies
-            campaignId={campaignId}
-            sheetId={sheet.id}
-            currencies={sheet.currencies}
-            disabled={false}
-            canEdit
-          />
-        </div>
-      ) : (
-        <NoActiveCharacter campaignSlug={campaignSlug} />
-      )}
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
+        onClick={() => setShowManager(false)}
+      >
+        Back to inventory
+      </Button>
+      <div className="flex flex-col gap-7">
+        <SheetInventory
+          campaignId={campaignId}
+          sheetId={sheet.id}
+          items={sheet.items}
+          disabled={false}
+          canEdit
+        />
+        <SheetCurrencies
+          campaignId={campaignId}
+          sheetId={sheet.id}
+          currencies={sheet.currencies}
+          disabled={false}
+          canEdit
+        />
+      </div>
     </SectionShell>
   );
 }

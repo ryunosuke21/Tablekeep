@@ -169,6 +169,19 @@ vi.mock("./player-character-panel", () => ({
     </div>
   ),
 }));
+vi.mock("./player-inventory-panel", () => ({
+  PlayerInventoryPanel: ({
+    onManageInventory,
+  }: {
+    onManageInventory: () => void;
+  }) => (
+    <div data-testid="player-inventory-panel">
+      <button type="button" onClick={onManageInventory}>
+        Manage inventory
+      </button>
+    </div>
+  ),
+}));
 
 const { PlayerClient } = await import("./player-client");
 
@@ -245,6 +258,24 @@ describe("PlayerClient", () => {
     );
     expect(
       screen.getByRole("button", { name: "Back to overview" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the inventory editor from the game inventory", async () => {
+    setBootstrap(bootstrap());
+    render(<PlayerClient campaignId={campaignId} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Inventory" }));
+    expect(screen.getByTestId("player-inventory-panel")).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Manage inventory" }),
+    );
+
+    expect(screen.getByTestId("sheet-inventory")).toBeInTheDocument();
+    expect(screen.getByTestId("sheet-currencies")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Back to inventory" }),
     ).toBeInTheDocument();
   });
 
