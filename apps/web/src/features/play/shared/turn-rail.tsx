@@ -71,7 +71,7 @@ export function TurnRail({
           Initiative order has not been set.
         </p>
       ) : (
-        <div className="min-w-0 flex-1 overflow-x-auto">
+        <div className="scrollbar-none min-w-0 flex-1 overflow-x-auto">
           <ol
             aria-label="Turn order"
             className="flex list-none items-start gap-3 px-4 py-3"
