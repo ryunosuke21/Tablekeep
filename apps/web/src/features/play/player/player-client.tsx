@@ -2,13 +2,20 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
+import {
+  IconBackpack,
+  IconNotebook,
+  IconSparkles,
+  IconSwords,
+  IconUserCircle,
+  IconUsers,
+} from "@tabler/icons-react";
 import Link from "next/link";
 
 import { Button } from "@tablekeep/ui/components/button";
 import { LoadingSwap } from "@tablekeep/ui/components/loading-swap";
 import { Spinner } from "@tablekeep/ui/components/spinner";
 import { Textarea } from "@tablekeep/ui/components/textarea";
-import { cn } from "@tablekeep/ui/lib/utils";
 
 import { CharacterSheet } from "@/components/characters/character-sheet";
 import { SaveStatus, saveState } from "@/components/characters/save-status";
@@ -28,6 +35,7 @@ import { usePartyKitConnection } from "@/hooks/use-partykit-connection";
 import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
+import { PlayShell } from "../shared/play-shell";
 import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
 
 type PlayerBootstrap = RouterOutputs["play"]["player"]["bootstrap"];
@@ -38,12 +46,12 @@ type PlayerPartyMember = PlayerBootstrap["party"][number];
 type PlayerNote = PlayerBootstrap["note"];
 
 const SECTIONS = [
-  { value: "character", label: "Character" },
-  { value: "turn", label: "Turn" },
-  { value: "spells", label: "Spells" },
-  { value: "inventory", label: "Inventory" },
-  { value: "party", label: "Party" },
-  { value: "notes", label: "Notes" },
+  { value: "character", label: "Character", icon: <IconUserCircle /> },
+  { value: "turn", label: "Turn", icon: <IconSwords /> },
+  { value: "spells", label: "Spells", icon: <IconSparkles /> },
+  { value: "inventory", label: "Inventory", icon: <IconBackpack /> },
+  { value: "party", label: "Party", icon: <IconUsers /> },
+  { value: "notes", label: "Notes", icon: <IconNotebook /> },
 ] as const;
 
 type SectionValue = (typeof SECTIONS)[number]["value"];
@@ -146,79 +154,49 @@ export function PlayerClient({ campaignId }: { campaignId: string }) {
     : [];
 
   return (
-    <div className="flex min-h-svh flex-col bg-background pb-20 lg:pb-0">
-      <header className="border-b px-4 py-3 sm:px-6">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">
-          Player view
-        </p>
-        <h1 className="mt-1 text-balance font-heading font-semibold text-foreground text-lg">
-          {campaign.name}
-        </h1>
-      </header>
-
-      <TurnRail
-        combatants={combatants}
-        activePosition={encounter?.activePosition ?? null}
-        round={encounter?.round ?? null}
-        isEncounterActive={encounter !== null}
-      />
-
-      <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start">
-        <nav
-          aria-label="Play sections"
-          className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-background lg:static lg:inset-auto lg:z-auto lg:w-44 lg:shrink-0 lg:flex-col lg:gap-1 lg:border-t-0"
-        >
-          {SECTIONS.map((entry) => {
-            const isActive = section === entry.value;
-            return (
-              <button
-                key={entry.value}
-                type="button"
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => setSection(entry.value)}
-                className={cn(
-                  "flex min-h-11 flex-1 items-center justify-center px-1 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none lg:flex-none lg:justify-start lg:rounded-lg lg:px-3 lg:text-sm",
-                  isActive
-                    ? "font-medium text-foreground lg:bg-muted"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {entry.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="min-w-0 flex-1">
-          {section === "character" ? (
-            <CharacterSection campaign={campaign} sheet={sheet} />
-          ) : null}
-          {section === "turn" ? (
-            <TurnSection sheet={sheet} encounter={encounter} />
-          ) : null}
-          {section === "spells" ? (
-            <SpellsSection
-              campaignId={campaignId}
-              campaignSlug={campaign.slug}
-              sheet={sheet}
-            />
-          ) : null}
-          {section === "inventory" ? (
-            <InventorySection
-              campaignId={campaignId}
-              campaignSlug={campaign.slug}
-              sheet={sheet}
-            />
-          ) : null}
-          {section === "party" ? (
-            <PartySection party={party} sheet={sheet} />
-          ) : null}
-          {section === "notes" ? (
-            <NotesSection campaignId={campaignId} note={note} />
-          ) : null}
-        </div>
-      </div>
-    </div>
+    <PlayShell
+      campaignName={campaign.name}
+      campaignHref={`/campaigns/${campaign.slug}`}
+      viewLabel="Player table"
+      sections={SECTIONS}
+      activeSection={section}
+      onSectionChange={(value) => setSection(value as SectionValue)}
+      turnRail={
+        <TurnRail
+          combatants={combatants}
+          activePosition={encounter?.activePosition ?? null}
+          round={encounter?.round ?? null}
+          isEncounterActive={encounter !== null}
+        />
+      }
+    >
+      {section === "character" ? (
+        <CharacterSection campaign={campaign} sheet={sheet} />
+      ) : null}
+      {section === "turn" ? (
+        <TurnSection sheet={sheet} encounter={encounter} />
+      ) : null}
+      {section === "spells" ? (
+        <SpellsSection
+          campaignId={campaignId}
+          campaignSlug={campaign.slug}
+          sheet={sheet}
+        />
+      ) : null}
+      {section === "inventory" ? (
+        <InventorySection
+          campaignId={campaignId}
+          campaignSlug={campaign.slug}
+          sheet={sheet}
+        />
+      ) : null}
+      {section === "party" ? (
+        <PartySection party={party} sheet={sheet} />
+      ) : null}
+      {section === "notes" ? (
+        <NotesSection campaignId={campaignId} note={note} />
+      ) : null}
+    </PlayShell>
   );
 }
 
