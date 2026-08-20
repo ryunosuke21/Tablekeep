@@ -182,6 +182,19 @@ vi.mock("./player-inventory-panel", () => ({
     </div>
   ),
 }));
+vi.mock("./player-spellbook-panel", () => ({
+  PlayerSpellbookPanel: ({
+    onManageSpells,
+  }: {
+    onManageSpells: () => void;
+  }) => (
+    <div data-testid="player-spellbook-panel">
+      <button type="button" onClick={onManageSpells}>
+        Manage spellbook
+      </button>
+    </div>
+  ),
+}));
 
 const { PlayerClient } = await import("./player-client");
 
@@ -276,6 +289,23 @@ describe("PlayerClient", () => {
     expect(screen.getByTestId("sheet-currencies")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Back to inventory" }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the spell editor from the game spellbook", async () => {
+    setBootstrap(bootstrap());
+    render(<PlayerClient campaignId={campaignId} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Spells" }));
+    expect(screen.getByTestId("player-spellbook-panel")).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Manage spellbook" }),
+    );
+
+    expect(screen.getByTestId("sheet-spells")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Back to spellbook" }),
     ).toBeInTheDocument();
   });
 

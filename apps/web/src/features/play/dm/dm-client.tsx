@@ -205,11 +205,11 @@ function SectionShell({
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <h2
-        id={headingId}
-        className="font-heading font-semibold text-foreground text-lg"
-      >
+    <section
+      aria-labelledby={headingId}
+      className="flex flex-col gap-4 border border-[#6b4a24]/70 bg-[#120d0a] p-4 text-[#e9dfc5] sm:p-6"
+    >
+      <h2 id={headingId} className="font-display text-2xl text-[#f2e5c8]">
         {heading}
       </h2>
       {children}
@@ -318,7 +318,7 @@ function PartySection({
         <Button
           type="button"
           variant="outline"
-          className="min-h-11 w-fit"
+          className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
           onClick={() => setSelectedSheetId(null)}
         >
           Back to party
@@ -366,23 +366,34 @@ function PartySection({
 
   return (
     <SectionShell headingId="party-heading" heading="Party">
-      <ul className="flex flex-col gap-2">
+      <ul className="grid list-none gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {party.map((member) => (
           <li key={member.sheetId}>
             <button
               type="button"
               onClick={() => setSelectedSheetId(member.sheetId)}
-              className="flex min-h-11 w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-border px-3 py-2 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/50"
+              className="flex min-h-16 w-full items-center gap-3 border border-[#6b4a24]/60 bg-[#0c0907] p-3 text-left outline-none transition-colors hover:border-[#8d6635] focus-visible:ring-2 focus-visible:ring-cyan-300/60 motion-reduce:transition-none"
             >
-              <span className="min-w-0 truncate font-medium text-foreground text-sm">
-                {member.name}
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#8d6635] bg-[#25140f] font-display text-[#e9dfc5] text-xs">
+                {member.name
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((word) => word[0])
+                  .join("")
+                  .toUpperCase() || "?"}
               </span>
-              <span className="text-muted-foreground text-xs">
-                {member.classes.length > 0
-                  ? member.classes
-                      .map((entry) => `${entry.name} ${entry.level}`)
-                      .join(" / ")
-                  : `Level ${member.totalLevel}`}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-display text-[#f2e5c8] text-sm">
+                  {member.name}
+                </span>
+                <span className="mt-1 block truncate text-[#9f8562] text-xs">
+                  {member.classes.length > 0
+                    ? member.classes
+                        .map((entry) => `${entry.name} ${entry.level}`)
+                        .join(" / ")
+                    : `Level ${member.totalLevel}`}
+                </span>
               </span>
             </button>
           </li>
@@ -423,7 +434,7 @@ function NotesSection({
 
   return (
     <SectionShell headingId="notes-heading" heading="Notes">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-[#9f8562] text-sm">
         Private to you. Players cannot see this.
       </p>
       <Textarea
@@ -437,11 +448,12 @@ function NotesSection({
         }}
         placeholder="Whatever is worth remembering next session."
         disabled={update.isPending}
+        className="min-h-64 rounded-none border-[#6b4a24] bg-[#0c0907] text-[#e9dfc5] placeholder:text-[#5f4a30] focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/40"
       />
       <div className="flex flex-wrap items-center gap-3">
         <Button
           type="button"
-          className="min-h-11"
+          className="min-h-11 rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
           disabled={update.isPending}
           onClick={save}
         >

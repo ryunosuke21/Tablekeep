@@ -387,10 +387,10 @@ export function EncounterSetup({
                   key={mode.value}
                   htmlFor={inputId}
                   className={cn(
-                    "flex min-h-11 cursor-pointer select-none items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors has-disabled:cursor-not-allowed has-disabled:opacity-60",
+                    "flex min-h-11 cursor-pointer select-none items-center gap-2 border px-3 py-2 text-sm transition-colors has-disabled:cursor-not-allowed has-disabled:opacity-60 motion-reduce:transition-none",
                     checked
-                      ? "border-primary bg-primary/5"
-                      : "border-input hover:bg-muted/50",
+                      ? "border-cyan-600/80 bg-[#0d2426] text-cyan-100"
+                      : "border-[#6b4a24]/70 bg-[#0c0907] text-[#b99c70] hover:border-[#8d6635]",
                   )}
                 >
                   <RadioGroupItem id={inputId} value={mode.value} />
@@ -455,7 +455,7 @@ export function EncounterSetup({
           <Button
             type="button"
             variant="outline"
-            className="min-h-11 w-fit"
+            className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
             disabled={isPending}
             onClick={addCustomRow}
           >
@@ -468,7 +468,7 @@ export function EncounterSetup({
 
         <Button
           type="submit"
-          className="min-h-11 w-fit"
+          className="min-h-11 w-fit rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
           disabled={isPending}
           aria-label="Begin encounter"
         >

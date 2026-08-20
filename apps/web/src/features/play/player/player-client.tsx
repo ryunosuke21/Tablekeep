@@ -23,7 +23,6 @@ import { SheetCurrencies } from "@/components/characters/sheet-currencies";
 import { SheetInventory } from "@/components/characters/sheet-inventory";
 import {
   EmptyNote,
-  ReadChip,
   ReadEntry,
   ReadField,
   ReadList,
@@ -39,6 +38,7 @@ import { PlayShell } from "../shared/play-shell";
 import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
 import { PlayerCharacterPanel } from "./player-character-panel";
 import { PlayerInventoryPanel } from "./player-inventory-panel";
+import { PlayerSpellbookPanel } from "./player-spellbook-panel";
 
 type PlayerBootstrap = RouterOutputs["play"]["player"]["bootstrap"];
 type PlayerCampaign = PlayerBootstrap["campaign"];
@@ -216,11 +216,11 @@ function SectionShell({
   children: ReactNode;
 }) {
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <h2
-        id={headingId}
-        className="font-heading font-semibold text-foreground text-lg"
-      >
+    <section
+      aria-labelledby={headingId}
+      className="flex flex-col gap-4 border border-[#6b4a24]/70 bg-[#120d0a] p-4 text-[#e9dfc5] sm:p-6"
+    >
+      <h2 id={headingId} className="font-display text-2xl text-[#f2e5c8]">
         {heading}
       </h2>
       {children}
@@ -388,19 +388,42 @@ function SpellsSection({
   campaignSlug: string;
   sheet: PlayerSheet | null;
 }) {
+  const [showManager, setShowManager] = useState(false);
+
+  if (!sheet) {
+    return (
+      <SectionShell headingId="spells-heading" heading="Spells">
+        <NoActiveCharacter campaignSlug={campaignSlug} />
+      </SectionShell>
+    );
+  }
+
+  if (!showManager) {
+    return (
+      <PlayerSpellbookPanel
+        spells={sheet.spells}
+        onManageSpells={() => setShowManager(true)}
+      />
+    );
+  }
+
   return (
     <SectionShell headingId="spells-heading" heading="Spells">
-      {sheet ? (
-        <SheetSpells
-          campaignId={campaignId}
-          sheetId={sheet.id}
-          spells={sheet.spells}
-          disabled={false}
-          canEdit
-        />
-      ) : (
-        <NoActiveCharacter campaignSlug={campaignSlug} />
-      )}
+      <Button
+        type="button"
+        variant="outline"
+        className="min-h-11 w-fit rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
+        onClick={() => setShowManager(false)}
+      >
+        Back to spellbook
+      </Button>
+      <SheetSpells
+        campaignId={campaignId}
+        sheetId={sheet.id}
+        spells={sheet.spells}
+        disabled={false}
+        canEdit
+      />
     </SectionShell>
   );
 }
@@ -483,27 +506,48 @@ function PartySection({
 
   return (
     <SectionShell headingId="party-heading" heading="Party">
-      <ReadList>
+      <ul className="grid list-none gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {party.map((member) => (
-          <ReadEntry
+          <li
             key={member.sheetId}
-            name={member.name}
-            meta={
-              member.classes.length > 0
-                ? member.classes
-                    .map((entry) => `${entry.name} ${entry.level}`)
-                    .join(" / ")
-                : `Level ${member.totalLevel}`
-            }
-            notes={member.ancestry}
-            badges={
-              member.sheetId === sheet?.id ? (
-                <ReadChip>You</ReadChip>
-              ) : undefined
-            }
-          />
+            className="flex min-w-0 items-center gap-3 border border-[#6b4a24]/60 bg-[#0c0907] p-3"
+          >
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-[#8d6635] bg-[#25140f] font-display text-[#e9dfc5] text-sm">
+              {member.name
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((word) => word[0])
+                .join("")
+                .toUpperCase() || "?"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="truncate font-display text-[#f2e5c8]">
+                  {member.name}
+                </p>
+                {member.sheetId === sheet?.id ? (
+                  <span className="shrink-0 border border-cyan-700/70 px-1.5 py-0.5 font-sans text-[9px] text-cyan-200 uppercase tracking-wider">
+                    You
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 truncate font-sans text-[#b99c70] text-xs">
+                {member.classes.length > 0
+                  ? member.classes
+                      .map((entry) => `${entry.name} ${entry.level}`)
+                      .join(" / ")
+                  : `Level ${member.totalLevel}`}
+              </p>
+              {member.ancestry ? (
+                <p className="mt-0.5 truncate text-[#8f7656] text-xs">
+                  {member.ancestry}
+                </p>
+              ) : null}
+            </div>
+          </li>
         ))}
-      </ReadList>
+      </ul>
     </SectionShell>
   );
 }
@@ -539,7 +583,7 @@ function NotesSection({
 
   return (
     <SectionShell headingId="notes-heading" heading="Notes">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-[#9f8562] text-sm">
         Private to you. The DM cannot see this.
       </p>
       <Textarea
@@ -553,11 +597,12 @@ function NotesSection({
         }}
         placeholder="Whatever is worth remembering next session."
         disabled={update.isPending}
+        className="min-h-64 rounded-none border-[#6b4a24] bg-[#0c0907] text-[#e9dfc5] placeholder:text-[#5f4a30] focus-visible:border-cyan-300/60 focus-visible:ring-cyan-300/40"
       />
       <div className="flex flex-wrap items-center gap-3">
         <Button
           type="button"
-          className="min-h-11"
+          className="min-h-11 rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
           disabled={update.isPending}
           onClick={save}
         >

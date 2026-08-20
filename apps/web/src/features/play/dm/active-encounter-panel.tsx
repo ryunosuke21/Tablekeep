@@ -19,8 +19,6 @@ import { Textarea } from "@tablekeep/ui/components/textarea";
 import { ConfirmActionDialog } from "@/components/campaigns/confirm-action-dialog";
 import type { RouterInputs, RouterOutputs } from "@/trpc/react";
 
-import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
-
 export type ActiveDmEncounter = NonNullable<
   RouterOutputs["play"]["dm"]["bootstrap"]["encounter"]
 >;
@@ -131,15 +129,6 @@ export function ActiveEncounterPanel({
   const combatants = [...encounter.combatants].sort(
     (a, b) => a.position - b.position,
   );
-  const turnRailCombatants: TurnRailCombatant[] = combatants.map(
-    (combatant) => ({
-      id: combatant.id,
-      name: combatant.name,
-      initiativeTotal: combatant.initiativeTotal,
-      position: combatant.position,
-    }),
-  );
-
   function advance(direction: "previous" | "next") {
     if (isPending) return;
     onAdvanceTurn({ expectedRevision: encounter.revision, direction });
@@ -148,7 +137,7 @@ export function ActiveEncounterPanel({
   return (
     <section
       aria-label={`${encounter.name} encounter`}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-5"
     >
       {errorMessage ? (
         <Alert variant="destructive">
@@ -158,10 +147,10 @@ export function ActiveEncounterPanel({
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-heading font-semibold text-foreground text-lg">
+          <h2 className="font-display text-2xl text-[#f2e5c8]">
             {encounter.name}
           </h2>
-          <p className="text-muted-foreground text-xs uppercase tracking-widest">
+          <p className="mt-1 font-mono text-[#9b7444] text-xs uppercase tracking-widest">
             Round {encounter.round}
           </p>
         </div>
@@ -187,18 +176,11 @@ export function ActiveEncounterPanel({
         />
       </header>
 
-      <TurnRail
-        combatants={turnRailCombatants}
-        activePosition={encounter.activePosition}
-        round={encounter.round}
-        isEncounterActive
-      />
-
       <div className="flex gap-2">
         <Button
           type="button"
           variant="outline"
-          className="min-h-11 min-w-11"
+          className="min-h-11 min-w-11 rounded-none border-[#8d6635] bg-[#0b0807] text-[#e9dfc5] hover:bg-[#24170f] hover:text-[#fff3d6]"
           disabled={isPending}
           onClick={() => advance("previous")}
         >
@@ -206,7 +188,7 @@ export function ActiveEncounterPanel({
         </Button>
         <Button
           type="button"
-          className="min-h-11 min-w-11"
+          className="min-h-11 min-w-11 rounded-none border border-[#8d6635] bg-[#6d342e] text-[#fff3d6] hover:bg-[#834139]"
           disabled={isPending}
           onClick={() => advance("next")}
         >
@@ -304,11 +286,11 @@ function CombatantCard({
   return (
     <li
       data-state={isCurrentTurn ? "current-turn" : undefined}
-      className="flex flex-col gap-3 rounded-lg border border-border px-3 py-3 data-[state=current-turn]:border-2 data-[state=current-turn]:border-tk-ember"
+      className="flex flex-col gap-3 border border-[#6b4a24]/60 bg-[#0c0907] px-3 py-3 data-[state=current-turn]:border-cyan-500/80 data-[state=current-turn]:shadow-[inset_3px_0_0_rgba(34,211,238,0.55)]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-medium text-foreground text-sm">
+          <span className="truncate font-display text-[#f2e5c8] text-base">
             {combatant.name}
           </span>
           <Badge variant="outline">
@@ -318,7 +300,7 @@ function CombatantCard({
             <Badge variant="secondary">Current turn</Badge>
           ) : null}
         </div>
-        <span className="text-muted-foreground text-xs tabular-nums">
+        <span className="font-mono text-[#9f8562] text-xs tabular-nums">
           {combatant.initiativeTotal !== null
             ? `Init ${combatant.initiativeTotal}`
             : "Init pending"}
