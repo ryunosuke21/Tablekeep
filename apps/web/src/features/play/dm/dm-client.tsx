@@ -2,13 +2,13 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
+import { IconNotebook, IconSwords, IconUsers } from "@tabler/icons-react";
 
 import { Alert, AlertDescription } from "@tablekeep/ui/components/alert";
 import { Button } from "@tablekeep/ui/components/button";
 import { LoadingSwap } from "@tablekeep/ui/components/loading-swap";
 import { Spinner } from "@tablekeep/ui/components/spinner";
 import { Textarea } from "@tablekeep/ui/components/textarea";
-import { cn } from "@tablekeep/ui/lib/utils";
 
 import { CharacterSheet } from "@/components/characters/character-sheet";
 import { SaveStatus, saveState } from "@/components/characters/save-status";
@@ -18,6 +18,8 @@ import { usePartyKitConnection } from "@/hooks/use-partykit-connection";
 import type { RouterOutputs } from "@/trpc/react";
 import { api } from "@/trpc/react";
 
+import { PlayShell } from "../shared/play-shell";
+import { TurnRail, type TurnRailCombatant } from "../shared/turn-rail";
 import {
   ActiveEncounterPanel,
   type AddEffectValue,
@@ -50,9 +52,9 @@ type CompleteEncounterMutation = ReturnType<
 >;
 
 const SECTIONS = [
-  { value: "table", label: "Table" },
-  { value: "party", label: "Party" },
-  { value: "notes", label: "Notes" },
+  { value: "table", label: "Table", icon: <IconSwords /> },
+  { value: "party", label: "Party", icon: <IconUsers /> },
+  { value: "notes", label: "Notes", icon: <IconNotebook /> },
 ] as const;
 
 type SectionValue = (typeof SECTIONS)[number]["value"];
@@ -123,8 +125,8 @@ export function DmClient({ campaignId }: { campaignId: string }) {
 
   if (bootstrap.isPending) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-background px-6 py-12">
-        <p className="flex items-center gap-2 text-muted-foreground text-sm">
+      <main className="flex min-h-svh items-center justify-center bg-[#0b0908] px-6 py-12 text-[#e9dfc5]">
+        <p className="flex items-center gap-2 text-[#8a6a45] text-sm">
           <Spinner /> Loading the table…
         </p>
       </main>
@@ -133,8 +135,8 @@ export function DmClient({ campaignId }: { campaignId: string }) {
 
   if (bootstrap.isError) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-background px-6 py-12">
-        <p className="max-w-sm text-balance text-center text-muted-foreground text-sm">
+      <main className="flex min-h-svh items-center justify-center bg-[#0b0908] px-6 py-12 text-[#e9dfc5]">
+        <p className="max-w-sm text-balance text-center text-[#8a6a45] text-sm">
           This DM view could not be loaded.{" "}
           {bootstrap.error.message || "Try again in a moment."}
         </p>
@@ -144,66 +146,52 @@ export function DmClient({ campaignId }: { campaignId: string }) {
 
   const { campaign, party, note, encounter } = bootstrap.data;
 
+  const combatants: TurnRailCombatant[] = encounter
+    ? encounter.combatants.map((combatant) => ({
+        id: combatant.id,
+        name: combatant.name,
+        initiativeTotal: combatant.initiativeTotal,
+        position: combatant.position,
+      }))
+    : [];
+
   return (
-    <div className="flex min-h-svh flex-col bg-background pb-20 lg:pb-0">
-      <header className="border-b px-4 py-3 sm:px-6">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-[0.18em]">
-          DM view
-        </p>
-        <h1 className="mt-1 text-balance font-heading font-semibold text-foreground text-lg">
-          {campaign.name}
-        </h1>
-      </header>
-
-      <div className="flex flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start">
-        <nav
-          aria-label="DM play sections"
-          className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-background lg:static lg:inset-auto lg:z-auto lg:w-44 lg:shrink-0 lg:flex-col lg:gap-1 lg:border-t-0"
-        >
-          {SECTIONS.map((entry) => {
-            const isActive = section === entry.value;
-            return (
-              <button
-                key={entry.value}
-                type="button"
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => setSection(entry.value)}
-                className={cn(
-                  "flex min-h-11 flex-1 items-center justify-center px-1 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 motion-reduce:transition-none lg:flex-none lg:justify-start lg:rounded-lg lg:px-3 lg:text-sm",
-                  isActive
-                    ? "font-medium text-foreground lg:bg-muted"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {entry.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="min-w-0 flex-1">
-          {section === "table" ? (
-            <TableSection
-              campaignId={campaignId}
-              party={party}
-              encounter={encounter}
-              beginEncounter={beginEncounter}
-              advanceTurn={advanceTurn}
-              setHealth={setHealth}
-              addEffect={addEffect}
-              removeEffect={removeEffect}
-              completeEncounter={completeEncounter}
-            />
-          ) : null}
-          {section === "party" ? (
-            <PartySection campaign={campaign} party={party} />
-          ) : null}
-          {section === "notes" ? (
-            <NotesSection campaignId={campaignId} note={note} />
-          ) : null}
-        </div>
-      </div>
-    </div>
+    <PlayShell
+      campaignName={campaign.name}
+      campaignHref={`/campaigns/${campaign.slug}`}
+      viewLabel="DM table"
+      sections={SECTIONS}
+      activeSection={section}
+      onSectionChange={(value) => setSection(value as SectionValue)}
+      turnRail={
+        <TurnRail
+          combatants={combatants}
+          activePosition={encounter?.activePosition ?? null}
+          round={encounter?.round ?? null}
+          isEncounterActive={encounter !== null}
+        />
+      }
+    >
+      {section === "table" ? (
+        <TableSection
+          campaignId={campaignId}
+          party={party}
+          encounter={encounter}
+          beginEncounter={beginEncounter}
+          advanceTurn={advanceTurn}
+          setHealth={setHealth}
+          addEffect={addEffect}
+          removeEffect={removeEffect}
+          completeEncounter={completeEncounter}
+        />
+      ) : null}
+      {section === "party" ? (
+        <PartySection campaign={campaign} party={party} />
+      ) : null}
+      {section === "notes" ? (
+        <NotesSection campaignId={campaignId} note={note} />
+      ) : null}
+    </PlayShell>
   );
 }
 
