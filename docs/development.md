@@ -57,6 +57,21 @@ M3 Player essentials is implemented. Its persistence boundary separates a global
 - Ability scores are rows in `sheet_stats`, not fixed columns, for the same reason currencies are rows: a table that uses a different spread of abilities still fits. `sheet_feats` and `sheet_npcs` follow the `sheet_backgrounds` shape.
 - Alignment, appearance, and the campaign's backstory are sheet columns, because they are one value per sheet. The character's global `bio` stays on `characters` and is shown beside the backstory rather than merged with it.
 
+### Play workspace
+
+`/play/[campaignId]` uses a paper-style workspace with the shared UI library's
+Tabs, buttons, inputs, and existing sheet editors. Its light paper tokens are
+scoped to `.play-paper`; other product pages retain the selected app theme.
+The character overview groups identity, recorded stats, encounter health,
+equipment, prepared spells, effects, resources, and feats into a sheet.
+Current HP is shown only when supplied by the active encounter.
+
+Initiative order appears only in the Initiative tab. Players see the authorized
+turn order and their own health and effects; DMs also have encounter setup,
+health, effect, and turn controls there. The existing `section=turn` player URL
+and `section=table` DM URL are retained. Tab and sub-view navigation still uses
+URL history, including the spellbook and inventory editors and private notes.
+
 ### Sheet history
 
 `sheet_events` is an append-only record of who changed what on a sheet. Rows are
@@ -111,7 +126,7 @@ Copy `apps/web/.env.example` to `apps/web/.env` and `apps/docs/.env.example` to 
 | `DATA_SOURCE` | No | Versioned Open5e reference-data API base URL; defaults to `https://api.open5e.com/v2`. |
 | `LOG_LEVEL` | No | `debug`, `info`, `warn`, or `error`; defaults to `info`. |
 
-The product’s public URL comes from Vercel’s `VERCEL_URL` system variable in deployed environments (via the T3 Env Vercel preset), and falls back to `http://localhost:3000` locally. You do not need to set an app URL in `.env`.
+The product’s public URL comes from Vercel’s `VERCEL_URL` system variable in deployed environments (via the T3 Env Vercel preset), and falls back to `http://localhost:3000` locally. You do not need to set an app URL in `.env`. When running the web app through Portless, it injects `PORTLESS_URL`; Better Auth uses that HTTPS URL for Google callbacks. Register `<PORTLESS_URL>/api/auth/callback/google` as a Google OAuth redirect URI for local sign-in.
 
 `apps/docs` reads one public variable through T3 Env.
 
