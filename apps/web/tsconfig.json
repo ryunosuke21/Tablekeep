@@ -1,4 +1,5 @@
 {
+  "extends": "@tablekeep/config/tsconfig.base.json",
   "compilerOptions": {
     /* Base Options: */
     "esModuleInterop": true,
@@ -24,8 +25,6 @@
     "plugins": [{ "name": "next" }],
     "incremental": true,
 
-    /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
