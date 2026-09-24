@@ -2,17 +2,21 @@
   "name": "@tablekeep/env",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    "./server": "./src/server.ts",
+    "./client": "./src/client.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@tablekeep/config": "workspace:*",
     "typescript": "catalog:",
-    "vitest": "^4.1.10"
+    "vitest": "catalog:"
   },
   "dependencies": {
     "@t3-oss/env-core": "^0.13.11",
